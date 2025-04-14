@@ -3,36 +3,117 @@
 import { gql, useQuery } from '@apollo/client';
 import client from '@/lib/apollo-client';
 import Link from 'next/link';
+import { useState } from 'react';
+import he from 'he';
+
 
 const GET_PRODUCTS = gql`
-  query GetProducts {
-    products {
+  query GetProducts($search: String, $category: [String], $after: String) {
+    products(first: 6, after: $after, where: { search: $search, categoryIn: $category }) {
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
       nodes {
         id
         name
         slug
         description
-        price
+        ... on SimpleProduct {
+          price
+        }
       }
     }
   }
 `;
 
 export default function ProductListPage() {
-  const { loading, error, data } = useQuery(GET_PRODUCTS, { client });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [category, setCategory] = useState<string | null>(null);
+  const [afterCursor, setAfterCursor] = useState<string | null>(null);
+  const [products, setProducts] = useState<any[]>([]);
 
-  if (loading) return <p>Učitavanje...</p>;
-  if (error) return <p>Greška: {error.message}</p>;
+  const { loading, error, data, fetchMore, refetch } = useQuery(GET_PRODUCTS, {
+    variables: {
+      search: searchTerm || undefined,
+      category: category ? [category] : undefined,
+      after: null,
+    },
+    client,
+    onCompleted: (data) => {
+      setProducts(data.products.nodes);
+      setAfterCursor(data.products.pageInfo.endCursor);
+    },
+  });
+
+  const loadMore = async () => {
+    const { data: moreData } = await fetchMore({
+      variables: {
+        after: afterCursor,
+      },
+    });
+    setProducts((prev) => [...prev, ...moreData.products.nodes]);
+    setAfterCursor(moreData.products.pageInfo.endCursor);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    refetch({ search: searchTerm, category: category ? [category] : undefined, after: null });
+  };
 
   return (
-    <div className="grid grid-cols-2 gap-4 p-4">
-      {data.products.nodes.map((product: any) => (
-        <Link href={`/products/${product.slug}`} key={product.id} className="border p-4 rounded shadow">
-          <h2 className="text-xl font-bold">{product.name}</h2>
-          <h2 className="text-xl font-bold">{product.price}</h2>
-          <div dangerouslySetInnerHTML={{ __html: product.description }} />
-        </Link>
-      ))}
+    <div className="p-4">
+      <form onSubmit={handleSearch} className="mb-4 flex gap-2">
+        <input
+          type="text"
+          placeholder="Pretraga..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border p-2 rounded w-full"
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Traži
+        </button>
+      </form>
+
+      <div className="grid grid-cols-2 gap-4">
+        {products.map((product: any) => (
+          <Link
+            href={`/products/${product.slug}`}
+            key={product.id}
+            className="border p-4 rounded shadow hover:shadow-lg transition"
+          >
+            <h2 className="text-lg font-bold">{product.name}</h2>
+            {product.price && (
+  <p className="text-green-600 text-sm font-semibold">
+    {he.decode(product.price).replace(/&nbsp;|&npsb;/g, '').trim()}
+  </p>
+)}
+
+            <div
+              className="text-sm"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
+          </Link>
+        ))}
+      </div>
+
+      {data?.products?.pageInfo?.hasNextPage && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={loadMore}
+            className="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700"
+          >
+            Učitaj još
+          </button>
+        </div>
+      )}
+
+      {loading && <p className="mt-4 text-center">Učitavanje...</p>}
+      {error && <p className="mt-4 text-red-600">Greška: {error.message}</p>}
     </div>
   );
 }

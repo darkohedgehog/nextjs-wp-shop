@@ -1,4 +1,4 @@
-import { useCartStore } from "../../../../zustand/useCartStore";
+import { useCart } from "../../../store/cart";
 
 
 async function fetchProduct(id: string) {
@@ -16,7 +16,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       <p>{product.price} €</p>
       <p className="mt-2 text-sm">{product.description}</p>
       <button
-        onClick={() => useCartStore.getState().addToCart({ id: product.id, name: product.name, price: parseFloat(product.price), quantity: 1 })}
+        onClick={() => useCart.getState().addToCart({ id: product.id, name: product.name, price: parseFloat(product.price), quantity: 1 })}
         className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
       >
         Dodaj u korpu
