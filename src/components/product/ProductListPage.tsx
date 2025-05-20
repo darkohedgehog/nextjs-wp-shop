@@ -5,7 +5,7 @@ import client from '@/lib/apollo-client';
 import Link from 'next/link';
 import { useState } from 'react';
 import he from 'he';
-
+import Image from 'next/image';
 
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
@@ -21,6 +21,10 @@ const GET_PRODUCTS = gql`
         description
         ... on SimpleProduct {
           price
+          image {
+            sourceUrl
+            altText
+          }
         }
       }
     }
@@ -48,9 +52,7 @@ export default function ProductListPage() {
 
   const loadMore = async () => {
     const { data: moreData } = await fetchMore({
-      variables: {
-        after: afterCursor,
-      },
+      variables: { after: afterCursor },
     });
     setProducts((prev) => [...prev, ...moreData.products.nodes]);
     setAfterCursor(moreData.products.pageInfo.endCursor);
@@ -71,32 +73,47 @@ export default function ProductListPage() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border p-2 rounded w-full"
         />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
           Traži
         </button>
       </form>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {products.map((product: any) => (
           <Link
             href={`/products/${product.slug}`}
             key={product.id}
             className="border p-4 rounded shadow hover:shadow-lg transition"
           >
-            <h2 className="text-lg font-bold">{product.name}</h2>
-            {product.price && (
-  <p className="text-green-600 text-sm font-semibold">
-    {he.decode(product.price).replace(/&nbsp;|&npsb;/g, '').trim()}
-  </p>
-)}
+            {/* Product Image */}
+            {product.image?.sourceUrl && (
+              <Image
+                width={200}
+                height={200}
+                src={product.image.sourceUrl}
+                alt={product.image.altText || product.name}
+                priority
+                className="w-40 h-40 object-cover mb-2"
+              />
+            )}
 
-            <div
-              className="text-sm"
-              dangerouslySetInnerHTML={{ __html: product.description }}
-            />
+            {/* Product Name */}
+            <h2 className="text-lg font-bold mb-1">{product.name}</h2>
+
+            {/* Product Price */}
+            {product.price && (
+              <p className="text-green-600 text-sm font-semibold mb-2">
+                {he.decode(product.price).replace(/&nbsp;|&npsb;/g, '').trim()}
+              </p>
+            )}
+
+            {/* Product Description */}
+            {product.description && (
+              <div
+                className="text-sm text-gray-700"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
+            )}
           </Link>
         ))}
       </div>
