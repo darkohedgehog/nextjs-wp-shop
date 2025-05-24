@@ -1,24 +1,26 @@
 import client from '@/lib/apollo-client';
+import AddToCartBtn from '@/components/cart/AddToCart';
 import { gql } from '@apollo/client';
 import he from 'he';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 // Server Component for Product Detail
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  // Await params as per Next.js 15 async dynamic routing
   const { slug } = await params;
 
   const GET_PRODUCT = gql`
     query GetProduct($id: ID!) {
       product(id: $id, idType: SLUG) {
+        databaseId
         id
         name
         slug
         shortDescription
         ... on SimpleProduct {
-          price
-          regularPrice
+          price(format: RAW)
+          regularPrice(format: RAW)
           image {
             sourceUrl
             altText
@@ -44,6 +46,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     return notFound();
   }
 
+  // parse price after fetch
+  const priceStr = product.price ?? product.regularPrice;
+  const priceNum = typeof priceStr === 'string' ? parseFloat(he.decode(priceStr)) : 0;
+
   return (
     <div className="p-4 max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
       {/* Main Image */}
@@ -60,18 +66,16 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       {/* Details */}
       <div>
         <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-        {product.price && (
-          <p className="text-xl text-green-600 mb-4">
-            {he.decode(product.price).replace(/&nbsp;|&npsb;/g, '').trim()}
-          </p>
-        )}
+        <p className="text-xl text-green-600 mb-4">
+          {priceNum.toFixed(2)} €
+        </p>
 
-     {product.shortDescription && (
-     <div
-       className="prose prose-lg mb-6"
-      dangerouslySetInnerHTML={{ __html: product.shortDescription }}
-       />
-       )}
+        {product.shortDescription && (
+          <div
+            className="prose prose-lg mb-6"
+            dangerouslySetInnerHTML={{ __html: product.shortDescription }}
+          />
+        )}
 
         {/* Gallery */}
         {product.galleryImages?.nodes?.length > 0 && (
@@ -88,6 +92,18 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             ))}
           </div>
         )}
+
+        {/* Add to Cart and Link to Cart */}
+        <div className="mt-6 flex items-center space-x-4">
+          <AddToCartBtn
+            product_id={product.databaseId}
+            name={product.name}
+            price={priceNum}
+          />
+          <Link href="/cart" className="text-blue-600 hover:underline">
+            Vidi košaricu
+          </Link>
+        </div>
       </div>
     </div>
   );

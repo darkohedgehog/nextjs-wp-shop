@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  rewrites: async () => [
+    { source: '/api/cart',        destination: 'https://wp.zivic-elektro.shop/wp-json/wc/store/v1/cart' },
+    { source: '/api/cart/add-item', destination: 'https://wp.zivic-elektro.shop/wp-json/wc/store/v1/cart/add-item' },
+  ],
   reactStrictMode: true,
     images: {
         remotePatterns: [
