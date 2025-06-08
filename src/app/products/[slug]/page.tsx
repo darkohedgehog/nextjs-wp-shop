@@ -95,11 +95,13 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
         {/* Add to Cart and Link to Cart */}
         <div className="mt-6 flex items-center space-x-4">
-          <AddToCartBtn
-            product_id={product.databaseId}
-            name={product.name}
-            price={priceNum}
-          />
+        <AddToCartBtn
+           product_id={parseInt(product.databaseId)}
+           name={product.name}
+           price={priceNum}
+           image={product.image?.sourceUrl || ''}
+           imageAlt={product.image?.altText || product.name}
+        />
           <Link href="/cart" className="text-blue-600 hover:underline">
             Vidi košaricu
           </Link>

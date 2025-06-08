@@ -1,8 +1,9 @@
 'use client';
 
-import { useCart, CartItem } from '@/store/cart';
+import { useCart } from '@/store/cart';
 import CartQty from '@/components/cart/CartQty';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function CartPage() {
   const items = useCart((s) => s.items);
@@ -16,10 +17,27 @@ export default function CartPage() {
   return (
     <div className="p-4 max-w-3xl mx-auto">
       {items.map((item) => (
-        <div key={item.product_id} className="flex justify-between items-center my-12">
-          <div>
-            <h2 className="font-semibold">{item.name}</h2>
-            <p>{item.price.toFixed(2)} € x {item.quantity} = {(item.price * item.quantity).toFixed(2)} €</p>
+        <div
+          key={item.product_id}
+          className="flex justify-between items-center my-12"
+        >
+          <div className="flex items-center space-x-4">
+            {item.image && item.image.length > 0 && (
+              <Image
+                src={item.image}
+                alt={item.imageAlt || item.name}
+                width={80}
+                height={80}
+                className="object-cover rounded"
+              />
+            )}
+            <div>
+              <h2 className="font-semibold">{item.name}</h2>
+              <p>
+                {item.price.toFixed(2)} € x {item.quantity} ={' '}
+                {(item.price * item.quantity).toFixed(2)} €
+              </p>
+            </div>
           </div>
           <CartQty product_id={item.product_id} />
         </div>
@@ -30,11 +48,13 @@ export default function CartPage() {
       </div>
 
       {/* Dugme ka checkout-u */}
-      <Link href={'/checkout'}>
-      <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded">
-        Na naplatu
-      </button>
-      </Link>
+      <div className="mt-4 text-center">
+        <Link href="/checkout">
+          <button className="bg-green-600 text-white px-6 py-2 rounded">
+            Na naplatu
+          </button>
+        </Link>
+      </div>
     </div>
   );
 }
