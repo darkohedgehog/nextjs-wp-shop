@@ -1,23 +1,17 @@
+// app/api/store-login/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function POST(request: NextRequest) {
-  // 1. Parsiraj username i password iz body-a
-  const { username, password } = await request.json();
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const url = new URL('/wp-json/jwt-auth/v1/token', process.env.WC_BASE_URL!);
 
-  // 2. Pozivi WooCommerce Store API authenticate ruti
-  const res = await fetch(
-    `${process.env.WC_BASE_URL}/wp-json/wc/store/v1/customer/authenticate`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // send + receive cookies
-      credentials: 'include',
-      body: JSON.stringify({ username, password }),
-    }
-  );
+  const wpRes = await fetch(url.toString(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 
-  // 3. Vratimo response točno onako kako je stigao iz WooCommercea
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  const data = await wpRes.json();
+  return NextResponse.json(data, { status: wpRes.status });
 }

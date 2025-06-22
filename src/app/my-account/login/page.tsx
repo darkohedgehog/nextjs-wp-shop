@@ -1,9 +1,10 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [creds, setCreds] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -11,21 +12,22 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
-    const res = await fetch('/api/wp-login', {
+    const res = await fetch('/api/store-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',            // <— važno!
-      body: JSON.stringify(creds),
+      body: JSON.stringify(form),
     });
+    const data = await res.json();
+    console.log('Login response:', data);
 
-    if (!res.ok) {
-      const { message } = await res.json().catch(() => ({}));
-      setError(message || 'Neispravni podaci');
-      return;
+    // token se nalazi u data.data.token prema JWT Auth strukturi!
+    if (!res.ok || !data.data?.token) {
+      setError(data?.message || 'Greška pri loginu');
+    } else {
+      localStorage.setItem('wpToken', data.data.token);
+      localStorage.setItem('wpUser', JSON.stringify(data.data));
+      router.push('/my-account');
     }
-
-    // uspjeh → redirect
-    router.push('/my-account');
   };
 
   return (
@@ -34,20 +36,27 @@ export default function LoginPage() {
       <input
         type="text"
         required
-        placeholder="Korisničko ime ili email"
-        value={creds.username}
-        onChange={(e) => setCreds((c) => ({ ...c, username: e.target.value }))}
+        placeholder="Korisničko ime ili Email"
+        value={form.username}
+        onChange={e =>
+          setForm(f => ({ ...f, username: e.target.value }))
+        }
         className="border p-2 rounded w-full"
       />
       <input
         type="password"
         required
         placeholder="Lozinka"
-        value={creds.password}
-        onChange={(e) => setCreds((c) => ({ ...c, password: e.target.value }))}
+        value={form.password}
+        onChange={e =>
+          setForm(f => ({ ...f, password: e.target.value }))
+        }
         className="border p-2 rounded w-full"
       />
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+      <button
+        type="submit"
+        className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+      >
         Prijavi se
       </button>
     </form>
