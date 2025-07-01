@@ -1,13 +1,11 @@
-import Link from "next/link";
+import HeroSection from "@/components/mainpage/herosection/HeroSection";
+
 
 
 export default function Home() {
   return (
     <>
-    <Link
-    href={'/products'}>
-    Proizvodi
-    </Link>
+    <HeroSection />
     </>
   );
 }
