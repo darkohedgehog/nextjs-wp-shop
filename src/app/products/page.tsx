@@ -1,12 +1,10 @@
+import ClientApolloProvider from '@/components/ClientApolloProvider';
 import ProductListPage from '@/components/product/ProductListPage';
-import React from 'react';
 
-const ProductsPage = () => {
+export default function ProductsPage() {
   return (
-    <>
-        <ProductListPage />
-    </>
-  )
+    <ClientApolloProvider>
+      <ProductListPage />
+    </ClientApolloProvider>
+  );
 }
-
-export default ProductsPage;

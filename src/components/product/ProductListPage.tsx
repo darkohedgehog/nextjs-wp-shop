@@ -1,11 +1,24 @@
 'use client';
 
 import { gql, useQuery } from '@apollo/client';
-import client from '@/lib/apollo-client';
+import { client } from '@/lib/apollo-client';
 import Link from 'next/link';
 import { useState } from 'react';
 import he from 'he';
 import Image from 'next/image';
+
+// Tip za Product
+interface Product {
+  id: string | number;
+  name: string;
+  slug: string;
+  description?: string;
+  price?: string;
+  image?: {
+    sourceUrl: string;
+    altText?: string;
+  };
+}
 
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
@@ -33,14 +46,13 @@ const GET_PRODUCTS = gql`
 
 export default function ProductListPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [category, setCategory] = useState<string | null>(null);
   const [afterCursor, setAfterCursor] = useState<string | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const { loading, error, data, fetchMore, refetch } = useQuery(GET_PRODUCTS, {
     variables: {
       search: searchTerm || undefined,
-      category: category ? [category] : undefined,
+      category: undefined, // mozeš kasnije dodati filter po kategoriji ako bude UI
       after: null,
     },
     client,
@@ -60,7 +72,7 @@ export default function ProductListPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    refetch({ search: searchTerm, category: category ? [category] : undefined, after: null });
+    refetch({ search: searchTerm, category: undefined, after: null });
   };
 
   return (
@@ -79,7 +91,7 @@ export default function ProductListPage() {
       </form>
 
       <div className="grid grid-cols-3 gap-4">
-        {products.map((product: any) => (
+        {products.map((product) => (
           <Link
             href={`/products/${product.slug}`}
             key={product.id}

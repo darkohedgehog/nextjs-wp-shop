@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,9 +34,11 @@ export default function RootLayout({
         <BackgroundGradientAnimation /> 
       </div>
       {/* Sadržaj aplikacije */}
+      <Providers>
       <div className="relative z-10">
         {children}
       </div>
+      </Providers>
       </body>
     </html>
   );

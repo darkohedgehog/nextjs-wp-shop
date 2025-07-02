@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function GET( req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-  ) {
-    const { id } = await params;
-  const base= process.env.WC_BASE_URL!;
+export async function GET(req: NextRequest) {
+  // 1. Dohvati id iz URL-a (poslednji deo)
+  const urlParts = req.nextUrl.pathname.split('/');
+  const id = urlParts[urlParts.length - 1];
+
+  const base = process.env.WC_BASE_URL!;
   const key = process.env.WC_KEY!;
   const sec = process.env.WC_SECRET!;
 

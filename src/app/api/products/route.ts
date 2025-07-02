@@ -22,7 +22,7 @@ export async function GET() {
       }
 
       return Response.json(data);
-    } catch (jsonErr) {
+    } catch {
       console.error('[JSON parse error]', text);
       return new Response(JSON.stringify({ error: true, message: 'Invalid JSON' }), { status: 500 });
     }

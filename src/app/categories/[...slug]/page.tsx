@@ -2,13 +2,44 @@
 
 import { useState, useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
-import client from '@/lib/apollo-client';
+import { client } from '@/lib/apollo-client';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import he from 'he';
 
-// Queries
+// --- Tipovi podataka
+type Category = {
+  id: string;
+  databaseId: number;
+  name: string;
+  slug: string;
+  image?: { sourceUrl: string; altText?: string };
+  children: { nodes: Category[] };
+};
+
+type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  price?: string;
+  image?: { sourceUrl: string; altText?: string };
+};
+
+type PageInfo = { endCursor: string; hasNextPage: boolean };
+
+type ProductsData = {
+  products: {
+    pageInfo: PageInfo;
+    nodes: Product[];
+  };
+};
+
+type CategoryData = {
+  productCategory: Category;
+};
+
+// GraphQL queries (ostaju isti)
 const GET_CATEGORY_TREE = gql`
   query CategoryTree($slug: ID!) {
     productCategory(id: $slug, idType: SLUG) {
@@ -39,26 +70,26 @@ export default function CategoryPage() {
   const childSlug = slugs[1] || null;
 
   // Fetch category tree
-  const { data: catData, loading: catLoading, error: catError } = useQuery(
+  const { data: catData, loading: catLoading, error: catError } = useQuery<CategoryData>(
     GET_CATEGORY_TREE,
     { variables: { slug: parentSlug }, client }
   );
 
   // Compute current category id
   const parentCat = catData?.productCategory;
-  const currentCat = parentCat
+  const currentCat: Category | null = parentCat
     ? childSlug
-      ? parentCat.children.nodes.find((c: any) => c.slug === childSlug)
+      ? parentCat.children.nodes.find((c) => c.slug === childSlug) || null
       : parentCat
     : null;
   const categoryId = currentCat?.databaseId;
 
   // State for pagination
-  const [products, setProducts] = useState<any[]>([]);
-  const [pageInfo, setPageInfo] = useState<{ endCursor: string; hasNextPage: boolean }>({ endCursor: '', hasNextPage: false });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [pageInfo, setPageInfo] = useState<PageInfo>({ endCursor: '', hasNextPage: false });
 
   // Fetch products for leaf category (skip until categoryId available)
-  const { data: prodData, loading: prodLoading, error: prodError, fetchMore } = useQuery(
+  const { data: prodData, loading: prodLoading, error: prodError, fetchMore } = useQuery<ProductsData>(
     GET_PRODUCTS_BY_CATEGORY,
     {
       variables: { categoryId: categoryId as number, after: null },
@@ -96,18 +127,18 @@ export default function CategoryPage() {
 
       {showSubcategories ? (
         <div className="grid grid-cols-3 gap-6">
-          {subCategories.map((sub: any) => (
+          {subCategories.map((sub: Category) => (
             <Link 
               key={sub.slug} 
               href={`/categories/${parentSlug}/${sub.slug}`} 
               className="border rounded overflow-hidden hover:shadow-lg">
               {sub.image?.sourceUrl && (
                 <Image 
-                src={sub.image.sourceUrl} 
-                alt={sub.image.altText || sub.name} 
-                width={300} 
-                height={200} 
-                className="w-full h-48 object-cover" />
+                  src={sub.image.sourceUrl} 
+                  alt={sub.image.altText || sub.name} 
+                  width={300} 
+                  height={200} 
+                  className="w-full h-48 object-cover" />
               )}
               <div className="p-4 text-center">
                 <h2 className="text-xl font-semibold">{sub.name}</h2>
@@ -118,23 +149,23 @@ export default function CategoryPage() {
       ) : (
         <>
           <div className="grid grid-cols-4 gap-4">
-            {products.map((product: any) => (
+            {products.map((product: Product) => (
               <Link 
-               key={product.id}
-               href={`/products/${product.slug}`} 
-               className="border p-4 rounded shadow hover:shadow-lg transition">
+                key={product.id}
+                href={`/products/${product.slug}`} 
+                className="border p-4 rounded shadow hover:shadow-lg transition">
                 {product.image?.sourceUrl && (
                   <Image 
-                   src={product.image.sourceUrl} 
-                   alt={product.image.altText || product.name}
-                   width={200}
-                   height={200} 
-                   className="w-full h-40 object-cover mb-2" />
+                    src={product.image.sourceUrl} 
+                    alt={product.image.altText || product.name}
+                    width={200}
+                    height={200} 
+                    className="w-full h-40 object-cover mb-2" />
                 )}
                 <h2 className="text-lg font-bold mb-1">{product.name}</h2>
                 {product.price && 
-                <p className="text-green-600 font-semibold">
-                  {he.decode(product.price).replace(/&nbsp;|&npsb;/g, '').trim()}
+                  <p className="text-green-600 font-semibold">
+                    {he.decode(product.price).replace(/&nbsp;|&npsb;/g, '').trim()}
                   </p>}
               </Link>
             ))}

@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import type { CreateOrderRequest } from '@/types/order';
 
 export async function POST(req: NextRequest) {
   try {
     const {
-      billing, shipping,
-      payment_method, payment_method_title,
-      line_items, shipping_lines,
-    } = await req.json();
+      billing,
+      shipping,
+      payment_method,
+      payment_method_title,
+      line_items,
+      shipping_lines,
+    }: CreateOrderRequest = await req.json();
 
     const base = process.env.WC_BASE_URL!;
     const key  = process.env.WC_KEY!;
@@ -16,20 +20,20 @@ export async function POST(req: NextRequest) {
     const url = new URL('/wp-json/wc/v3/orders', base);
     const auth = Buffer.from(`${key}:${sec}`).toString('base64');
 
-    const payload: any = {
+    const payload: CreateOrderRequest & { status: string } = {
       payment_method,
       payment_method_title,
       billing,
       shipping,
       line_items,
-      shipping_lines, // forward
+      shipping_lines,
       status: 'processing',
     };
 
     const wpRes = await fetch(url.toString(), {
       method: 'POST',
       headers: {
-        'Content-Type':'application/json',
+        'Content-Type': 'application/json',
         'Authorization': `Basic ${auth}`,
       },
       body: JSON.stringify(payload),
@@ -37,11 +41,17 @@ export async function POST(req: NextRequest) {
 
     const text = await wpRes.text();
     const data = JSON.parse(text);
+
     if (!wpRes.ok) {
       return NextResponse.json({ error: data }, { status: wpRes.status });
     }
     return NextResponse.json(data, { status: wpRes.status });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    // “e” je unknown tip, pa moramo kastovati kad koristimo message
+    const errorMessage =
+      typeof e === "object" && e !== null && "message" in e
+        ? (e as { message: string }).message
+        : "Unknown error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
