@@ -1,5 +1,5 @@
 import client from '@/lib/apollo-client';
-import AddToCartBtn from '@/components/cart/AddToCart';
+import AddToCartWrapper from '@/components/cart/AddToCartWrapper';
 import { gql } from '@apollo/client';
 import he from 'he';
 import Image from 'next/image';
@@ -7,9 +7,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 // Server Component for Product Detail
-export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-
+export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
+  console.log(params)
   const GET_PRODUCT = gql`
     query GetProduct($id: ID!) {
       product(id: $id, idType: SLUG) {
@@ -36,12 +36,19 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     }
   `;
 
-  const { data } = await client.query({
-    query: GET_PRODUCT,
-    variables: { id: slug },
-  });
+  let product;
+  try {
+    const { data } = await client.query({
+      query: GET_PRODUCT,
+      variables: { id: slug },
+    });
+    product = data.product;
+  } catch (error) {
+    console.error("Greška pri dohvaćanju proizvoda:", error);
+    // Možete handle-ati grešku na drugačiji način, npr. prikazati poruku o grešci korisniku
+    return notFound(); // Ili preusmjeriti na stranicu s greškom
+  }
 
-  const product = data.product;
   if (!product) {
     return notFound();
   }
@@ -60,6 +67,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           src={product.image.sourceUrl}
           alt={product.image.altText || product.name}
           className="w-full h-auto object-cover rounded"
+          // Dodano 'priority' svojstvo za LCP sliku
+          priority 
         />
       )}
 
@@ -86,7 +95,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                 height={200}
                 key={idx}
                 src={img.sourceUrl}
-                alt={img.altText || product.name}
+                alt={img.altText}
                 className="w-40 h-40 object-cover rounded"
               />
             ))}
@@ -95,7 +104,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
         {/* Add to Cart and Link to Cart */}
         <div className="mt-6 flex items-center space-x-4">
-        <AddToCartBtn
+        <AddToCartWrapper
            product_id={parseInt(product.databaseId)}
            name={product.name}
            price={priceNum}
