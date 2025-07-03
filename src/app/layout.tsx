@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
 import { Providers } from "./providers";
+import { NavbarWithChildren } from "@/components/navigation/Nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
         <BackgroundGradientAnimation /> 
       </div>
       {/* Sadržaj aplikacije */}
+      <NavbarWithChildren />
       <Providers>
       <div className="relative z-10">
         {children}
