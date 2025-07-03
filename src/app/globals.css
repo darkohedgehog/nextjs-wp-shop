@@ -43,3 +43,47 @@
     }
   }
 }
+
+.bg-gradient-custom {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 119, 182, 1) 0%,
+    rgba(0, 150, 199, 1) 25%,
+    rgba(0, 180, 216, 1) 50%,
+    rgba(72, 202, 228, 1) 75%,
+    rgba(144, 224, 239, 1) 100%
+  );
+}
+
+.bg-gradient-custom-hover:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 119, 182, 1) 0%,
+    rgba(0, 150, 199, 1) 25%,
+    rgba(0, 180, 216, 1) 50%,
+    rgba(72, 202, 228, 1) 75%,
+    rgba(144, 224, 239, 1) 90%,
+    rgba(140, 100, 255, 1) 100%
+  );
+}
+.primary-color {
+  color: rgba(0, 119, 182, 1);
+}
+
+.bg-primary-color {
+  background-color: rgba(0, 119, 182, 1);
+}
+.glass-primary {
+  background: rgba(140, 100, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px; /* full rounded */
+}
+.secondary-color {
+  color: rgb(0, 150, 199, 1);
+}
+
+.bg-secondary-color {
+  background-color: rgba(0, 150, 199, 1);
+}

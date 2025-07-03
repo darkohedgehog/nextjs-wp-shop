@@ -58,7 +58,7 @@ const DesktopNav = ({ navItems }: any) => {
   return (
     <motion.div
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-white px-4 py-2 lg:flex dark:bg-neutral-950",
+        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full px-4 py-2 lg:flex bg-gradient-custom",
         "sticky inset-x-0 top-40",
       )}
     >
@@ -238,7 +238,7 @@ export const MenuItem = ({
     <div onMouseEnter={() => setActive(item)} className="relative">
       <motion.p
         transition={{ duration: 0.3 }}
-        className="cursor-pointer text-neutral-700 hover:opacity-[0.9] dark:text-neutral-300"
+        className="cursor-pointer hover:opacity-[0.9] dark:text-neutral-100"
       >
         {item}
       </motion.p>
@@ -254,7 +254,7 @@ export const MenuItem = ({
                 <motion.div
                   transition={transition}
                   layoutId="active" // layoutId ensures smooth animation
-                  className="mt-4 overflow-hidden rounded-2xl bg-white shadow-xl backdrop-blur-sm dark:bg-neutral-950"
+                  className="mt-4 overflow-hidden rounded-2xl bg-secondary-color shadow-xl backdrop-blur-sm"
                 >
                   <motion.div
                     layout // layout ensures smooth animation
@@ -282,7 +282,7 @@ export const Menu = ({
   return (
     <nav
       onMouseLeave={() => setActive(null)} // resets the state
-      className="relative flex justify-center space-x-4 rounded-full bg-white px-4 py-3 dark:bg-neutral-950"
+      className="relative flex justify-center space-x-4 rounded-full glass-primary px-4 py-3"
     >
       {children}
     </nav>
@@ -310,10 +310,10 @@ export const ProductItem = ({
         className="flex-shrink-0 rounded-md shadow-2xl"
       />
       <div>
-        <h4 className="mb-1 text-base font-normal text-black dark:text-white">
+        <h4 className="mb-1 text-base font-normal text-white">
           {title}
         </h4>
-        <p className="max-w-[10rem] text-sm text-neutral-700 dark:text-neutral-300">
+        <p className="max-w-[10rem] text-sm text-neutral-100">
           {description}
         </p>
       </div>
@@ -325,7 +325,7 @@ export const HoveredLink = ({ children, ...rest }: any) => {
   return (
     <Link
       {...rest}
-      className="text-neutral-700 hover:text-black dark:text-neutral-200"
+      className="text-neutral-200 hover:text-black"
     >
       {children}
     </Link>
