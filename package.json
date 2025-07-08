@@ -13,6 +13,7 @@
     "@apollo/client-integration-nextjs": "^0.12.2",
     "@tabler/icons-react": "^3.34.0",
     "clsx": "^2.1.1",
+    "cobe": "^0.6.4",
     "cookies-next": "^6.0.0",
     "graphql": "^16.11.0",
     "he": "^1.2.0",
