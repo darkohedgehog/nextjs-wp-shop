@@ -6,6 +6,7 @@
   --animate-third: moveInCircle 40s linear infinite;
   --animate-fourth: moveHorizontal 40s ease infinite;
   --animate-fifth: moveInCircle 20s ease infinite;
+  --animate-shine: shine var(--duration) infinite linear;
 
   @keyframes moveHorizontal {
     0% {
@@ -40,6 +41,17 @@
     }
     100% {
       transform: translateY(-50%);
+    }
+  }
+  @keyframes shine {
+    0% {
+      background-position: 0% 0%;
+    }
+    50% {
+      background-position: 100% 100%;
+    }
+    to {
+      background-position: 0% 0%;
     }
   }
 }

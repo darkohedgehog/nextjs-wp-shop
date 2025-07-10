@@ -7,6 +7,7 @@ import { SkeletonOne } from "./SkeletonOne";
 import { SkeletonTwo } from "./SkeletonTwo";
 import { SkeletonThree } from "./SkeletonThree";
 import { SkeletonFour } from "./SkeletonFour";
+import { ShineBorder } from "@/components/ui/shine-border";
 
 
 export function IntroductionSection() {
@@ -17,14 +18,15 @@ export function IntroductionSection() {
         "Track and manage your project issues with ease using our intuitive interface.",
       skeleton: <SkeletonOne />,
       className:
-        "col-span-1 lg:col-span-4 border-b lg:border-r dark:border-neutral-800",
+        "col-span-1 lg:col-span-4 border-b lg:border-r border-[#A07CFE]",
+        
     },
     {
       title: "Capture pictures with AI",
       description:
         "Capture stunning photos effortlessly using our advanced AI technology.",
       skeleton: <SkeletonTwo />,
-      className: "border-b col-span-1 lg:col-span-2 dark:border-neutral-800",
+      className: "border-b col-span-1 lg:col-span-2 border-[#FE8FB5]",
     },
     {
       title: "Watch our AI on YouTube",
@@ -32,7 +34,7 @@ export function IntroductionSection() {
         "Whether its you or Tyler Durden, you can get to know about our product on YouTube",
       skeleton: <SkeletonThree />,
       className:
-        "col-span-1 lg:col-span-3 lg:border-r  dark:border-neutral-800",
+        "col-span-1 lg:col-span-3 lg:border-r border-[#FFBE7B]",
     },
     {
       title: "Deploy in seconds",
@@ -54,17 +56,17 @@ export function IntroductionSection() {
           literally everything. It can even create this website copy for you.
         </p>
       </div>
-
-      <div className="relative ">
-        <div className="grid grid-cols-1 lg:grid-cols-6 mt-12 xl:border rounded-md dark:border-neutral-800">
-          {features.map((feature) => (
-            <FeatureCard key={feature.title} className={feature.className}>
-              <FeatureTitle>{feature.title}</FeatureTitle>
-              <FeatureDescription>{feature.description}</FeatureDescription>
-              <div className=" h-full w-full">{feature.skeleton}</div>
-            </FeatureCard>
-          ))}
-        </div>
+      <div className="relative">
+       <ShineBorder shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]} />
+     <div className="grid grid-cols-1 lg:grid-cols-6 mt-12">
+       {features.map((feature) => (
+      <FeatureCard key={feature.title} className={feature.className}>
+        <FeatureTitle>{feature.title}</FeatureTitle>
+        <FeatureDescription>{feature.description}</FeatureDescription>
+        <div className=" h-full w-full">{feature.skeleton}</div>
+      </FeatureCard>
+       ))}
+    </div>
       </div>
     </div>
   );
