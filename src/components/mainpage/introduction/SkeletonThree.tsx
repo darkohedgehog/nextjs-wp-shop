@@ -1,4 +1,5 @@
 import { IconBrandYoutubeFilled } from "@tabler/icons-react";
+import Image from "next/image";
 
 export const SkeletonThree = () => {
     return (
@@ -11,11 +12,12 @@ export const SkeletonThree = () => {
           <div className="flex flex-1 w-full h-full flex-col space-y-2  relative">
             {/* TODO */}
             <IconBrandYoutubeFilled className="h-20 w-20 absolute z-10 inset-0 text-red-500 m-auto " />
-            <img
+            <Image
               src="https://assets.aceternity.com/fireship.jpg"
               alt="header"
               width={800}
               height={800}
+              priority
               className="h-full w-full aspect-square object-cover object-center rounded-sm blur-none group-hover/image:blur-md transition-all duration-200"
             />
           </div>

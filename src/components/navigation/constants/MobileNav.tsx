@@ -12,11 +12,11 @@ type NavChild = {
 };
 
 type NavProduct = {
-    title: string;
-    href: string;
-    src: string;
-    description: string;
-  };
+  title: string;
+  href: string;
+  src: string;
+  description: string;
+};
 
 type NavItem = {
   name: string;
@@ -61,7 +61,7 @@ const MobileNav = ({ navItems }: MobileNavProps) => {
                 exit={{ opacity: 0 }}
                 className="absolute inset-x-0 top-16 z-20 flex w-full flex-col items-start justify-start gap-4 rounded-lg bg-primary-color px-4 py-8"
               >
-                {navItems.map((navItem: any, idx: number) => (
+                {navItems.map((navItem: NavItem, idx: number) => (
                   <div key={`navItem-${idx}`} className="w-full">
                     {(navItem.children || navItem.products) ?(
                       <MobileChildNavItems navItem={navItem} />

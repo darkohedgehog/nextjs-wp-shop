@@ -18,7 +18,8 @@ type NavProduct = {
 
 type NavItem = {
   name: string;
-  children: NavChild[];
+  link: string;
+  children?: NavChild[];
   products?: NavProduct[];
 };
 

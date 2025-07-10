@@ -1,14 +1,17 @@
+import Image from "next/image";
+
 export const SkeletonOne = () => {
     return (
       <div className="relative flex py-8 px-2 gap-10 h-full">
         <div className="w-full  p-5  mx-auto shadow-2xl group h-full">
           <div className="flex flex-1 w-full h-full flex-col space-y-2  ">
             {/* TODO */}
-            <img
+            <Image
               src="/cover.png"
               alt="header"
               width={400}
               height={400}
+              priority
               className="h-full w-full object-cover rounded-lg"
             />
           </div>

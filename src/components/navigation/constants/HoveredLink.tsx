@@ -1,12 +1,15 @@
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-export const HoveredLink = ({ children, ...rest }: any) => {
-    return (
-      <Link
-        {...rest}
-        className="text-neutral-200 hover:text-black"
-      >
-        {children}
-      </Link>
-    );
-  };
+type HoveredLinkProps = React.ComponentProps<typeof Link>;
+
+export const HoveredLink = ({ children, className, ...rest }: HoveredLinkProps) => {
+  return (
+    <Link
+      {...rest}
+      className={cn("text-neutral-200 hover:text-black", className)}
+    >
+      {children}
+    </Link>
+  );
+};
