@@ -56,6 +56,19 @@
   }
 }
 
+:root {
+  --primary-color: rgba(0, 119, 182, 1);
+  --secondary-color: rgba(0, 150, 199, 1);
+}
+
+.primary-color {
+  color: var(--primary-color);
+}
+
+.secondary-color {
+  color: var(--secondary-color);
+}
+
 .bg-gradient-custom {
   background: linear-gradient(
     135deg,
@@ -78,9 +91,7 @@
     rgba(140, 100, 255, 1) 100%
   );
 }
-.primary-color {
-  color: rgba(0, 119, 182, 1);
-}
+
 
 .bg-primary-color {
   background-color: rgba(0, 119, 182, 1);
@@ -91,9 +102,6 @@
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 9999px; /* full rounded */
-}
-.secondary-color {
-  color: rgb(0, 150, 199, 1);
 }
 
 .bg-secondary-color {

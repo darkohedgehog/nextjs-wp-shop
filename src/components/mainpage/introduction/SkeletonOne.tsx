@@ -9,13 +9,14 @@ export const SkeletonOne = () => {
               alt="header"
               width={400}
               height={400}
-              className="h-full w-full aspect-square object-cover object-left-top rounded-sm"
+              className="h-full w-full object-cover rounded-lg"
             />
           </div>
         </div>
   
-        <div className="absolute bottom-0 z-40 inset-x-0 h-60 bg-gradient-to-t from-white dark:from-black via-white dark:via-black to-transparent w-full pointer-events-none" />
-        <div className="absolute top-0 z-40 inset-x-0 h-60 bg-gradient-to-b from-white dark:from-black via-transparent to-transparent w-full pointer-events-none" />
+        <div className="absolute bottom-0 z-40 inset-x-0 h-60 w-full pointer-events-none rounded-lg" style={{ background: 'linear-gradient(to top, var(--primary-color), transparent)' }} />
+ 
+        <div className="absolute top-0 z-40 inset-x-0 h-60 w-full pointer-events-none rounded-lg" style={{ background: 'linear-gradient(to bottom, var(--secondary-color), transparent)' }} />
       </div>
     );
   };

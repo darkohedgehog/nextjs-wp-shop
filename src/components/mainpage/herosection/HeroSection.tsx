@@ -26,7 +26,7 @@ const HeroSection = () => {
   }, [isInView, animate, scope]);
 
   return (
-    <section className="max-w-7xl mx-auto px-4 pt-10 md:pt-20">
+    <section className="max-w-7xl mx-auto px-4 -mt-32 md:mt-0">
       <div className="flex flex-col md:flex-row items-center justify-between gap-10">
         
         <div className="flex items-center justify-center min-w-[200px]">
