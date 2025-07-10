@@ -6,7 +6,29 @@ import React, { useState } from "react";
 import Logo from "@/components/logo/Logo";
 import MobileChildNavItems from "./MobileChildNavItems";
 
-const MobileNav = ({ navItems }: any) => {
+type NavChild = {
+  name: string;
+  link: string;
+};
+
+type NavProduct = {
+    title: string;
+    href: string;
+    src: string;
+    description: string;
+  };
+
+type NavItem = {
+  name: string;
+  link: string;
+  children?: NavChild[];
+  products?: NavProduct[];
+};
+
+type MobileNavProps = {
+  navItems: NavItem[];
+};
+const MobileNav = ({ navItems }: MobileNavProps) => {
     const [open, setOpen] = useState(false);
   
     return (
@@ -41,7 +63,7 @@ const MobileNav = ({ navItems }: any) => {
               >
                 {navItems.map((navItem: any, idx: number) => (
                   <div key={`navItem-${idx}`} className="w-full">
-                    {navItem.children ? (
+                    {(navItem.children || navItem.products) ?(
                       <MobileChildNavItems navItem={navItem} />
                     ) : (
                       <Link
