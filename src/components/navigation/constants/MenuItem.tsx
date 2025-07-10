@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "motion/react";
 import React from "react";
-import transition from "./tranisition";
+import transition from "./transition";
 
 export const MenuItem = ({
     setActive,
