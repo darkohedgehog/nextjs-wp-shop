@@ -1,10 +1,14 @@
 import { IconBrandYoutubeFilled } from "@tabler/icons-react";
 import Image from "next/image";
 
+const image = '/assets/covercamera.png';
+
 export const SkeletonThree = () => {
+
+
     return (
       <a
-        href="https://www.youtube.com/watch?v=RPa3_AD1_Vs"
+        href="https://www.youtube.com/watch?v=k8zLN4XOUuk&t=21s"
         target="__blank"
         className="relative flex gap-10  h-full group/image"
       >
@@ -13,12 +17,12 @@ export const SkeletonThree = () => {
             {/* TODO */}
             <IconBrandYoutubeFilled className="h-20 w-20 absolute z-10 inset-0 text-red-500 m-auto " />
             <Image
-              src="https://assets.aceternity.com/fireship.jpg"
+              src={image}
               alt="header"
               width={800}
               height={800}
               priority
-              className="h-full w-full aspect-square object-cover object-center rounded-sm blur-none group-hover/image:blur-md transition-all duration-200"
+              className="h-full w-full aspect-square object-cover object-center rounded-sm blur-none group-hover/image:blur-md transition-all duration-200 mb-11"
             />
           </div>
         </div>
