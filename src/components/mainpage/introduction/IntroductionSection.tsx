@@ -8,12 +8,14 @@ import { SkeletonTwo } from "./SkeletonTwo";
 import { SkeletonThree } from "./SkeletonThree";
 import { SkeletonFour } from "./SkeletonFour";
 import { ShineBorder } from "@/components/ui/shine-border";
+import Link from "next/link";
 
 
 export function IntroductionSection() {
   const features = [
     {
       title: "Track issues effectively",
+      href: "/categories",
       description:
         "Track and manage your project issues with ease using our intuitive interface.",
       skeleton: <SkeletonOne />,
@@ -23,6 +25,7 @@ export function IntroductionSection() {
     },
     {
       title: "Capture pictures with AI",
+      href: "/products",
       description:
         "Capture stunning photos effortlessly using our advanced AI technology.",
       skeleton: <SkeletonTwo />,
@@ -38,6 +41,7 @@ export function IntroductionSection() {
     },
     {
       title: "Deploy in seconds",
+      href: "/contact",
       description:
         "With our blazing fast, state of the art, cutting edge, we are so back cloud servies (read AWS) - you can deploy your model in seconds.",
       skeleton: <SkeletonFour />,
@@ -47,11 +51,11 @@ export function IntroductionSection() {
   return (
     <div className="relative z-20 py-10 lg:py-40 max-w-7xl mx-auto">
       <div className="px-8">
-        <h4 className="text-3xl lg:text-5xl lg:leading-tight max-w-5xl mx-auto text-center tracking-tight font-medium text-black dark:text-white">
+        <h4 className="text-3xl lg:text-5xl lg:leading-tight max-w-5xl mx-auto text-center tracking-tight font-medium secondary-color">
           Packed with thousands of features
         </h4>
 
-        <p className="text-sm lg:text-base  max-w-2xl  my-4 mx-auto text-neutral-500 text-center font-normal dark:text-neutral-300">
+        <p className="text-lg lg:text-xl  max-w-2xl  my-4 mx-auto text-center font-normal paragraph-color">
           From Image generation to video generation, Everything AI has APIs for
           literally everything. It can even create this website copy for you.
         </p>
@@ -59,13 +63,21 @@ export function IntroductionSection() {
       <div className="relative">
        <ShineBorder shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]} />
      <div className="grid grid-cols-1 lg:grid-cols-6 mt-12">
-       {features.map((feature) => (
-      <FeatureCard key={feature.title} className={feature.className}>
-        <FeatureTitle>{feature.title}</FeatureTitle>
-        <FeatureDescription>{feature.description}</FeatureDescription>
-        <div className=" h-full w-full">{feature.skeleton}</div>
-      </FeatureCard>
-       ))}
+     {features.map((feature) => (
+     <FeatureCard key={feature.title} className={feature.className}>
+       <FeatureTitle>
+        {feature.href ? (
+          <Link href={feature.href} className="hover:underline secondary-color">
+          {feature.title}
+          </Link>
+           ) : (
+          feature.title
+        )}
+        </FeatureTitle>
+    <FeatureDescription>{feature.description}</FeatureDescription>
+    <div className="h-full w-full">{feature.skeleton}</div>
+  </FeatureCard>
+))}
     </div>
       </div>
     </div>

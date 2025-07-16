@@ -12,7 +12,7 @@ export const SkeletonOne = () => {
               width={400}
               height={400}
               priority
-              className="h-full w-full object-cover rounded-lg"
+              className="h-full w-full object-cover rounded-lg mb-20"
             />
           </div>
         </div>

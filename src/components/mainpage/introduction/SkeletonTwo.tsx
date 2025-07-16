@@ -9,6 +9,8 @@ const images = [
   "/assets/17.01.051.png",
   "/assets/razdjelnik.png",
   "/assets/camera.png",
+  "/assets/12.23.001.png",
+  "/assets/05.61.81.png",
 ];
 
 export const SkeletonTwo = () => {
@@ -34,7 +36,7 @@ export const SkeletonTwo = () => {
 
   return (
     <div className="relative flex flex-col items-start p-8 gap-10 h-full overflow-hidden">
-      <div className="flex flex-col mx-auto">
+      <div className="grid grid-cols-2 gap-5 mx-auto">
         {images.map((image, idx) => (
           <motion.div
             key={"images-first" + idx}
@@ -46,9 +48,9 @@ export const SkeletonTwo = () => {
           >
             <Image
               src={image}
-              alt="bali images"
-              width={300}
-              height={300}
+              alt="proizvodi"
+              width={200}
+              height={200}
               priority
               className="rounded-lg h-20 w-20 md:h-40 md:w-40 object-cover shrink-0"
             />

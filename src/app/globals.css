@@ -59,6 +59,7 @@
 :root {
   --primary-color: rgba(0, 119, 182, 1);
   --secondary-color: rgba(0, 150, 199, 1);
+  --paragraph-color: rgb(199, 143, 255);
 }
 
 .primary-color {
@@ -67,6 +68,9 @@
 
 .secondary-color {
   color: var(--secondary-color);
+}
+.paragraph-color {
+  color: var(--paragraph-color);
 }
 
 .bg-gradient-custom {
