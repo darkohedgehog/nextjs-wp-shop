@@ -111,3 +111,11 @@
 .bg-secondary-color {
   background-color: rgba(0, 150, 199, 1);
 }
+
+.titlemain {
+  @apply bg-gradient-to-br from-slate-300 to-slate-500 
+         dark:from-slate-300 dark:to-slate-500 
+         py-4 bg-clip-text text-center 
+         text-2xl md:text-5xl 
+         font-medium tracking-tight text-transparent;
+}
