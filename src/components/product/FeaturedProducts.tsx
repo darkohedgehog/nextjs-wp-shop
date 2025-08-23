@@ -1,8 +1,8 @@
 import { client } from '@/lib/apollo-client';
 import { gql } from '@apollo/client';
 import he from 'he';
-import Image from 'next/image';
-import Link from 'next/link';
+import FeaturedProductsCarousel from './FeaturedProductsCarousel';
+
 
 type Product = {
   databaseId: number;
@@ -32,6 +32,11 @@ const GET_FEATURED_PRODUCTS = gql`
   }
 `;
 
+function stripHtml(input?: string | null) {
+  if (!input) return '';
+  return input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 export default async function FeaturedProducts({ count = 8 }: { count?: number }) {
   const { data } = await client.query({
     query: GET_FEATURED_PRODUCTS,
@@ -41,30 +46,25 @@ export default async function FeaturedProducts({ count = 8 }: { count?: number }
   const products: Product[] = data?.products?.nodes ?? [];
   if (products.length === 0) return null;
 
+  // Priprema plain-props za klijentsku komponentu (bez funkcija/Date/Map itd.)
+  const items = products.map((p) => ({
+    key: p.databaseId,                                   // stabilan key
+    name: p.name,
+    slug: p.slug,
+    price: p.price ? he.decode(p.price).replace(/&nbsp;|&npsb;/g, '').trim() : null,
+    imageSrc: p.image?.sourceUrl ?? '',
+    imageAlt: p.image?.altText ?? p.name,
+    blurb: stripHtml(p.shortDescription),
+  }));
+
   return (
     <section>
-      <h2 className="secondary-color text-center text-2xl md:text-5xl my-4">Izdvojeni proizvodi</h2>
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-        {products.map((p) => (
-          <Link
-            key={p.databaseId} // stabilan key
-            href={`/products/${p.slug}`}
-            className="border rounded-lg p-3 hover:shadow transition"
-          >
-            {p.image?.sourceUrl && (
-              <Image
-                src={p.image.sourceUrl}
-                alt={p.image.altText || p.name}
-                width={300}
-                height={300}
-                className="w-full h-48 object-cover rounded mb-2"
-              />
-            )}
-            <h3 className="font-semibold leading-tight line-clamp-2">{p.name}</h3>
-            {p.price && <p className="text-green-600 font-medium">{he.decode(p.price).replace(/&nbsp;|&npsb;/g, '').trim()}</p>}
-          </Link>
-        ))}
-      </div>
+      <h2 className="secondary-color text-center text-2xl md:text-5xl my-4">
+        Izdvojeni proizvodi
+      </h2>
+
+      {/* Karusel/slider u klijentu */}
+      <FeaturedProductsCarousel items={items} />
     </section>
   );
 }
