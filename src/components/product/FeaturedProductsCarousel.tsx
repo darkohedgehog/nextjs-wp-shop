@@ -114,15 +114,15 @@ export default function FeaturedProductsCarousel({
             transition={{ duration: 0.2, ease: "easeInOut" }}
           >
             <Link href={`/products/${items[active].slug}`}>
-              <h3 className="text-2xl font-bold hover:underline">
+              <h3 className="text-2xl font-bold hover:underline text-slate-400">
                 {items[active].name}
               </h3>
             </Link>
             {items[active].price && (
-              <p className="mt-1 text-green-600 font-semibold">{items[active].price}</p>
+              <p className="mt-1 text-blue-600 font-semibold">{items[active].price}</p>
             )}
             {items[active].blurb && (
-              <p className="mt-6 text-lg text-gray-100 line-clamp-4">
+              <p className="mt-6 text-lg paragraph-color line-clamp-6">
                 {items[active].blurb}
               </p>
             )}
