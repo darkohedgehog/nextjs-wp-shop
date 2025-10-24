@@ -3,7 +3,6 @@ import { gql } from '@apollo/client';
 import he from 'he';
 import FeaturedProductsCarousel from './FeaturedProductsCarousel';
 
-
 type Product = {
   databaseId: number;
   id: string;
@@ -14,8 +13,15 @@ type Product = {
   image?: { sourceUrl: string; altText?: string | null } | null;
 };
 
+type ProductsData = {
+  products: { nodes: Array<Product | null | undefined> } | null;
+};
+
+type Vars = { first?: number };
+
 const GET_FEATURED_PRODUCTS = gql`
-  query FeaturedProducts($first: Int! = 8) {
+  # default vrednost ide samo na ne-obavezne varijable
+  query FeaturedProducts($first: Int = 8) {
     products(first: $first, where: { featured: true }) {
       nodes {
         databaseId
@@ -38,20 +44,26 @@ function stripHtml(input?: string | null) {
 }
 
 export default async function FeaturedProducts({ count = 8 }: { count?: number }) {
-  const { data } = await client.query({
+  // ⬇️ Ne forsiramo ApolloQueryResult tip — prepustimo TS-u inference
+  const { data } = await client.query<ProductsData, Vars>({
     query: GET_FEATURED_PRODUCTS,
     variables: { first: count },
+    // po želji: fetchPolicy: 'cache-first'
   });
 
-  const products: Product[] = data?.products?.nodes ?? [];
+  // nodes mogu biti (Product | null | undefined) → očistimo ih type guard-om
+  const products = (data?.products?.nodes ?? []).filter(
+    (p): p is Product => Boolean(p)
+  );
+
   if (products.length === 0) return null;
 
-  // Priprema plain-props za klijentsku komponentu (bez funkcija/Date/Map itd.)
   const items = products.map((p) => ({
-    key: p.databaseId,                                   // stabilan key
+    key: p.databaseId,
     name: p.name,
     slug: p.slug,
-    price: p.price ? he.decode(p.price).replace(/&nbsp;|&npsb;/g, '').trim() : null,
+    // ukloni &nbsp; i realni NBSP (U+00A0)
+    price: p.price ? he.decode(p.price).replace(/&nbsp;|\u00A0/g, '').trim() : null,
     imageSrc: p.image?.sourceUrl ?? '',
     imageAlt: p.image?.altText ?? p.name,
     blurb: stripHtml(p.shortDescription),
@@ -62,8 +74,6 @@ export default async function FeaturedProducts({ count = 8 }: { count?: number }
       <h2 className="secondary-color text-center text-2xl md:text-5xl my-4">
         Izdvojeni proizvodi
       </h2>
-
-      {/* Karusel/slider u klijentu */}
       <FeaturedProductsCarousel items={items} />
     </section>
   );

@@ -1,8 +1,9 @@
 'use client';
 
-import { gql, useQuery } from '@apollo/client';
+import { gql } from '@apollo/client';
+import { useQuery } from '@apollo/client/react'; // za 4.0.7 je ovo pravi import za hookove
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import he from 'he';
 import Image from 'next/image';
 
@@ -27,7 +28,11 @@ interface Vars {
 
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
-    products(first: 6, after: $after, where: { search: $search, categoryIn: $category }) {
+    products(
+      first: 6
+      after: $after
+      where: { search: $search, categoryIn: $category }
+    ) {
       pageInfo { endCursor hasNextPage }
       nodes {
         databaseId
@@ -66,36 +71,51 @@ export default function ProductListClient({
   initialPageInfo: PageInfo;
   initialSearch: string;
 }) {
-  const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [products, setProducts] = useState<Product[]>(dedupeProducts(initialProducts));
-  const [pageInfo, setPageInfo] = useState<PageInfo>(initialPageInfo);
+  const [searchTerm, setSearchTerm] = useState(initialSearch ?? '');
+  const [products, setProducts] = useState<Product[]>(
+    dedupeProducts(initialProducts ?? [])
+  );
+  const [pageInfo, setPageInfo] = useState<PageInfo>(
+    initialPageInfo ?? { endCursor: null, hasNextPage: false }
+  );
 
-  const { loading, error, fetchMore, refetch } = useQuery<ProductsData, Vars>(
-    GET_PRODUCTS,
-    {
-      variables: { search: initialSearch || undefined, category: undefined, after: null },
-      onCompleted: (d) => {
-        setProducts(dedupeProducts(d.products.nodes));
-        setPageInfo(d.products.pageInfo);
+  // Napomena: u 4.0.7 typings za /react overload su konzervativni.
+  // Ne koristimo onCompleted; umesto toga sync radimo u useEffect ispod.
+  const { data, loading, error, fetchMore, refetch, networkStatus } =
+    useQuery<ProductsData, Vars>(GET_PRODUCTS, {
+      variables: {
+        search: initialSearch || undefined,
+        category: undefined,
+        after: null,
       },
       fetchPolicy: 'cache-and-network',
+      notifyOnNetworkStatusChange: true,
+    });
+
+  // Kad stignu podaci, uskladi lokalni state (bez duplikata)
+  useEffect(() => {
+    if (data?.products) {
+      setProducts(dedupeProducts(data.products.nodes));
+      setPageInfo(data.products.pageInfo);
     }
-  );
+  }, [data]);
 
   const loadMore = async () => {
     if (!pageInfo.hasNextPage || !pageInfo.endCursor) return;
 
-    const { data: more } = await fetchMore({
+    const res = await fetchMore({
       variables: {
         search: searchTerm || undefined,
         category: undefined,
-        after: pageInfo.endCursor,         // <- KORISTI STATE, ne data
+        after: pageInfo.endCursor,
       },
     });
 
-    const next = more.products;
-    setProducts((prev) => dedupeProducts([...prev, ...next.nodes]));
-    setPageInfo(next.pageInfo);            // <- AŽURIRAJ STATE PAGEINFO
+    const next = (res?.data as ProductsData | undefined)?.products;
+    if (next) {
+      setProducts((prev) => dedupeProducts([...prev, ...next.nodes]));
+      setPageInfo(next.pageInfo);
+    }
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -105,8 +125,15 @@ export default function ProductListClient({
       category: undefined,
       after: null,
     });
-    setProducts(dedupeProducts(res.data.products.nodes));
-    setPageInfo(res.data.products.pageInfo);
+
+    const refreshed = (res.data as ProductsData | undefined)?.products;
+    if (refreshed) {
+      setProducts(dedupeProducts(refreshed.nodes));
+      setPageInfo(refreshed.pageInfo);
+    } else {
+      setProducts([]);
+      setPageInfo({ endCursor: null, hasNextPage: false });
+    }
   };
 
   return (
@@ -119,10 +146,16 @@ export default function ProductListClient({
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border p-2 rounded w-full"
         />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Traži</button>
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+          aria-label="Pretraži proizvode"
+        >
+          Traži
+        </button>
       </form>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((product) => (
           <Link
             href={`/products/${product.slug}`}
@@ -131,20 +164,26 @@ export default function ProductListClient({
           >
             {product.image?.sourceUrl && (
               <Image
-                width={200}
-                height={200}
+                width={400}
+                height={400}
                 src={product.image.sourceUrl}
                 alt={product.image.altText || product.name}
-                priority
-                className="w-40 h-40 object-cover mb-2"
+                className="w-full h-48 object-cover mb-2"
               />
             )}
             <h2 className="text-lg font-bold mb-1">{product.name}</h2>
+
             {product.price && (
               <p className="text-green-600 text-sm font-semibold mb-2">
-                {he.decode(product.price).replace(/&nbsp;|&npsb;/g, '').trim()}
+                {
+                  he
+                    .decode(product.price)
+                    .replace(/&nbsp;|\u00A0/g, '')
+                    .trim()
+                }
               </p>
             )}
+
             {product.description && (
               <div
                 className="text-sm text-gray-700"
@@ -157,14 +196,23 @@ export default function ProductListClient({
 
       {pageInfo.hasNextPage && (
         <div className="mt-4 text-center">
-          <button onClick={loadMore} className="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700">
-            Učitaj još
+          <button
+            onClick={loadMore}
+            className="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
+            disabled={loading || networkStatus === 3 /* refetch */ }
+          >
+            {loading ? 'Učitavanje…' : 'Učitaj još'}
           </button>
         </div>
       )}
 
-      {loading && <p className="mt-4 text-center">Učitavanje...</p>}
+      {loading && !products.length && (
+        <p className="mt-4 text-center">Učitavanje…</p>
+      )}
       {error && <p className="mt-4 text-red-600">Greška: {error.message}</p>}
+      {!loading && !error && !products.length && (
+        <p className="mt-4 text-center text-gray-600">Nema rezultata.</p>
+      )}
     </div>
   );
 }
