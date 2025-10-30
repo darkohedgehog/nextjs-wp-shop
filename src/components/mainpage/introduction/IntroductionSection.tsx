@@ -1,5 +1,4 @@
 'use client'
-import React from "react";
 import FeatureCard from "./FeatureCard";
 import FeatureTitle from "./FeatureTitle";
 import FeatureDescription from "./FeatureDescription";

@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import he from 'he';
 import Image from 'next/image';
+import { ShineBorder } from '../ui/shine-border';
+import { div } from 'motion/react-client';
 
 interface Product {
   databaseId?: number;
@@ -29,7 +31,7 @@ interface Vars {
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
     products(
-      first: 6
+      first: 8
       after: $after
       where: { search: $search, categoryIn: $category }
     ) {
@@ -137,8 +139,8 @@ export default function ProductListClient({
   };
 
   return (
-    <div className="p-4">
-      <form onSubmit={handleSearch} className="mb-4 flex gap-2">
+    <div className="p-4 mx-auto w-full flex flex-col items-center justify-center">
+      <form onSubmit={handleSearch} className="my-4 flex gap-2">
         <input
           type="text"
           placeholder="Pretraga..."
@@ -155,12 +157,16 @@ export default function ProductListClient({
         </button>
       </form>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-2 mt-16 gap-5">
         {products.map((product) => (
+        <div className='relative'>
+          <ShineBorder 
+          shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]} 
+          className='rounded-xl block'/>
           <Link
             href={`/products/${product.slug}`}
             key={productKey(product)}
-            className="border p-4 rounded shadow hover:shadow-lg transition"
+            className="p-4 rounded-xl shadow hover:shadow-lg transition"
           >
             {product.image?.sourceUrl && (
               <Image
@@ -168,13 +174,14 @@ export default function ProductListClient({
                 height={400}
                 src={product.image.sourceUrl}
                 alt={product.image.altText || product.name}
-                className="w-full h-48 object-cover mb-2"
+                className="w-48 h-48 object-cover mb-2 mx-auto rounded-xl"
               />
             )}
-            <h2 className="text-lg font-bold mb-1">{product.name}</h2>
-
+            <h2 className="text-md font-bold mb-1 mx-4 flex items-center justify-start secondary-color">
+              {product.name}
+            </h2>
             {product.price && (
-              <p className="text-green-600 text-sm font-semibold mb-2">
+              <p className="paragraph-color text-sm font-semibold mb-2 flex items-start justify-start mx-4">
                 {
                   he
                     .decode(product.price)
@@ -183,17 +190,11 @@ export default function ProductListClient({
                 }
               </p>
             )}
-
-            {product.description && (
-              <div
-                className="text-sm text-gray-700"
-                dangerouslySetInnerHTML={{ __html: product.description }}
-              />
-            )}
           </Link>
+          </div>
         ))}
       </div>
-
+     {/* LOADER */}
       {pageInfo.hasNextPage && (
         <div className="mt-4 text-center">
           <button
