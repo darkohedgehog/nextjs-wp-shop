@@ -1,4 +1,5 @@
 import HeroSection from "@/components/mainpage/herosection/HeroSection";
+import { HeroSectionTwo } from "@/components/mainpage/herosection/HeroSectionTwo";
 import { IntroductionSection } from "@/components/mainpage/introduction/IntroductionSection";
 import FeaturedProducts from "@/components/product/FeaturedProducts";
 
@@ -7,7 +8,7 @@ import FeaturedProducts from "@/components/product/FeaturedProducts";
 export default function Home() {
   return (
     <>
-    <HeroSection />
+    <HeroSectionTwo/>
     <FeaturedProducts count={8} />
     <IntroductionSection />
     </>
