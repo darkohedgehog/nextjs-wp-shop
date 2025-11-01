@@ -63,34 +63,34 @@ export function HeroSectionTwo() {
 export const ImagesGrid = () => {
   const images = [
     {
-      src: "https://assets.aceternity.com/pro/hero-example-3.jpg",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/emorio.png",
       className: "translate-y-10",
     },
     {
-      src: "https://assets.aceternity.com/pro/hero-example-1.jpg",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/happy.png",
       className: "translate-y-20",
     },
 
     {
-      src: "https://assets.aceternity.com/pro/hero-example-2.jpg",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/kombo.png",
       className: "translate-y-4",
     },
     {
-      src: "https://assets.aceternity.com/pro/hero-example-4.jpg",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/setq.png",
       className: "translate-y-10",
     },
     {
-      src: "https://assets.aceternity.com/pro/hero-example-5.jpg",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/razdjelnik.png",
       className: "translate-y-20",
     },
   ];
   return (
-    <div className="relative mt-10 h-80 w-full overflow-hidden border-b border-neutral-200 md:h-120 dark:border-neutral-800">
+    <div className="relative mt-10 h-80 w-full overflow-hidden border-b border-color md:h-120 dark:border-border-color">
       <div className="absolute inset-0 flex h-full w-full shrink-0 justify-center gap-5">
         {images.map((image) => (
           <div
             className={cn(
-              "relative mt-0 rounded-lg border border-neutral-200 bg-gray-100 p-2 dark:border-neutral-900 dark:bg-neutral-800",
+              "relative mt-0 rounded-lg border border-indigo-500 bg-border-color p-2",
               image.className,
             )}
             key={image.src}

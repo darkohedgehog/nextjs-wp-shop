@@ -60,6 +60,7 @@
   --primary-color: rgba(0, 119, 182, 1);
   --secondary-color: rgba(0, 150, 199, 1);
   --paragraph-color: rgb(199, 143, 255);
+  --border-color: rgb(165, 180, 252);
 }
 
 .primary-color {
@@ -71,6 +72,10 @@
 }
 .paragraph-color {
   color: var(--paragraph-color);
+}
+
+.border-color {
+  color: var(--border-color);
 }
 
 .bg-gradient-custom {
