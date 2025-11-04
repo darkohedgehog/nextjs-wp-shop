@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import he from 'he';
 import Image from 'next/image';
 import { ShineBorder } from '../ui/shine-border';
-import { div } from 'motion/react-client';
+
 
 interface Product {
   databaseId?: number;
@@ -140,60 +140,80 @@ export default function ProductListClient({
 
   return (
     <div className="p-4 mx-auto w-full flex flex-col items-center justify-center">
-      <form onSubmit={handleSearch} className="my-4 flex gap-2">
-        <input
-          type="text"
-          placeholder="Pretraga..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          aria-label="Pretraži proizvode"
-        >
-          Traži
-        </button>
-      </form>
+  <form onSubmit={handleSearch} className="my-4 flex gap-2 w-full max-w-xl mx-auto">
+  <div className="relative flex-1">
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-2 mt-16 gap-5">
-        {products.map((product) => (
-        <div className='relative'>
-          <ShineBorder 
-          shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]} 
-          className='rounded-xl block'/>
-          <Link
-            href={`/products/${product.slug}`}
-            key={productKey(product)}
-            className="p-4 rounded-xl shadow hover:shadow-lg transition"
-          >
-            {product.image?.sourceUrl && (
-              <Image
-                width={400}
-                height={400}
-                src={product.image.sourceUrl}
-                alt={product.image.altText || product.name}
-                className="w-48 h-48 object-cover mb-2 mx-auto rounded-xl"
-              />
-            )}
-            <h2 className="text-md font-bold mb-1 mx-4 flex items-center justify-start secondary-color">
-              {product.name}
-            </h2>
-            {product.price && (
-              <p className="paragraph-color text-sm font-semibold mb-2 flex items-start justify-start mx-4">
-                {
-                  he
-                    .decode(product.price)
-                    .replace(/&nbsp;|\u00A0/g, '')
-                    .trim()
-                }
-              </p>
-            )}
-          </Link>
-          </div>
-        ))}
-      </div>
+    {/* ✅ INPUT WRAPPER */}
+    <div className="relative z-20">
+      <input
+        type="text"
+        placeholder="Pretraga..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="
+          shine-input
+          w-full p-3 rounded-xl
+          outline-none
+          caret-white
+          text-white
+          placeholder:text-neutral-300
+          focus:ring-2 focus:ring-purple-400/50
+        "
+        style={{ WebkitTextFillColor: "#fff" }}
+      />
+    </div>
+
+    {/* ✅ SHINE BORDER — OVERLAY SAMO DEKORACIJA */}
+    <div className="pointer-events-none absolute inset-0 rounded-xl">
+      <ShineBorder
+        shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]}
+        duration={14}
+        borderWidth={2}
+      />
+    </div>
+
+  </div>
+
+  <button
+    type="submit"
+    className="shrink-0 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 active:scale-95 transition"
+  >
+    Traži
+  </button>
+</form>
+
+<div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-2 mt-16 gap-5">
+  {products.map((product) => (
+    <div key={productKey(product)} className="relative">
+      <ShineBorder
+        shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]}
+        className="rounded-xl block"
+      />
+      <Link
+        href={`/products/${product.slug}`}
+        className="p-4 rounded-xl shadow hover:shadow-lg transition"
+      >
+        {product.image?.sourceUrl && (
+          <Image
+            width={400}
+            height={400}
+            src={product.image.sourceUrl}
+            alt={product.image.altText || product.name}
+            className="w-48 h-48 object-cover mb-2 mx-auto rounded-xl"
+          />
+        )}
+        <h2 className="text-md font-bold mb-1 mx-4 flex items-center justify-start secondary-color">
+          {product.name}
+        </h2>
+        {product.price && (
+          <p className="paragraph-color text-sm font-semibold mb-2 flex items-start justify-start mx-4">
+            {he.decode(product.price).replace(/&nbsp;|\u00A0/g, "").trim()}
+          </p>
+        )}
+      </Link>
+    </div>
+  ))}
+</div>
      {/* LOADER */}
       {pageInfo.hasNextPage && (
         <div className="mt-4 text-center">

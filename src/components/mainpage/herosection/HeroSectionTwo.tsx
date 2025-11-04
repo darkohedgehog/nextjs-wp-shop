@@ -2,6 +2,7 @@
 import { motion } from "motion/react";
 import Marquee from "react-fast-marquee";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export function HeroSectionTwo() {
   return (
@@ -10,9 +11,9 @@ export function HeroSectionTwo() {
         <div className="relative mt-20 flex flex-col items-center justify-center">
           <FeaturedImages />
           <h1 className="mb-8relative mx-auto mt-4 max-w-6xl text-center text-3xl font-bold tracking-tight text-zinc-300 md:text-4xl lg:text-7xl">
-            Your best in class{" "}
+          Opremite svoj dom s našim  {" "}
             <span className="relative z-10 bg-linear-to-b from-indigo-700 to-indigo-600 bg-clip-text text-transparent">
-              design and development studio
+            vrhunskim proizvodima
             </span>{" "}
             <span>
               <svg
@@ -44,8 +45,7 @@ export function HeroSectionTwo() {
             </span>
           </h1>
           <h2 className="font-regular relative mx-auto mt-8 mb-8 max-w-xl text-center text-base tracking-wide text-zinc-200 antialiased md:text-xl">
-            We provide the best in class design and development services for
-            teams that ship with the speed of light.
+           Naša web trgovina nudi širok asortiman proizvoda koji kombinuju funkcionalnost i stil, zadovoljavajući sve vaše potrebe za elektro galanterijom.
           </h2>
         </div>
         <div className="group relative z-10 mb-10">
@@ -120,28 +120,28 @@ export const FeaturedImages = ({
 }) => {
   const images = [
     {
-      name: "John Doe",
-      src: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3387&q=80",
+      name: "Kamera Commel",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/05/270-151-scaled-1.jpg",
     },
     {
-      name: "Robert Johnson",
-      src: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YXZhdGFyfGVufDB8fDB8fHww&auto=format&fit=crop&w=800&q=60",
+      name: "Uticnica Happy",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/04/16.36.052.jpg",
     },
     {
-      name: "Jane Smith",
-      src: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YXZhdGFyfGVufDB8fDB8fHww&auto=format&fit=crop&w=800&q=60",
+      name: "Uticnica SET-Q",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/04/12.23.051.jpg",
     },
     {
-      name: "Emily Davis",
-      src: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGF2YXRhcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60",
+      name: "Trofazno-monofazni razdjelnik",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/04/trofazno-monofazni-razvodnik.jpg",
     },
     {
-      name: "Tyler Durden",
-      src: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3540&q=80",
+      name: "Sklopka Emporio",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/04/17.01.007.jpg",
     },
     {
-      name: "Dora",
-      src: "https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3534&q=80",
+      name: "Razdjelnik",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/04/05.63.81.jpg",
     },
   ];
   return (
@@ -159,13 +159,14 @@ export const FeaturedImages = ({
                 <motion.div
                   whileHover={{ scale: 1.05, zIndex: 30 }}
                   transition={{ duration: 0.2 }}
-                  className="relative overflow-hidden rounded-full border-2 border-neutral-200"
+                  className="relative overflow-hidden rounded-full border-2 border-color"
                 >
-                  <img
+                  <Image
                     height={100}
                     width={100}
                     src={image.src}
                     alt={image.name}
+                    priority
                     className="h-8 w-8 object-cover object-top md:h-14 md:w-14"
                   />
                 </motion.div>
@@ -186,35 +187,43 @@ export function LogoCloudMarquee() {
     },
     {
       name: "Nopallux",
-      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/nopallux.png",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/nopallux_logo.jpeg",
     },
     {
       name: "Tehnoelektro-Tim",
       src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/tehnoelektro-logo.png",
     },
     {
-      name: "Elid",
-      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/elid_logo.jpeg",
+      name: "Elid Elektroindustrija",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/elid.png",
     },
   ];
 
   return (
     <div className="relative">
       <p className="mt-4 text-center font-sans text-base text-neutral-200">
-        Trusted by famous brands
+        Kvaliteta koja traje
       </p>
 
       <div className="relative mx-auto mt-4 flex h-20 w-full max-w-4xl flex-wrap justify-center gap-10 mask-[linear-gradient(to_right,transparent,black_20%,black_80%,transparent)] md:mt-2 md:gap-40">
-        <Marquee pauseOnHover direction="left" speed={30}>
+      <Marquee pauseOnHover direction="left" speed={30}>
           {logos.map((logo) => (
-            <img
-              key={logo.name + "second"}
-              src={logo.src}
-              alt={logo.name}
-              width="100"
-              height="100"
-              className="mx-0 w-12 h-12 object-contain filter md:mx-10 md:w-40"
-            />
+            <div
+              key={logo.name}
+              className="flex flex-col items-center mx-6 md:mx-10"
+            >
+              <Image
+                src={logo.src}
+                alt={logo.name}
+                width={100}
+                height={100}
+                priority
+                className="w-12 h-12 md:w-40 object-contain"
+              />
+              <span className="mt-2 text-sm md:text-md text-neutral-400 whitespace-nowrap">
+                {logo.name}
+              </span>
+            </div>
           ))}
         </Marquee>
       </div>

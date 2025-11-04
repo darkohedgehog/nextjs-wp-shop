@@ -93,6 +93,7 @@ export default function FeaturedProductsCarousel({
                           width={800}
                           height={600}
                           draggable={false}
+                          priority
                           className="h-full w-full rounded-3xl object-cover object-center"
                         />
                       </Link>
@@ -114,12 +115,12 @@ export default function FeaturedProductsCarousel({
             transition={{ duration: 0.2, ease: "easeInOut" }}
           >
             <Link href={`/products/${items[active].slug}`}>
-              <h3 className="text-2xl font-bold hover:underline text-slate-400">
+              <h3 className="text-2xl font-bold hover:underline secondary-color">
                 {items[active].name}
               </h3>
             </Link>
             {items[active].price && (
-              <p className="mt-1 text-blue-600 font-semibold">{items[active].price}</p>
+              <p className="mt-1 text-neutral-300 font-semibold">{items[active].price}</p>
             )}
             {items[active].blurb && (
               <p className="mt-6 text-lg paragraph-color line-clamp-6">
@@ -131,13 +132,13 @@ export default function FeaturedProductsCarousel({
           <div className="flex gap-4 pt-10 md:pt-0">
             <button
               onClick={handlePrev}
-              className="group/button flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-800"
+              className="group/button flex h-7 w-7 items-center justify-center rounded-full bg-gradient-custom"
             >
               <IconArrowLeft className="h-5 w-5 transition-transform duration-300 group-hover/button:rotate-12" />
             </button>
             <button
               onClick={handleNext}
-              className="group/button flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-800"
+              className="group/button flex h-7 w-7 items-center justify-center rounded-full bg-gradient-custom"
             >
               <IconArrowRight className="h-5 w-5 transition-transform duration-300 group-hover/button:-rotate-12" />
             </button>

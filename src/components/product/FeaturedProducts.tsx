@@ -71,7 +71,7 @@ export default async function FeaturedProducts({ count = 8 }: { count?: number }
 
   return (
     <section>
-      <h2 className="secondary-color text-center text-2xl md:text-5xl my-4">
+      <h2 className="secondary-color text-center text-2xl md:text-5xl my-10">
         Izdvojeni proizvodi
       </h2>
       <FeaturedProductsCarousel items={items} />

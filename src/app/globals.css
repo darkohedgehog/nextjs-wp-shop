@@ -8,6 +8,15 @@
   --animate-fifth: moveInCircle 20s ease infinite;
   --animate-shine: shine var(--duration) infinite linear;
 
+  @keyframes input-glow {
+    0%   { box-shadow: 0 0 0 rgba(255,255,255,0.00); }
+    100% { box-shadow: 0 0 18px rgba(255,255,255,0.25); }
+  }
+  @keyframes border-breathe {
+    0%   { box-shadow: 0 0 0 0 rgba(160,124,254,0.20), 0 0 0 0 rgba(254,143,181,0.12); }
+    50%  { box-shadow: 0 0 24px 2px rgba(160,124,254,0.35), 0 0 40px 8px rgba(254,143,181,0.18); }
+    100% { box-shadow: 0 0 0 0 rgba(160,124,254,0.20), 0 0 0 0 rgba(254,143,181,0.12); }
+  }
   @keyframes moveHorizontal {
     0% {
       transform: translateX(-50%) translateY(-10%);
@@ -56,27 +65,51 @@
   }
 }
 
+.shine-input,
+.shine-input * {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.shine-input::placeholder {
+  color: rgb(212 212 212) !important;
+  opacity: 1 !important;
+}
+
+/* Ako ShineBorder ima apsolutne overlays, nek ne hvataju evente i nek budu ispod inputa */
+.shine-border-overlay {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+/* breathing puls na wrapperu kad je input u fokusu */
+.shine-focus:focus-within {
+  animation: border-breathe 1.8s ease-in-out infinite;
+}
+
+/* poštuj reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .input-focus-glow:focus,
+  .shine-focus:focus-within {
+    animation: none !important;
+  }
+}
+
+/* ako tvoj ShineBorder renderuje apsolutne dekorativne slojeve */
+.shine-focus > *[class*="absolute"] {
+  pointer-events: none;
+}
+
 :root {
   --primary-color: rgba(0, 119, 182, 1);
   --secondary-color: rgba(0, 150, 199, 1);
   --paragraph-color: rgb(199, 143, 255);
   --border-color: rgb(165, 180, 252);
 }
-
-.primary-color {
-  color: var(--primary-color);
-}
-
-.secondary-color {
-  color: var(--secondary-color);
-}
-.paragraph-color {
-  color: var(--paragraph-color);
-}
-
-.border-color {
-  color: var(--border-color);
-}
+.primary-color { color: var(--primary-color); }
+.secondary-color { color: var(--secondary-color); }
+.paragraph-color { color: var(--paragraph-color); }
+.border-color { color: var(--border-color); }
 
 .bg-gradient-custom {
   background: linear-gradient(
