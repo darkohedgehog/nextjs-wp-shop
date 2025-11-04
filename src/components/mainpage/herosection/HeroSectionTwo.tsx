@@ -9,7 +9,7 @@ export function HeroSectionTwo() {
       <div className="relative flex flex-col items-center justify-center overflow-hidden px-8 pb-4 md:px-8">
         <div className="relative mt-20 flex flex-col items-center justify-center">
           <FeaturedImages />
-          <h1 className="mb-8relative mx-auto mt-4 max-w-6xl text-center text-3xl font-bold tracking-tight text-zinc-700 md:text-4xl lg:text-7xl dark:text-white">
+          <h1 className="mb-8relative mx-auto mt-4 max-w-6xl text-center text-3xl font-bold tracking-tight text-zinc-300 md:text-4xl lg:text-7xl">
             Your best in class{" "}
             <span className="relative z-10 bg-linear-to-b from-indigo-700 to-indigo-600 bg-clip-text text-transparent">
               design and development studio
@@ -43,7 +43,7 @@ export function HeroSectionTwo() {
               </svg>
             </span>
           </h1>
-          <h2 className="font-regular relative mx-auto mt-8 mb-8 max-w-xl text-center text-base tracking-wide text-zinc-500 antialiased md:text-xl dark:text-zinc-200">
+          <h2 className="font-regular relative mx-auto mt-8 mb-8 max-w-xl text-center text-base tracking-wide text-zinc-200 antialiased md:text-xl">
             We provide the best in class design and development services for
             teams that ship with the speed of light.
           </h2>
@@ -85,12 +85,12 @@ export const ImagesGrid = () => {
     },
   ];
   return (
-    <div className="relative mt-10 h-80 w-full overflow-hidden border-b border-color md:h-120 dark:border-border-color">
+    <div className="relative mt-10 h-80 w-full overflow-hidden border-b border-color md:h-120">
       <div className="absolute inset-0 flex h-full w-full shrink-0 justify-center gap-5">
         {images.map((image) => (
           <div
             className={cn(
-              "relative mt-0 rounded-lg border border-indigo-500 bg-border-color p-2",
+              "relative mt-0 rounded-lg border border-border-color bg-linear-to-b from-indigo-700 to-indigo-600 p-2",
               image.className,
             )}
             key={image.src}
@@ -181,55 +181,39 @@ export const FeaturedImages = ({
 export function LogoCloudMarquee() {
   const logos = [
     {
-      name: "Aceternity UI",
-      src: "https://assets.aceternity.com/pro/logos/aceternity-ui.png",
+      name: "Metalka Majur",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/metalka-logo.png",
     },
     {
-      name: "Gamity",
-      src: "https://assets.aceternity.com/pro/logos/gamity.png",
+      name: "Nopallux",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/nopallux.png",
     },
     {
-      name: "Host it",
-      src: "https://assets.aceternity.com/pro/logos/hostit.png",
+      name: "Tehnoelektro-Tim",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/tehnoelektro-logo.png",
     },
     {
-      name: "Asteroid Kit",
-      src: "https://assets.aceternity.com/pro/logos/asteroid-kit.png",
-    },
-    {
-      name: "Aceternity UI 2",
-      src: "https://assets.aceternity.com/pro/logos/aceternity-ui.png",
-    },
-    {
-      name: "Gamity 2",
-      src: "https://assets.aceternity.com/pro/logos/gamity.png",
-    },
-    {
-      name: "Host it 2",
-      src: "https://assets.aceternity.com/pro/logos/hostit.png",
-    },
-    {
-      name: "Asteroid Kit 2",
-      src: "https://assets.aceternity.com/pro/logos/asteroid-kit.png",
+      name: "Elid",
+      src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/elid_logo.jpeg",
     },
   ];
 
   return (
     <div className="relative">
-      <p className="mt-4 text-center font-sans text-base text-neutral-700 dark:text-neutral-300">
+      <p className="mt-4 text-center font-sans text-base text-neutral-200">
         Trusted by famous brands
       </p>
 
       <div className="relative mx-auto mt-4 flex h-20 w-full max-w-4xl flex-wrap justify-center gap-10 mask-[linear-gradient(to_right,transparent,black_20%,black_80%,transparent)] md:mt-2 md:gap-40">
         <Marquee pauseOnHover direction="left" speed={30}>
-          {logos.map((logo, idx) => (
+          {logos.map((logo) => (
             <img
               key={logo.name + "second"}
               src={logo.src}
               alt={logo.name}
               width="100"
               height="100"
-              className="mx-0 w-32 object-contain filter md:mx-10 md:w-40 dark:invert"
+              className="mx-0 w-12 h-12 object-contain filter md:mx-10 md:w-40"
             />
           ))}
         </Marquee>
