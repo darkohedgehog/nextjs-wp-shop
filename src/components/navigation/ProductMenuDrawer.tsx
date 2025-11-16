@@ -75,16 +75,23 @@ export default function ProductMenuDrawer() {
           slug: b.slug,
           count: b.count ?? 0,
         }))
-        .reduce<Record<string, { id: string; name: string; slug: string; count: number }>>((acc, b) => {
-          const exist = acc[b.slug];
-          if (!exist || (b.count || 0) > (exist.count || 0)) acc[b.slug] = b;
-          return acc;
-        }, {})
+        .reduce<Record<string, { id: string; name: string; slug: string; count: number }>>(
+          (acc, b) => {
+            const exist = acc[b.slug];
+            if (!exist || (b.count || 0) > (exist.count || 0)) acc[b.slug] = b;
+            return acc;
+          },
+          {},
+        )
     )
     .sort((a, b) => a.name.localeCompare(b.name, 'sr'));
 
+  // helper da zatvori meni posle navigacije
+  const handleLinkClick = () => setOpen(false);
+
   return (
-    <div className="relative z-50 lg:hidden">
+    // root samo drži dugme – z-index ovde nije presudan kad već dajemo veći na overlay/aside
+    <div className="relative lg:hidden">
       <button
         onClick={() => setOpen(true)}
         className="text-white bg-blue-600 hover:bg-blue-700 p-2 rounded-lg"
@@ -96,24 +103,32 @@ export default function ProductMenuDrawer() {
       <AnimatePresence>
         {open && (
           <>
+            {/* BACKDROP — sada sa većim z-indexom da bude iznad glavnog menija */}
             <motion.div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
             />
 
+            {/* DRAWER — full height, flex kolona, sadržaj skroluje */}
             <motion.aside
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-              className="fixed top-0 right-0 w-80 h-full bg-neutral-900 text-white p-6 shadow-2xl"
+              className="
+                fixed mt-24 inset-y-0 right-0 z-70
+                w-80 max-w-full
+                bg-neutral-900 text-white shadow-2xl
+                flex flex-col
+              "
               role="dialog"
               aria-modal="true"
             >
-              <div className="flex justify-between items-center mb-6">
+              {/* HEADER (ne skroluje) */}
+              <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 shrink-0">
                 <h2 className="text-2xl font-semibold">Meni</h2>
                 <button
                   onClick={() => setOpen(false)}
@@ -124,93 +139,110 @@ export default function ProductMenuDrawer() {
                 </button>
               </div>
 
-              {/* SORTIRANJE (isti linkovi kao SSR sidebar) */}
-              <section className="mb-8">
-                <h3 className="text-xl font-semibold mb-3">Sortiranje</h3>
-                <nav className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: 'Cena ↑', value: 'price_asc' },
-                    { label: 'Cena ↓', value: 'price_desc' },
-                    { label: 'Najnovije', value: 'date_desc' },
-                    { label: 'Najstarije', value: 'date_asc' },
-                    { label: 'Naziv A-Z', value: 'name_asc' },
-                    { label: 'Naziv Z-A', value: 'name_desc' },
-                  ].map((s) => (
-                    <Link
-                      key={s.value}
-                      href={{ pathname: '/products', query: { sort: s.value } }}
-                      onClick={() => setOpen(false)}
-                      className="rounded border border-white/10 px-2 py-1 text-sm text-neutral-300 hover:text-white hover:border-white/20 transition"
-                    >
-                      {s.label}
-                    </Link>
-                  ))}
-                </nav>
-              </section>
-
-              {/* KATEGORIJE */}
-              <section className="mb-8">
-                <h3 className="text-xl font-semibold mb-3">Kategorije</h3>
-                {catLoading && <p className="text-neutral-400 text-sm">Učitavanje…</p>}
-                {catError && <p className="text-red-400 text-sm">Greška pri učitavanju kategorija.</p>}
-
-                <nav className="space-y-3">
-                  {categories.map((cat) => (
-                    <div key={cat.id}>
+              {/* BODY (skroluje) */}
+              <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-8">
+                {/* SORTIRANJE (isti linkovi kao SSR sidebar) */}
+                <section>
+                  <h3 className="text-xl font-semibold mb-3">Sortiranje</h3>
+                  <nav className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: 'Cena ↑', value: 'price_asc' },
+                      { label: 'Cena ↓', value: 'price_desc' },
+                      { label: 'Najnovije', value: 'date_desc' },
+                      { label: 'Najstarije', value: 'date_asc' },
+                      { label: 'Naziv A-Z', value: 'name_asc' },
+                      { label: 'Naziv Z-A', value: 'name_desc' },
+                    ].map((s) => (
                       <Link
-                        href={`/categories/${cat.slug}`}
-                        onClick={() => setOpen(false)}
+                        key={s.value}
+                        href={{ pathname: '/products', query: { sort: s.value } }}
+                        onClick={handleLinkClick}
+                        className="rounded border border-white/10 px-2 py-1 text-sm text-neutral-300 hover:text-white hover:border-white/20 transition"
+                      >
+                        {s.label}
+                      </Link>
+                    ))}
+                  </nav>
+                </section>
+
+                {/* KATEGORIJE */}
+                <section>
+                  <h3 className="text-xl font-semibold mb-3">Kategorije</h3>
+                  {catLoading && (
+                    <p className="text-neutral-400 text-sm">Učitavanje…</p>
+                  )}
+                  {catError && (
+                    <p className="text-red-400 text-sm">
+                      Greška pri učitavanju kategorija.
+                    </p>
+                  )}
+
+                  <nav className="space-y-3">
+                    {categories.map((cat) => (
+                      <div key={cat.id}>
+                        <Link
+                          href={`/categories/${cat.slug}`}
+                          onClick={handleLinkClick}
+                          className="block text-lg hover:text-blue-400 transition"
+                        >
+                          {cat.name}
+                        </Link>
+
+                        {!!cat.children?.nodes?.length && (
+                          <div className="mt-1 ml-3 space-y-2">
+                            {cat.children.nodes.map((sc) => (
+                              <Link
+                                key={sc.id}
+                                href={`/categories/${cat.slug}/${sc.slug}`}
+                                onClick={handleLinkClick}
+                                className="block text-sm text-neutral-400 hover:text-neutral-200"
+                              >
+                                {sc.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {!catLoading && !catError && categories.length === 0 && (
+                      <p className="text-neutral-400 text-sm">Nema kategorija.</p>
+                    )}
+                  </nav>
+                </section>
+
+                {/* BRENDOVI (PWB) */}
+                <section>
+                  <h3 className="text-xl font-semibold mb-3">Brendovi</h3>
+                  {brandLoading && (
+                    <p className="text-neutral-400 text-sm">Učitavanje…</p>
+                  )}
+                  {brandError && (
+                    <p className="text-neutral-400 text-sm">
+                      Nije moguće učitati brendove.
+                    </p>
+                  )}
+
+                  <nav className="space-y-3">
+                    {brands.map((b) => (
+                      <Link
+                        key={b.id}
+                        href={{ pathname: '/products', query: { brand: b.slug } }}
+                        onClick={handleLinkClick}
                         className="block text-lg hover:text-blue-400 transition"
                       >
-                        {cat.name}
+                        {b.name}
+                        {b.count ? (
+                          <span className="text-neutral-500"> ({b.count})</span>
+                        ) : null}
                       </Link>
-
-                      {!!cat.children?.nodes?.length && (
-                        <div className="mt-1 ml-3 space-y-2">
-                          {cat.children.nodes.map((sc) => (
-                            <Link
-                              key={sc.id}
-                              href={`/categories/${cat.slug}/${sc.slug}`}
-                              onClick={() => setOpen(false)}
-                              className="block text-sm text-neutral-400 hover:text-neutral-200"
-                            >
-                              {sc.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {!catLoading && !catError && categories.length === 0 && (
-                    <p className="text-neutral-400 text-sm">Nema kategorija.</p>
-                  )}
-                </nav>
-              </section>
-
-              {/* BRENDOVI (PWB) */}
-              <section>
-                <h3 className="text-xl font-semibold mb-3">Brendovi</h3>
-                {brandLoading && <p className="text-neutral-400 text-sm">Učitavanje…</p>}
-                {brandError && <p className="text-neutral-400 text-sm">Nije moguće učitati brendove.</p>}
-
-                <nav className="space-y-3 max-h-[40vh] overflow-auto pr-1">
-                  {brands.map((b) => (
-                    <Link
-                      key={b.id}
-                      href={{ pathname: '/products', query: { brand: b.slug } }}
-                      onClick={() => setOpen(false)}
-                      className="block text-lg hover:text-blue-400 transition"
-                    >
-                      {b.name}
-                      {b.count ? <span className="text-neutral-500"> ({b.count})</span> : null}
-                    </Link>
-                  ))}
-                  {!brandLoading && !brandError && brands.length === 0 && (
-                    <p className="text-neutral-400 text-sm">Nema brendova.</p>
-                  )}
-                </nav>
-              </section>
+                    ))}
+                    {!brandLoading && !brandError && brands.length === 0 && (
+                      <p className="text-neutral-400 text-sm">Nema brendova.</p>
+                    )}
+                  </nav>
+                </section>
+              </div>
             </motion.aside>
           </>
         )}

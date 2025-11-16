@@ -1,4 +1,3 @@
-// components/shop/ProductMenuSSR.tsx
 import Link from 'next/link';
 import { gql } from '@apollo/client';
 import { client } from '@/lib/apollo-client';
@@ -114,8 +113,8 @@ export default async function ProductMenuSSR({
 
   // linkovi za sortiranje (isti ključ kao u ProductListClient)
   const sortLinks = [
-    { label: 'Cena ↑', value: 'price_asc' },
-    { label: 'Cena ↓', value: 'price_desc' },
+    { label: 'Cijena ↑', value: 'price_asc' },
+    { label: 'Cijena ↓', value: 'price_desc' },
     { label: 'Najnovije', value: 'date_desc' },
     { label: 'Najstarije', value: 'date_asc' },
     { label: 'Naziv A–Z', value: 'name_asc' },
@@ -124,11 +123,10 @@ export default async function ProductMenuSSR({
 
   return (
     <aside className="hidden lg:block w-72 shrink-0">
-      <div className="sticky top-6 space-y-8 rounded-xl border border-white/10 bg-neutral-900/40 p-5">
-
+      <div className="sticky top-6 space-y-8 rounded-xl border border-white/10 bg-neutral-900/20 p-5">
         {/* SORT */}
         <section>
-          <h3 className="text-lg font-semibold mb-3">Sortiranje</h3>
+          <h3 className="text-lg font-semibold mb-3 text-blue-400">Sortiranje</h3>
           <nav className="grid grid-cols-2 gap-2">
             {sortLinks.map((s) => {
               const href = {
@@ -143,8 +141,8 @@ export default async function ProductMenuSSR({
                   className={[
                     'rounded border px-2 py-1 text-sm transition',
                     isActive
-                      ? 'border-white/40 text-white'
-                      : 'border-white/10 text-neutral-300 hover:text-white hover:border-white/20',
+                      ? 'border-white/40 text-zinc-200'
+                      : 'border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20',
                   ].join(' ')}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -157,14 +155,14 @@ export default async function ProductMenuSSR({
 
         {/* KATEGORIJE */}
         <section>
-          <h3 className="text-lg font-semibold mb-3">Kategorije</h3>
+          <h3 className="text-lg font-semibold mb-3 text-blue-400">Kategorije</h3>
           {categories.length ? (
             <nav className="space-y-2">
               {categories.map((c) => (
                 <div key={c.id}>
                   <Link
                     href={`/categories/${c.slug}`}
-                    className="block text-neutral-200 hover:text-white transition"
+                    className="block secondary-color hover:text-white transition"
                   >
                     {c.name}
                   </Link>
@@ -175,7 +173,7 @@ export default async function ProductMenuSSR({
                         <Link
                           key={sc.id}
                           href={`/categories/${c.slug}/${sc.slug}`}
-                          className="block text-sm text-neutral-400 hover:text-neutral-200"
+                          className="block text-sm text-blue-300 hover:text-neutral-200"
                         >
                           {sc.name}
                         </Link>
@@ -186,13 +184,15 @@ export default async function ProductMenuSSR({
               ))}
             </nav>
           ) : (
-            <p className="text-neutral-400 text-sm">Nema kategorija.</p>
+            <p className="text-neutral-400 text-sm flex items-center justify-center">
+              Nema tražene kategorije
+              </p>
           )}
         </section>
 
         {/* BRENDOVI */}
         <section>
-          <h3 className="text-lg font-semibold mb-3">Brendovi</h3>
+          <h3 className="text-lg font-semibold mb-3 text-blue-400">Brendovi</h3>
           {brandList.length ? (
             <nav className="max-h-[40vh] overflow-auto pr-1 space-y-2">
               {brandList.map((b) => {
@@ -208,8 +208,8 @@ export default async function ProductMenuSSR({
                     className={[
                       'block transition',
                       isActive
-                        ? 'text-white'
-                        : 'text-neutral-300 hover:text-white',
+                        ? 'text-blue-300'
+                        : 'text-blue-300 hover:text-white',
                     ].join(' ')}
                     aria-current={isActive ? 'page' : undefined}
                   >

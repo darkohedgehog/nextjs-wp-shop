@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ShineBorder } from '../ui/shine-border';
 import ProductMenuDrawer from '../navigation/ProductMenuDrawer';
+import { FaSearchengin } from "react-icons/fa";
 
 // ——— Types ———
 type Brand = { name?: string | null; slug?: string | null };
@@ -43,7 +44,7 @@ interface Vars {
 // Dodata je i 'date' da bi sortiranje po datumu bilo smisleno.
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
-    products(first: 8, after: $after, where: { search: $search, categoryIn: $category }) {
+    products(first: 12, after: $after, where: { search: $search, categoryIn: $category }) {
       pageInfo { endCursor hasNextPage }
       nodes {
         databaseId
@@ -259,7 +260,8 @@ export default function ProductListClient({
 
   // ——— UI ———
   return (
-    <div className="p-4 mx-auto w-full flex flex-col items-center justify-center">Product 
+    <div className="p-4 mx-auto w-full flex flex-col items-center justify-center"> 
+    <div className='flex items-center justify-center gap-4'>
     <ProductMenuDrawer />
       {/* Search */}
       <form onSubmit={handleSearch} className="my-4 flex gap-2 w-full max-w-xl mx-auto">
@@ -293,15 +295,15 @@ export default function ProductListClient({
 
         <button
           type="submit"
-          className="shrink-0 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 active:scale-95 transition"
+          className="shrink-0 bg-gradient-custom text-zinc-200 px-4 py-2 rounded-full active:scale-95 transition"
           aria-label="Pretraži proizvode"
         >
-          Traži
+          <FaSearchengin />
         </button>
       </form>
-
+      </div>
       {/* Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-2 mt-6 gap-5 w-full">
+      <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-2 mt-6 gap-5 w-96 lg:w-full">
         {products.map((product) => {
           const brandName = getBrandName(product);
           return (
@@ -317,7 +319,7 @@ export default function ProductListClient({
 
               <Link
                 href={`/products/${product.slug}`}
-                className="relative z-10 block p-4 rounded-xl shadow hover:shadow-lg transition bg-black/20"
+                className="relative z-10 block p-4 rounded-xl transition"
               >
                 {product.image?.sourceUrl && (
                   <Image
@@ -334,8 +336,8 @@ export default function ProductListClient({
                 </h2>
 
                 {brandName && (
-                  <p className="text-xs text-neutral-400 mb-1 mx-1">
-                    Brend: <span className="text-neutral-200">{brandName}</span>
+                  <p className="text-xs text-zinc-400 mb-1 mx-1">
+                    Proizvođač: <span className="text-zinc-200">{brandName}</span>
                   </p>
                 )}
 
@@ -355,10 +357,10 @@ export default function ProductListClient({
         <div className="mt-6 text-center">
           <button
             onClick={loadMore}
-            className="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
+            className="bg-gradient-custom text-zinc-200 px-6 py-2 rounded-xl disabled:opacity-50"
             disabled={loading || networkStatus === 3 /* refetch */}
           >
-            {loading ? 'Učitavanje…' : 'Učitaj još'}
+            {loading ? 'Učitavanje…' : 'Učitaj više...'}
           </button>
         </div>
       )}
