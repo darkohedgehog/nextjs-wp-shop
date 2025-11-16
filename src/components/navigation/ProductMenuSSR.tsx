@@ -192,7 +192,7 @@ export default async function ProductMenuSSR({
 
         {/* BRENDOVI */}
         <section>
-          <h3 className="text-lg font-semibold mb-3 text-blue-400">Brendovi</h3>
+          <h3 className="text-lg font-semibold mb-3 text-blue-400">Proizvođač</h3>
           {brandList.length ? (
             <nav className="max-h-[40vh] overflow-auto pr-1 space-y-2">
               {brandList.map((b) => {

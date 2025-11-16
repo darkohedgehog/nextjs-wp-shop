@@ -94,7 +94,7 @@ export default function ProductMenuDrawer() {
     <div className="relative lg:hidden">
       <button
         onClick={() => setOpen(true)}
-        className="text-white bg-blue-600 hover:bg-blue-700 p-2 rounded-lg"
+        className="text-zinc-200 bg-primary-color p-2 rounded-lg"
         aria-label="Otvori meni"
       >
         <FiMenu size={24} />
@@ -121,7 +121,7 @@ export default function ProductMenuDrawer() {
               className="
                 fixed mt-24 inset-y-0 right-0 z-70
                 w-80 max-w-full
-                bg-neutral-900 text-white shadow-2xl
+                bg-neutral-900/60 text-white shadow-2xl
                 flex flex-col
               "
               role="dialog"
@@ -129,10 +129,9 @@ export default function ProductMenuDrawer() {
             >
               {/* HEADER (ne skroluje) */}
               <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 shrink-0">
-                <h2 className="text-2xl font-semibold">Meni</h2>
                 <button
                   onClick={() => setOpen(false)}
-                  className="text-neutral-400 hover:text-white"
+                  className="paragraph-color hover:text-zinc-100"
                   aria-label="Zatvori meni"
                 >
                   <FiX size={28} />
@@ -143,11 +142,11 @@ export default function ProductMenuDrawer() {
               <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-8">
                 {/* SORTIRANJE (isti linkovi kao SSR sidebar) */}
                 <section>
-                  <h3 className="text-xl font-semibold mb-3">Sortiranje</h3>
+                  <h3 className="text-xl font-semibold mb-3 text-blue-400">Sortiranje</h3>
                   <nav className="grid grid-cols-2 gap-2">
                     {[
-                      { label: 'Cena ↑', value: 'price_asc' },
-                      { label: 'Cena ↓', value: 'price_desc' },
+                      { label: 'Cijena ↑', value: 'price_asc' },
+                      { label: 'Cijena ↓', value: 'price_desc' },
                       { label: 'Najnovije', value: 'date_desc' },
                       { label: 'Najstarije', value: 'date_asc' },
                       { label: 'Naziv A-Z', value: 'name_asc' },
@@ -157,7 +156,7 @@ export default function ProductMenuDrawer() {
                         key={s.value}
                         href={{ pathname: '/products', query: { sort: s.value } }}
                         onClick={handleLinkClick}
-                        className="rounded border border-white/10 px-2 py-1 text-sm text-neutral-300 hover:text-white hover:border-white/20 transition"
+                        className="rounded border border-white/40 px-2 py-1 text-sm text-zinc-200 hover:text-zinc-100 hover:border-white/20 transition"
                       >
                         {s.label}
                       </Link>
@@ -167,17 +166,17 @@ export default function ProductMenuDrawer() {
 
                 {/* KATEGORIJE */}
                 <section>
-                  <h3 className="text-xl font-semibold mb-3">Kategorije</h3>
+                  <h3 className="text-xl font-semibold mb-3 text-blue-400">Kategorije</h3>
                   {catLoading && (
-                    <p className="text-neutral-400 text-sm">Učitavanje…</p>
+                    <p className="text-neutral-400 text-sm flex items-center justify-center">Učitavanje…</p>
                   )}
                   {catError && (
-                    <p className="text-red-400 text-sm">
+                    <p className="text-red-400 text-sm flex items-center justify-center">
                       Greška pri učitavanju kategorija.
                     </p>
                   )}
 
-                  <nav className="space-y-3">
+                  <nav className="space-y-3 secondary-color">
                     {categories.map((cat) => (
                       <div key={cat.id}>
                         <Link
@@ -189,13 +188,13 @@ export default function ProductMenuDrawer() {
                         </Link>
 
                         {!!cat.children?.nodes?.length && (
-                          <div className="mt-1 ml-3 space-y-2">
+                          <div className="mt-1 ml-3 space-y-2 primary-color">
                             {cat.children.nodes.map((sc) => (
                               <Link
                                 key={sc.id}
                                 href={`/categories/${cat.slug}/${sc.slug}`}
                                 onClick={handleLinkClick}
-                                className="block text-sm text-neutral-400 hover:text-neutral-200"
+                                className="block text-sm hover:text-neutral-300"
                               >
                                 {sc.name}
                               </Link>
@@ -206,24 +205,28 @@ export default function ProductMenuDrawer() {
                     ))}
 
                     {!catLoading && !catError && categories.length === 0 && (
-                      <p className="text-neutral-400 text-sm">Nema kategorija.</p>
+                      <p className="text-neutral-400 text-sm flex items-center justify-center">
+                        Nema kategorija...
+                        </p>
                     )}
                   </nav>
                 </section>
 
                 {/* BRENDOVI (PWB) */}
                 <section>
-                  <h3 className="text-xl font-semibold mb-3">Brendovi</h3>
+                  <h3 className="text-xl font-semibold mb-3 text-blue-400">Proizvođač</h3>
                   {brandLoading && (
-                    <p className="text-neutral-400 text-sm">Učitavanje…</p>
+                    <p className="text-neutral-400 text-sm flex items-center justify-center">
+                      Učitavanje…
+                    </p>
                   )}
                   {brandError && (
-                    <p className="text-neutral-400 text-sm">
-                      Nije moguće učitati brendove.
+                    <p className="text-neutral-400 text-sm flex items-center justify-center">
+                      Nije moguće učitati proizvođače...
                     </p>
                   )}
 
-                  <nav className="space-y-3">
+                  <nav className="space-y-3 secondary-color">
                     {brands.map((b) => (
                       <Link
                         key={b.id}
@@ -238,7 +241,7 @@ export default function ProductMenuDrawer() {
                       </Link>
                     ))}
                     {!brandLoading && !brandError && brands.length === 0 && (
-                      <p className="text-neutral-400 text-sm">Nema brendova.</p>
+                      <p className="text-neutral-400 text-sm">Nema proizvođača...</p>
                     )}
                   </nav>
                 </section>
