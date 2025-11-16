@@ -259,7 +259,8 @@ export default function ProductListClient({
 
   // ——— UI ———
   return (
-    <div className="p-4 mx-auto w-full flex flex-col items-center justify-center">
+    <div className="p-4 mx-auto w-full flex flex-col items-center justify-center">Product 
+    <ProductMenuDrawer />
       {/* Search */}
       <form onSubmit={handleSearch} className="my-4 flex gap-2 w-full max-w-xl mx-auto">
         <div className="relative flex-1">
@@ -298,9 +299,7 @@ export default function ProductListClient({
           Traži
         </button>
       </form>
-<div>
-  <ProductMenuDrawer />
-</div>
+
       {/* Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-2 mt-6 gap-5 w-full">
         {products.map((product) => {

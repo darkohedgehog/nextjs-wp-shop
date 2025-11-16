@@ -84,7 +84,7 @@ export default function ProductMenuDrawer() {
     .sort((a, b) => a.name.localeCompare(b.name, 'sr'));
 
   return (
-    <div className="relative z-50">
+    <div className="relative z-50 lg:hidden">
       <button
         onClick={() => setOpen(true)}
         className="text-white bg-blue-600 hover:bg-blue-700 p-2 rounded-lg"
