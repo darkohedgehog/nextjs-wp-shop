@@ -2,7 +2,7 @@
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import React, { useState } from "react";
+import { useState } from "react";
 import Logo from "@/components/logo/Logo";
 import MobileChildNavItems from "./MobileChildNavItems";
 

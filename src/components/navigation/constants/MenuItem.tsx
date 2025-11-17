@@ -29,7 +29,7 @@ export const MenuItem = ({
             transition={transition}
           >
             {active === item && (
-              <div className="absolute left-1/2 top-[calc(100%_+_0.2rem)] -translate-x-1/2 transform pt-4">
+              <div className="absolute left-1/2 top-[calc(100%+0.2rem)] -translate-x-1/2 transform pt-4">
                 <div className="">
                   <motion.div
                     transition={transition}

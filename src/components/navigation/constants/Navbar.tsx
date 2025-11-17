@@ -19,14 +19,14 @@ const Navbar = () => {
         {
           title: "Proizvodi",
           href: "/products",
-          src: "https://assets.aceternity.com/demos/algochurn.webp",
-          description: "Prepare for tech interviews like never before.",
+          src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/hedgehog1000_an_ecommerce_who_sells_an_elecric_material_realist_0e83b2f2-f680-4503-ad02-79f620be34ab.webp",
+          description: "Priuštite sebi kvalitetu",
         },
         {
           title: "Kategorije",
           href: "/categories",
-          src: "https://assets.aceternity.com/demos/tailwindmasterkit.webp",
-          description: "Production ready Tailwind css components for your next project",
+          src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/CategoryBanner2.png",
+          description: "Istražite naše proizvode",
         },
       ],
     },

@@ -2,7 +2,7 @@
 import Logo from "@/components/logo/Logo";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { MenuItem } from "./MenuItem";
 import { Menu } from "./Menu";
 import { HoveredLink } from "./HoveredLink";

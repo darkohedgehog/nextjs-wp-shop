@@ -5,9 +5,8 @@ import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react'; // ✅ Apollo 4.0.7 hooks
 import { client } from '@/lib/apollo-client';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
 import he from 'he';
+import { ProductCard } from '@/components/product/ProductCard';
 
 // --- Tipovi podataka
 type Category = {
@@ -64,7 +63,7 @@ const GET_CATEGORY_TREE = gql`
 
 const GET_PRODUCTS_BY_CATEGORY = gql`
   query ProductsByCategory($categoryId: Int!, $after: String) {
-    products(first: 10, after: $after, where: { categoryId: $categoryId }) {
+    products(first: 12, after: $after, where: { categoryId: $categoryId }) {
       pageInfo { endCursor hasNextPage }
       nodes {
         id
@@ -150,12 +149,12 @@ export default function CategoryPage() {
   // Sync product state na svaku promenu prodData
   useEffect(() => {
     if (!prodData?.products) return;
-  
+
     const nodes = prodData.products.nodes ?? [];
     const clean = nodes.filter((p): p is Product => Boolean(p));
-  
+
     setProducts(clean);
-  
+
     setPageInfo({
       endCursor: prodData.products.pageInfo?.endCursor ?? null,
       hasNextPage: prodData.products.pageInfo?.hasNextPage ?? false,
@@ -164,31 +163,48 @@ export default function CategoryPage() {
 
   const loadMore = async () => {
     if (!fetchMore || !pageInfo.hasNextPage || !pageInfo.endCursor) return;
-  
+
     const res = await fetchMore({ variables: { after: pageInfo.endCursor } });
-  
+
     const nodes = res?.data?.products?.nodes ?? [];
     const clean = nodes.filter((p): p is Product => Boolean(p));
-  
+
     setProducts((prev) => [...prev, ...clean]);
-  
+
     setPageInfo({
       endCursor: res?.data?.products?.pageInfo?.endCursor ?? null,
       hasNextPage: res?.data?.products?.pageInfo?.hasNextPage ?? false,
     });
   };
+
   // Rendering logic
   if (!parentSlug) {
-    return <p className="p-4">Učitavanje…</p>;
+    return (
+      <p className="p-4 flex items-center justify-center text-sm paragraph-color">
+        Učitavanje…
+      </p>
+    );
   }
   if (catLoading && !parentCat) {
-    return <p className="p-4">Učitavanje kategorije...</p>;
+    return (
+      <p className="p-4 flex items-center justify-center text-sm paragraph-color">
+        Učitavanje kategorije...
+      </p>
+    );
   }
   if (catError || !parentCat) {
-    return <p className="p-4 text-red-600">Kategorija nije pronađena.</p>;
+    return (
+      <p className="p-4 text-red-600 flex items-center justify-center text-sm">
+        Kategorija nije pronađena
+      </p>
+    );
   }
   if (!currentCat) {
-    return <p className="p-4 text-red-600">Podkategorija nije pronađena.</p>;
+    return (
+      <p className="p-4 text-red-600 flex items-center justify-center text-sm">
+        Podkategorija nije pronađena
+      </p>
+    );
   }
 
   const showSubcategories = !childSlug && childNodes.length > 0;
@@ -198,53 +214,34 @@ export default function CategoryPage() {
       <h1 className="text-3xl font-bold mb-6">{currentCat.name}</h1>
 
       {showSubcategories ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        // 👉 PODKATEGORIJE – isti UI kao na CategoriesPage.tsx
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 w-full">
           {childNodes.map((sub) => (
-            <Link
+            <ProductCard
               key={sub.id}
               href={`/categories/${parentSlug}/${sub.slug}`}
-              className="border rounded overflow-hidden hover:shadow-lg"
-            >
-              {sub.image?.sourceUrl && (
-                <Image
-                  src={sub.image.sourceUrl}
-                  alt={sub.image.altText || sub.name}
-                  width={300}
-                  height={200}
-                  className="w-full h-48 object-cover"
-                />
-              )}
-              <div className="p-4 text-center">
-                <h2 className="text-xl font-semibold">{sub.name}</h2>
-              </div>
-            </Link>
+              name={sub.name}
+              imageUrl={sub.image?.sourceUrl ?? parentCat.image?.sourceUrl ?? null}
+              imageAlt={sub.image?.altText || sub.name}
+              price={undefined}
+              brandName={undefined}
+            />
           ))}
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {/* LEAF KATEGORIJA – proizvodi, takođe isti card UI */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mt-6 gap-5 w-full">
             {products.map((product) => (
-              <Link
+              <ProductCard
                 key={product.id}
                 href={`/products/${product.slug}`}
-                className="border p-4 rounded shadow hover:shadow-lg transition"
-              >
-                {product.image?.sourceUrl && (
-                  <Image
-                    src={product.image.sourceUrl}
-                    alt={product.image.altText || product.name}
-                    width={220}
-                    height={220}
-                    className="w-full h-40 object-cover mb-2"
-                  />
-                )}
-                <h2 className="text-lg font-bold mb-1">{product.name}</h2>
-                {product.price && (
-                  <p className="text-green-600 font-semibold">
-                    {cleanPrice(product.price)}
-                  </p>
-                )}
-              </Link>
+                name={product.name}
+                imageUrl={product.image?.sourceUrl ?? null}
+                imageAlt={product.image?.altText || product.name}
+                price={product.price ? cleanPrice(product.price) : undefined}
+                brandName={undefined}
+              />
             ))}
           </div>
 

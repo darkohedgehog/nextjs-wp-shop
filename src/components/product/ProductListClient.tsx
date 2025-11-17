@@ -2,14 +2,13 @@
 
 import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react'; // za @apollo/client 4.0.7
-import Link from 'next/link';
-import Image from 'next/image';
 import he from 'he';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ShineBorder } from '../ui/shine-border';
 import ProductMenuDrawer from '../navigation/ProductMenuDrawer';
-import { FaSearchengin } from "react-icons/fa";
+import { FaSearchengin } from 'react-icons/fa';
+import { ProductCard } from './ProductCard';
 
 // ——— Types ———
 type Brand = { name?: string | null; slug?: string | null };
@@ -40,8 +39,6 @@ interface Vars {
 }
 
 // ——— GQL ———
-// Uzimamo terms (PWBBRAND) za sve tipove proizvoda, a price/image na SimpleProduct.
-// Dodata je i 'date' da bi sortiranje po datumu bilo smisleno.
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
     products(first: 12, after: $after, where: { search: $search, categoryIn: $category }) {
@@ -123,39 +120,74 @@ function matchesBrand(p: Product, desiredSlug: string | null): boolean {
 function parsePriceToNumber(price?: string | null): number | null {
   if (!price) return null;
   const decoded = he.decode(price);
-  // pokupi prvi broj sa zarez/tačka varijacijama
   const match = decoded.replace(/\s/g, '').match(/[\d.,]+/);
   if (!match) return null;
   let n = match[0];
 
-  // heuristic: ako sadrži i '.' i ',', onda '.' je hiljadarka, ',' je decimalna
   if (n.includes('.') && n.includes(',')) {
     n = n.replace(/\./g, '').replace(',', '.');
   } else if (n.includes(',')) {
-    // ako ima samo ',', tretiraj je kao decimalni separator
     n = n.replace(',', '.');
   }
   const num = Number(n);
   return Number.isFinite(num) ? num : null;
 }
 
+// display helper za cenu
+function cleanPrice(raw?: string | null): string | null {
+  if (!raw) return null;
+  return he.decode(raw).replace(/&nbsp;|\u00A0/g, '').trim();
+}
+
 // sortiranje
-type SortKey = 'price_asc' | 'price_desc' | 'date_asc' | 'date_desc' | 'name_asc' | 'name_desc' | '';
+type SortKey =
+  | 'price_asc'
+  | 'price_desc'
+  | 'date_asc'
+  | 'date_desc'
+  | 'name_asc'
+  | 'name_desc'
+  | '';
+
 function sortProducts(list: Product[], sort: SortKey): Product[] {
   const arr = [...list];
   switch (sort) {
     case 'price_asc':
-      return arr.sort((a, b) => (parsePriceToNumber(a.price) ?? Infinity) - (parsePriceToNumber(b.price) ?? Infinity));
+      return arr.sort(
+        (a, b) =>
+          (parsePriceToNumber(a.price) ?? Infinity) -
+          (parsePriceToNumber(b.price) ?? Infinity),
+      );
     case 'price_desc':
-      return arr.sort((a, b) => (parsePriceToNumber(b.price) ?? -Infinity) - (parsePriceToNumber(a.price) ?? -Infinity));
+      return arr.sort(
+        (a, b) =>
+          (parsePriceToNumber(b.price) ?? -Infinity) -
+          (parsePriceToNumber(a.price) ?? -Infinity),
+      );
     case 'date_asc':
-      return arr.sort((a, b) => (Date.parse(a.date ?? '1970-01-01') - Date.parse(b.date ?? '1970-01-01')));
+      return arr.sort(
+        (a, b) =>
+          Date.parse(a.date ?? '1970-01-01') -
+          Date.parse(b.date ?? '1970-01-01'),
+      );
     case 'date_desc':
-      return arr.sort((a, b) => (Date.parse(b.date ?? '1970-01-01') - Date.parse(a.date ?? '1970-01-01')));
+      return arr.sort(
+        (a, b) =>
+          Date.parse(b.date ?? '1970-01-01') -
+          Date.parse(a.date ?? '1970-01-01'),
+      );
     case 'name_asc':
-      return arr.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'sr', { sensitivity: 'base' }));
+      return arr.sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', 'sr', {
+          sensitivity: 'base',
+        }),
+      );
     case 'name_desc':
-      return arr.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'sr', { sensitivity: 'base' }));
+      return arr.sort((a, b) =>
+        (b.name || '').localeCompare(a.name || '', 'sr', {
+          sensitivity: 'base',
+        }),
+      );
     default:
       return arr;
   }
@@ -172,9 +204,10 @@ export default function ProductListClient({
 }) {
   const searchParams = useSearchParams();
 
-  // direktno, bez useMemo:
   const brandParamRaw = searchParams.get('brand');
-  const brandParam = brandParamRaw ? decodeURIComponent(brandParamRaw).trim().toLowerCase() : null;
+  const brandParam = brandParamRaw
+    ? decodeURIComponent(brandParamRaw).trim().toLowerCase()
+    : null;
 
   const sortParamRaw = (searchParams.get('sort') || '') as SortKey;
 
@@ -182,12 +215,14 @@ export default function ProductListClient({
   const [searchTerm, setSearchTerm] = useState(initialSearch ?? '');
   const [products, setProducts] = useState<Product[]>(
     sortProducts(
-      dedupeProducts((initialProducts ?? []).filter((p) => matchesBrand(p, brandParam))),
+      dedupeProducts(
+        (initialProducts ?? []).filter((p) => matchesBrand(p, brandParam)),
+      ),
       sortParamRaw,
-    )
+    ),
   );
   const [pageInfo, setPageInfo] = useState<PageInfo>(
-    initialPageInfo ?? { endCursor: null, hasNextPage: false }
+    initialPageInfo ?? { endCursor: null, hasNextPage: false },
   );
 
   // ——— Query ———
@@ -211,7 +246,6 @@ export default function ProductListClient({
       setProducts(sorted);
       setPageInfo(data.products.pageInfo);
     }
-    // reaguj i na promenu sort/brand u URL-u
   }, [data, brandParam, sortParamRaw]);
 
   // ——— Pagination ———
@@ -228,7 +262,7 @@ export default function ProductListClient({
 
     const next = (res?.data as ProductsData | undefined)?.products;
     if (next) {
-      const merged = dedupeProducts([...products, ...next.nodes]); // dedupe preko id/slug
+      const merged = dedupeProducts([...products, ...next.nodes]);
       const filtered = merged.filter((p) => matchesBrand(p, brandParam));
       const sorted = sortProducts(filtered, sortParamRaw);
       setProducts(sorted);
@@ -260,94 +294,70 @@ export default function ProductListClient({
 
   // ——— UI ———
   return (
-    <div className="p-4 mx-auto w-full flex flex-col items-center justify-center"> 
-    <div className='flex items-center justify-center gap-4'>
-    <ProductMenuDrawer />
-      {/* Search */}
-      <form onSubmit={handleSearch} className="my-4 flex gap-2 w-full max-w-xl mx-auto">
-        <div className="relative flex-1">
-          {/* INPUT */}
-          <div className="relative z-20">
-            <input
-              type="text"
-              placeholder="Pretraga..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="
-                w-full p-3 rounded-xl
-                bg-black/10 backdrop-blur
-                outline-none caret-white text-white
-                placeholder:text-neutral-300
-                focus:ring-2 focus:ring-purple-400/50
-              "
-              style={{ WebkitTextFillColor: '#fff' }}
-            />
-          </div>
-          {/* SHINE BORDER — samo vizuelni overlay, bez eventa */}
-          <div className="pointer-events-none absolute inset-0 rounded-xl">
-            <ShineBorder
-              shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']}
-              duration={14}
-              borderWidth={2}
-            />
-          </div>
-        </div>
+    <div className="p-4 mx-auto w-full flex flex-col items-center justify-center">
+      <div className="flex items-center justify-center gap-4">
+        <ProductMenuDrawer />
 
-        <button
-          type="submit"
-          className="shrink-0 bg-gradient-custom text-zinc-200 px-4 py-2 rounded-full active:scale-95 transition"
-          aria-label="Pretraži proizvode"
+        {/* Search */}
+        <form
+          onSubmit={handleSearch}
+          className="my-4 flex gap-2 w-full max-w-xl mx-auto"
         >
-          <FaSearchengin />
-        </button>
-      </form>
+          <div className="relative flex-1">
+            {/* INPUT */}
+            <div className="relative z-20">
+              <input
+                type="text"
+                placeholder="Pretraga..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="
+                  w-full p-3 rounded-xl
+                  bg-black/10 backdrop-blur
+                  outline-none caret-white text-white
+                  placeholder:text-neutral-300
+                  focus:ring-2 focus:ring-purple-400/50
+                "
+                style={{ WebkitTextFillColor: '#fff' }}
+              />
+            </div>
+            {/* SHINE BORDER — samo vizuelni overlay, bez eventa */}
+            <div className="pointer-events-none absolute inset-0 rounded-xl">
+              <ShineBorder
+                shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']}
+                duration={14}
+                borderWidth={2}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="shrink-0 bg-gradient-custom text-zinc-200 px-4 py-2 rounded-full active:scale-95 transition"
+            aria-label="Pretraži proizvode"
+          >
+            <FaSearchengin />
+          </button>
+        </form>
       </div>
+
       {/* Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-2 mt-6 gap-5 w-96 lg:w-full">
+      <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
         {products.map((product) => {
           const brandName = getBrandName(product);
+          const displayPrice = cleanPrice(product.price);
+
           return (
-            <div key={productKey(product)} className="relative">
-              {/* Dekorativni border panel (iza linka) */}
-              <div className="pointer-events-none absolute inset-0 rounded-xl">
-                <ShineBorder
-                  shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']}
-                  duration={14}
-                  borderWidth={2}
-                />
-              </div>
-
-              <Link
-                href={`/products/${product.slug}`}
-                className="relative z-10 block p-4 rounded-xl transition"
-              >
-                {product.image?.sourceUrl && (
-                  <Image
-                    width={400}
-                    height={400}
-                    src={product.image.sourceUrl}
-                    alt={product.image.altText || product.name}
-                    className="w-48 h-48 object-cover mb-2 mx-auto rounded-xl"
-                  />
-                )}
-
-                <h2 className="text-md font-bold mb-1 mx-1 secondary-color">
-                  {product.name}
-                </h2>
-
-                {brandName && (
-                  <p className="text-xs text-zinc-400 mb-1 mx-1">
-                    Proizvođač: <span className="text-zinc-200">{brandName}</span>
-                  </p>
-                )}
-
-                {product.price && (
-                  <p className="text-sm font-semibold mb-2 mx-1 text-fuchsia-300">
-                    {he.decode(product.price).replace(/&nbsp;|\u00A0/g, '').trim()}
-                  </p>
-                )}
-              </Link>
-            </div>
+            <ProductCard
+              key={productKey(product)}
+              href={`/products/${product.slug}`}
+              name={product.name}
+              imageUrl={product.image?.sourceUrl ?? null}
+              imageAlt={product.image?.altText || product.name}
+              brandName={brandName}
+              price={displayPrice}
+              brandLabel="Proizvođač"
+            />
           );
         })}
       </div>
