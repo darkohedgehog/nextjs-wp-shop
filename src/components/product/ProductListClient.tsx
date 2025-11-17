@@ -296,8 +296,6 @@ export default function ProductListClient({
   return (
     <div className="p-4 mx-auto w-full flex flex-col items-center justify-center">
       <div className="flex items-center justify-center gap-4">
-        <ProductMenuDrawer />
-
         {/* Search */}
         <form
           onSubmit={handleSearch}

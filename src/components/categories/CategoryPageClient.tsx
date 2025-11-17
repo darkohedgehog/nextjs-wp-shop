@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react'; // ✅ Apollo 4.0.7 hooks
+import { useQuery } from '@apollo/client/react';
 import { client } from '@/lib/apollo-client';
-import { useParams } from 'next/navigation';
 import he from 'he';
 import { ProductCard } from '@/components/product/ProductCard';
 
@@ -78,25 +77,29 @@ const GET_PRODUCTS_BY_CATEGORY = gql`
   }
 `;
 
-// util: bezbedno izvući slug-ove iz params
-function getSlugs(params: Record<string, string | string[] | undefined>) {
-  const raw = params?.slug;
-  const arr = Array.isArray(raw) ? raw : raw ? [raw] : [];
-  return { parentSlug: arr[0] ?? null, childSlug: arr[1] ?? null };
-}
-
-// util: pročisti cenu (entiteti &nbsp; i realni NBSP)
+// util: pročisti cenu
 function cleanPrice(raw?: string | null) {
   if (!raw) return '';
   return he.decode(raw).replace(/&nbsp;|\u00A0/g, '').trim();
 }
 
-export default function CategoryPage() {
-  // Dynamic slugs
-  const params = useParams() as Record<string, string | string[] | undefined>;
-  const { parentSlug, childSlug } = getSlugs(params);
+// slug može biti string ili string[]
+function normalizeSlugParam(slug: string | string[] | undefined): string[] {
+  if (!slug) return [];
+  return Array.isArray(slug) ? slug : [slug];
+}
 
-  // Fetch category tree
+export function CategoryPageClient({
+  params,
+}: {
+  params: { slug?: string | string[] };
+}) {
+  // slug-ove dobijamo iz props-a od server route-a
+  const slugArr = normalizeSlugParam(params.slug);
+  const parentSlug = slugArr[0] ?? null;
+  const childSlug = slugArr[1] ?? null;
+
+  // 1) Kategorija (stablo)
   const {
     data: catData,
     loading: catLoading,
@@ -109,12 +112,13 @@ export default function CategoryPage() {
     notifyOnNetworkStatusChange: true,
   });
 
-  // Izračunaj trenutnu kategoriju (parent ili child)
-  const parentCat = catData?.productCategory ?? null;
+  // ⚠️ ovde TS zna da je catData: CategoryData | undefined
+  // zato prvo izvučemo "categoryData"
+  const categoryData = catData?.productCategory ?? null;
+  const parentCat = categoryData;
 
-  // children.nodes mogu imati null/undefined -> očisti
   const childNodes: Category[] = (parentCat?.children?.nodes ?? []).filter(
-    (c): c is Category => Boolean(c)
+    (c): c is Category => Boolean(c),
   );
 
   const currentCat: Category | null = parentCat
@@ -125,14 +129,13 @@ export default function CategoryPage() {
 
   const categoryId = currentCat?.databaseId ?? null;
 
-  // State za paginaciju
+  // 2) Proizvodi za aktivnu kategoriju
   const [products, setProducts] = useState<Product[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo>({
     endCursor: null,
     hasNextPage: false,
   });
 
-  // Fetch products za aktivnu (leaf) kategoriju
   const {
     data: prodData,
     loading: prodLoading,
@@ -146,18 +149,18 @@ export default function CategoryPage() {
     notifyOnNetworkStatusChange: true,
   });
 
-  // Sync product state na svaku promenu prodData
   useEffect(() => {
-    if (!prodData?.products) return;
+    // 🔒 prvo izvučemo productsData da TS suzimo
+    const productsData = prodData?.products;
+    if (!productsData) return;
 
-    const nodes = prodData.products.nodes ?? [];
+    const nodes = productsData.nodes ?? [];
     const clean = nodes.filter((p): p is Product => Boolean(p));
 
     setProducts(clean);
-
     setPageInfo({
-      endCursor: prodData.products.pageInfo?.endCursor ?? null,
-      hasNextPage: prodData.products.pageInfo?.hasNextPage ?? false,
+      endCursor: productsData.pageInfo?.endCursor ?? null,
+      hasNextPage: productsData.pageInfo?.hasNextPage ?? false,
     });
   }, [prodData]);
 
@@ -166,18 +169,22 @@ export default function CategoryPage() {
 
     const res = await fetchMore({ variables: { after: pageInfo.endCursor } });
 
-    const nodes = res?.data?.products?.nodes ?? [];
+    // opet lokalna varijabla da TS bude srećan
+    const productsData = res?.data?.products;
+    if (!productsData) return;
+
+    const nodes = productsData.nodes ?? [];
     const clean = nodes.filter((p): p is Product => Boolean(p));
 
     setProducts((prev) => [...prev, ...clean]);
 
     setPageInfo({
-      endCursor: res?.data?.products?.pageInfo?.endCursor ?? null,
-      hasNextPage: res?.data?.products?.pageInfo?.hasNextPage ?? false,
+      endCursor: productsData.pageInfo?.endCursor ?? null,
+      hasNextPage: productsData.pageInfo?.hasNextPage ?? false,
     });
   };
 
-  // Rendering logic
+  // Rendering logic / guardovi
   if (!parentSlug) {
     return (
       <p className="p-4 flex items-center justify-center text-sm paragraph-color">
@@ -185,6 +192,7 @@ export default function CategoryPage() {
       </p>
     );
   }
+
   if (catLoading && !parentCat) {
     return (
       <p className="p-4 flex items-center justify-center text-sm paragraph-color">
@@ -192,6 +200,7 @@ export default function CategoryPage() {
       </p>
     );
   }
+
   if (catError || !parentCat) {
     return (
       <p className="p-4 text-red-600 flex items-center justify-center text-sm">
@@ -199,6 +208,7 @@ export default function CategoryPage() {
       </p>
     );
   }
+
   if (!currentCat) {
     return (
       <p className="p-4 text-red-600 flex items-center justify-center text-sm">
@@ -214,7 +224,7 @@ export default function CategoryPage() {
       <h1 className="text-3xl font-bold mb-6">{currentCat.name}</h1>
 
       {showSubcategories ? (
-        // 👉 PODKATEGORIJE – isti UI kao na CategoriesPage.tsx
+        // 👉 Podkategorije – isti UI kao na CategoriesPage
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 w-full">
           {childNodes.map((sub) => (
             <ProductCard
@@ -230,7 +240,7 @@ export default function CategoryPage() {
         </div>
       ) : (
         <>
-          {/* LEAF KATEGORIJA – proizvodi, takođe isti card UI */}
+          {/* Leaf kategorija – proizvodi */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mt-6 gap-5 w-full">
             {products.map((product) => (
               <ProductCard
