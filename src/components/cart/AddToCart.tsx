@@ -2,6 +2,7 @@
 
 import { useCart } from '@/store/cart';
 import Image from 'next/image';
+import { TiShoppingCart } from "react-icons/ti";
 
 export default function AddToCartBtn(props: {
   product_id: number;
@@ -29,7 +30,7 @@ export default function AddToCartBtn(props: {
   return (
     <button
       onClick={handleAdd}
-      className="flex items-center bg-blue-600 text-white px-4 py-2 rounded"
+      className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-3xl"
     >
       {image && image.trim() !== '' && (
         <Image
@@ -37,10 +38,13 @@ export default function AddToCartBtn(props: {
           alt={imageAlt || name}
           width={24}
           height={24}
-          className="object-cover rounded mr-2"
+          priority
+          className="object-cover w-4 h-4 rounded mr-2"
         />
       )}
-      <span>Dodaj u košaricu{existingQty > 0 && ` (${existingQty})`}</span>
+      <span className='flex items-center justify-center gap-2'>
+        Dodaj u <TiShoppingCart /> {existingQty > 0 && ` (${existingQty})`}
+        </span>
     </button>
   );
 }
