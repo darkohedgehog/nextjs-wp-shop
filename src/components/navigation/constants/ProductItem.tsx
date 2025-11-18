@@ -19,13 +19,14 @@ export const ProductItem = ({
         width={140}
         height={70}
         alt={title}
-        className="flex-shrink-0 rounded-md shadow-2xl"
+        priority
+        className="shrink-0 rounded-md shadow-2xl w-36 h-32"
       />
       <div>
-        <h4 className="mb-1 text-base font-normal text-white">
+        <h4 className="mb-1 text-base font-normal text-zinc-200">
           {title}
         </h4>
-        <p className="max-w-[10rem] text-sm text-neutral-100">
+        <p className="max-w-40 text-sm text-zinc-300">
           {description}
         </p>
       </div>

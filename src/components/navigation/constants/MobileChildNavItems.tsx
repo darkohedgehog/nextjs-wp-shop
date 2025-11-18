@@ -2,7 +2,7 @@
 import { IconChevronDown } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import React, { useState } from "react";
+import { useState } from "react";
 import { ProductItem } from "./ProductItem";
 
 type NavChild = {

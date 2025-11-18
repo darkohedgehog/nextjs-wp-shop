@@ -73,9 +73,9 @@ export default async function CategoriesPage() {
 
   return (
     <div className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Kategorije proizvoda</h1>
+      <h1 className="text-3xl font-bold mb-6 secondary-color">Kategorije proizvoda</h1>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 w-full">
+      <div className="grid grid-cols-2 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
         {categories.map((cat) => (
           <ProductCard
             key={cat.id}

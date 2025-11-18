@@ -20,7 +20,7 @@ const Navbar = () => {
           title: "Proizvodi",
           href: "/products",
           src: "https://wp.zivic-elektro.shop/wp-content/uploads/2025/11/hedgehog1000_an_ecommerce_who_sells_an_elecric_material_realist_0e83b2f2-f680-4503-ad02-79f620be34ab.webp",
-          description: "Priuštite sebi kvalitetu",
+          description: "Priuštite sebi kvalitetu po povoljnim cijenama",
         },
         {
           title: "Kategorije",

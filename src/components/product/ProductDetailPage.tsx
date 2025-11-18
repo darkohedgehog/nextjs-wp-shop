@@ -86,15 +86,21 @@ export default function ProductDetailPage() {
 
   if (!slug) {
     // npr. pre nego što se klijentski router hidrira
-    return <div className="p-4">Učitavanje proizvoda…</div>;
+    return <div className="p-4 flex items-center justify-center paragraph-color">
+      Učitavanje proizvoda…
+      </div>;
   }
 
   if (loading && !data?.product) {
-    return <div className="p-4">Učitavanje proizvoda…</div>;
+    return <div className="p-4 items-center justify-center paragraph-color">
+      Učitavanje proizvoda…
+      </div>;
   }
 
   if (error || !data?.product) {
-    return <div className="p-4 text-red-600">Proizvod nije pronađen.</div>;
+    return <div className="p-4 text-red-600 flex items-center justify-center">
+      Proizvod nije pronađen.
+      </div>;
   }
 
   const product = data.product;
@@ -109,26 +115,26 @@ export default function ProductDetailPage() {
           height={600}
           src={product.image.sourceUrl}
           alt={product.image.altText || product.name}
-          className="w-full h-auto object-cover rounded"
+          className="w-56 h-56 object-cover mb-2 mx-auto rounded-xl shadow-lg shadow-blue-400"
           priority
         />
       )}
 
       <div>
-        <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-        <p className="text-xl text-green-600 mb-4">
+        <h1 className="text-2xl font-bold mb-4 text-zinc-400">{product.name}</h1>
+        <p className="text-xl text-blue-500 mb-4">
           {priceNum > 0 ? `${priceNum.toFixed(2)} €` : '—'}
         </p>
 
         {product.shortDescription && (
           <div
-            className="prose prose-lg mb-6"
+            className="prose prose-lg mb-6 text-zinc-300"
             dangerouslySetInnerHTML={{ __html: product.shortDescription }}
           />
         )}
 
         {galleryNodes.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-6">
+          <div className="grid grid-cols-2 gap-2 mb-6">
             {galleryNodes.map((img, idx) => (
               <Image
                 width={200}
@@ -136,7 +142,8 @@ export default function ProductDetailPage() {
                 key={`${img.sourceUrl}-${idx}`}
                 src={img.sourceUrl}
                 alt={img.altText || product.name}
-                className="w-40 h-40 object-cover rounded"
+                priority
+                className="w-44 h-44 object-cover mb-2 mx-auto rounded-xl"
               />
             ))}
           </div>
