@@ -8,6 +8,7 @@ export type CartItem = {
   quantity: number;
   image: string; // URL
   imageAlt: string;
+  sku?: string;
 };
 
 type CartState = {

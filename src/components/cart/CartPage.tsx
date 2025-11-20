@@ -33,6 +33,9 @@ export default function CartPage() {
             )}
             <div>
               <h2 className="font-semibold">{item.name}</h2>
+              {item.sku && (
+             <p className="text-xs text-zinc-500">SKU: {item.sku}</p>
+               )}
               <p>
                 {item.price.toFixed(2)} € x {item.quantity} ={' '}
                 {(item.price * item.quantity).toFixed(2)} €

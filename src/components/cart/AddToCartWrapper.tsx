@@ -10,6 +10,7 @@ export default function AddToCartWrapper(props: {
   imageAlt?: string;
   disabled?: boolean;
   quantity?: number;
+  sku?: string;
 }) {
   return <AddToCartBtn {...props} />;
 }

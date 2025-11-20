@@ -12,8 +12,9 @@ export default function AddToCartBtn(props: {
   imageAlt?: string;
   disabled?: boolean;
   quantity?: number;
+  sku?: string;
 }) {
-  const { product_id, name, price, image, imageAlt, disabled, quantity } = props;
+  const { product_id, name, price, image, imageAlt, disabled, quantity, sku } = props;
   const addItem = useCart((s) => s.addItem);
   const items = useCart((s) => s.items);
   const existingQty = items.find((i) => i.product_id === product_id)?.quantity || 0;
@@ -31,6 +32,7 @@ export default function AddToCartBtn(props: {
       quantity: qtyToAdd,
       image: image ?? '',
       imageAlt: imageAlt ?? name,
+      sku: sku ?? '',
     });
   };
 
@@ -56,8 +58,8 @@ export default function AddToCartBtn(props: {
         />
       )}
 
-      <span className="flex items-center justify-center gap-2">
-        Dodaj u <TiShoppingCart /> {existingQty > 0 && `(${existingQty})`}
+      <span className="flex items-center justify-center gap-2 text-zinc-300">
+        Dodaj u <TiShoppingCart className='text-green-400' /> {existingQty > 0 && `(${existingQty})`}
       </span>
     </button>
   );

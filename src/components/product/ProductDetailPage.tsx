@@ -8,8 +8,11 @@ import he from 'he';
 import Image from 'next/image';
 import Link from 'next/link';
 import AddToCartWrapper from '@/components/cart/AddToCartWrapper';
+import { useRouter } from 'next/navigation';
 import { PiEyeClosedLight } from "react-icons/pi";
 import { HiArrowNarrowRight, HiArrowLeft } from "react-icons/hi";
+import { TbShoppingCartMinus, TbShoppingCartPlus } from 'react-icons/tb';
+import { IoReturnDownBackOutline } from 'react-icons/io5';
 
 // --- Tipovi ---
 type GalleryImage = {
@@ -104,6 +107,7 @@ export default function ProductDetailPage() {
   // Next App Router: useParams može vratiti string ili string[]
   const params = useParams() as Record<string, string | string[] | undefined>;
   const slug = getSlugParam(params, 'slug');
+  const router = useRouter();
 
   const { data, loading, error } = useQuery<{ product: Product }>(GET_PRODUCT, {
     variables: { id: slug as string },
@@ -326,14 +330,14 @@ const handleQuantityChange = (value: number) => {
         )}
 
   <div>
-        <h1 className="text-2xl font-bold text-zinc-400 mb-1">
+        <h1 className="text-2xl font-bold text-zinc-300 mb-2">
          {product.name}
         </h1>
         {/* SKU + EAN */}
-         <div className="text-sm text-zinc-400 space-y-0.5 mb-2">
+         <div className="text-sm text-zinc-400 space-y-0.5 mb-3">
         {product.sku && (
          <p>
-        <span className="font-semibold text-zinc-200">SKU:</span> {product.sku}
+        <span className="font-semibold text-zinc-400">SKU:</span> {product.sku}
           </p>
          )}
          {ean && (
@@ -360,14 +364,14 @@ const handleQuantityChange = (value: number) => {
     </div>
           {product.shortDescription && (
             <div
-              className="prose prose-lg mb-6 text-zinc-300"
+              className="prose prose-lg mb-8 text-zinc-300"
               dangerouslySetInnerHTML={{ __html: product.shortDescription }}
             />
           )}
 
           {/* Gallery slike */}
           {galleryNodes.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 mb-6">
+            <div className="grid grid-cols-2 gap-2 mb-8">
               {galleryNodes.map((img, idx) => {
                 // ako postoji mainImage, gallery počinje od indexa 1, inače od 0
                 const baseIndex = mainImage ? 1 : 0;
@@ -394,14 +398,14 @@ const handleQuantityChange = (value: number) => {
       {/* Količina */}
       <div className="mb-4 flex items-center gap-3">
         <span className="text-sm text-zinc-300">Količina:</span>
-        <div className="inline-flex items-center rounded-lg border border-zinc-600 shadow-lg shadow-blue-400">
+        <div className="inline-flex items-center rounded-lg bg-blue-500 border border-zinc-600 shadow-lg shadow-blue-400">
           <button
             type="button"
             onClick={() => handleQuantityChange(quantity - 1)}
             disabled={!isInStock || quantity <= 1}
             className="px-3 py-2 text-lg text-red-600 disabled:opacity-40"
           >
-            -
+            <TbShoppingCartMinus />
           </button>
           <input
             type="number"
@@ -425,7 +429,7 @@ const handleQuantityChange = (value: number) => {
             }
             className="px-3 py-2 text-lg text-green-400 disabled:opacity-40"
           >
-            +
+            <TbShoppingCartPlus />
           </button>
         </div>
         {product?.stockQuantity != null && (
@@ -434,7 +438,7 @@ const handleQuantityChange = (value: number) => {
           </span>
         )}
       </div>
-          <div className="mt-6 flex items-center gap-4">
+          <div className="mt-12 flex items-center gap-4">
             <AddToCartWrapper
               product_id={product.databaseId}
               name={product.name}
@@ -443,10 +447,21 @@ const handleQuantityChange = (value: number) => {
               imageAlt={product.image?.altText || product.name}
               disabled={!isInStock}
               quantity={quantity}
+              sku={product.sku || ''}
             />
             <Link href="/cart" className="text-blue-600 hover:underline">
               Vidi košaricu
             </Link>
+          </div>
+          <div className='flex items-center justify-center mt-8'>
+          <button className='mt-8 cursor-pointer'
+        onClick={() => router.back()}>
+          <span className='paragraph-color uppercase text-sm flex items-center justify-center gap-2'>
+          <IoReturnDownBackOutline className='w-5 h-5' />
+            Nazad
+            </span>
+        </button>  
+
           </div>
         </div>
       </div>
