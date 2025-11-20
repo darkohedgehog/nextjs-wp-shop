@@ -8,6 +8,8 @@ export default function AddToCartWrapper(props: {
   price: number;
   image?: string;
   imageAlt?: string;
+  disabled?: boolean;
+  quantity?: number;
 }) {
   return <AddToCartBtn {...props} />;
 }

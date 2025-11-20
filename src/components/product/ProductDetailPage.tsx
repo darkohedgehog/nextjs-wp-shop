@@ -17,6 +17,11 @@ type GalleryImage = {
   altText?: string | null;
 };
 
+type ProductMeta = {
+  key: string;
+  value: string;
+};
+
 type Product = {
   databaseId: number;
   id: string;
@@ -27,6 +32,12 @@ type Product = {
   shortDescription?: string | null;
   image?: { sourceUrl: string; altText?: string | null } | null;
   galleryImages?: { nodes: GalleryImage[] } | null;
+
+  // Novo:
+  sku?: string | null;
+  stockStatus?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'ON_BACKORDER' | string;
+  stockQuantity?: number | null;
+  metaData?: ProductMeta[];
 };
 
 // --- GraphQL ---
@@ -38,9 +49,15 @@ const GET_PRODUCT = gql`
       name
       slug
       shortDescription
+
       ... on SimpleProduct {
+        sku
+        stockStatus
+        stockQuantity
+
         price(format: RAW)
         regularPrice(format: RAW)
+
         image {
           sourceUrl
           altText
@@ -50,6 +67,11 @@ const GET_PRODUCT = gql`
             sourceUrl
             altText
           }
+        }
+
+        metaData {
+          key
+          value
         }
       }
     }
@@ -98,6 +120,17 @@ export default function ProductDetailPage() {
   const product = data?.product ?? null;
   const galleryNodes = product?.galleryImages?.nodes ?? [];
 
+  // EAN / barcode iz metaData – prilagodi ključeve ako tvoj plugin koristi druge
+const ean =
+product?.metaData?.find((m) =>
+  ['_ean', 'ean', '_barcode', 'barcode', 'EAN', 'BARCODE', 'GTIN', 'UPC'].includes(
+    m.key.trim()
+  )
+)?.value ?? null;
+
+// Da li je proizvod na zalihi
+const isInStock = product?.stockStatus === 'IN_STOCK';
+
   const mainImage: GalleryImage | null =
     product?.image?.sourceUrl
       ? {
@@ -116,6 +149,28 @@ export default function ProductDetailPage() {
   const priceNum = parsePrice(
     product?.price ?? product?.regularPrice ?? undefined
   );
+
+  const [quantity, setQuantity] = useState<number>(1);
+
+useEffect(() => {
+  // kad se promijeni proizvod, resetuj količinu
+  setQuantity(1);
+}, [product?.databaseId]);
+
+const handleQuantityChange = (value: number) => {
+  if (Number.isNaN(value)) return;
+
+  let next = value;
+
+  if (!next || next < 1) next = 1;
+
+  // ako imaš info o stockQuantity, limitiraj
+  if (product?.stockQuantity != null) {
+    next = Math.min(next, product.stockQuantity);
+  }
+
+  setQuantity(next);
+};
 
   // ESC + strelice levo/desno na tastaturi
   useEffect(() => {
@@ -270,14 +325,39 @@ export default function ProductDetailPage() {
           />
         )}
 
-        <div>
-          <h1 className="text-2xl font-bold mb-4 text-zinc-400">
-            {product.name}
-          </h1>
-          <p className="text-xl text-blue-500 mb-4">
-            {priceNum > 0 ? `${priceNum.toFixed(2)} €` : '—'}
+  <div>
+        <h1 className="text-2xl font-bold text-zinc-400 mb-1">
+         {product.name}
+        </h1>
+        {/* SKU + EAN */}
+         <div className="text-sm text-zinc-400 space-y-0.5 mb-2">
+        {product.sku && (
+         <p>
+        <span className="font-semibold text-zinc-200">SKU:</span> {product.sku}
           </p>
+         )}
+         {ean && (
+         <p>
+           <span className="font-semibold text-zinc-500">EAN:</span> {ean}
+         </p>
+             )}
+        </div>
 
+      {/* Cena + status zalihe */}
+     <div className="flex items-center gap-3 mb-4">
+          <p className="text-xl text-blue-500">
+            {priceNum > 0 ? `${priceNum.toFixed(2)} €` : '—'}
+            </p>
+
+          {product.stockStatus && (
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide
+            ${
+            isInStock
+              ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/40'
+              : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/40'}`}>
+              {isInStock ? 'Na zalihi' : 'Nema na zalihi'}
+              </span>)}
+    </div>
           {product.shortDescription && (
             <div
               className="prose prose-lg mb-6 text-zinc-300"
@@ -311,6 +391,49 @@ export default function ProductDetailPage() {
             </div>
           )}
 
+      {/* Količina */}
+      <div className="mb-4 flex items-center gap-3">
+        <span className="text-sm text-zinc-300">Količina:</span>
+        <div className="inline-flex items-center rounded-lg border border-zinc-600 shadow-lg shadow-blue-400">
+          <button
+            type="button"
+            onClick={() => handleQuantityChange(quantity - 1)}
+            disabled={!isInStock || quantity <= 1}
+            className="px-3 py-2 text-lg text-red-600 disabled:opacity-40"
+          >
+            -
+          </button>
+          <input
+            type="number"
+            min={1}
+            max={product.stockQuantity ?? undefined}
+            value={quantity}
+            onChange={(e) =>
+              handleQuantityChange(parseInt(e.target.value, 10))
+            }
+            disabled={!isInStock}
+            className="w-14 bg-transparent text-center text-zinc-100 outline-none px-1 py-2 [appearance:textfield]
+                       [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+          <button
+            type="button"
+            onClick={() => handleQuantityChange(quantity + 1)}
+            disabled={
+              !isInStock ||
+              (product?.stockQuantity != null &&
+                quantity >= product.stockQuantity)
+            }
+            className="px-3 py-2 text-lg text-green-400 disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
+        {product?.stockQuantity != null && (
+          <span className="text-xs text-zinc-300">
+            Na zalihi: {product.stockQuantity}
+          </span>
+        )}
+      </div>
           <div className="mt-6 flex items-center gap-4">
             <AddToCartWrapper
               product_id={product.databaseId}
@@ -318,6 +441,8 @@ export default function ProductDetailPage() {
               price={priceNum}
               image={product.image?.sourceUrl || ''}
               imageAlt={product.image?.altText || product.name}
+              disabled={!isInStock}
+              quantity={quantity}
             />
             <Link href="/cart" className="text-blue-600 hover:underline">
               Vidi košaricu
