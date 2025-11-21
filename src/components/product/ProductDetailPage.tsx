@@ -12,7 +12,8 @@ import { useRouter } from 'next/navigation';
 import { PiEyeClosedLight } from "react-icons/pi";
 import { HiArrowNarrowRight, HiArrowLeft } from "react-icons/hi";
 import { TbShoppingCartMinus, TbShoppingCartPlus } from 'react-icons/tb';
-import { IoReturnDownBackOutline } from 'react-icons/io5';
+import { TiShoppingCart } from 'react-icons/ti';
+import { GiReturnArrow } from 'react-icons/gi';
 
 // --- Tipovi ---
 type GalleryImage = {
@@ -398,7 +399,7 @@ const handleQuantityChange = (value: number) => {
       {/* Količina */}
       <div className="mb-4 flex items-center gap-3">
         <span className="text-sm text-zinc-300">Količina:</span>
-        <div className="inline-flex items-center rounded-lg bg-blue-500 border border-zinc-600 shadow-lg shadow-blue-400">
+        <div className="inline-flex items-center rounded-lg bg-[#f8f9fa] border border-[#adb5bd] shadow-lg shadow-[#adb5bd]">
           <button
             type="button"
             onClick={() => handleQuantityChange(quantity - 1)}
@@ -416,7 +417,7 @@ const handleQuantityChange = (value: number) => {
               handleQuantityChange(parseInt(e.target.value, 10))
             }
             disabled={!isInStock}
-            className="w-14 bg-transparent text-center text-zinc-100 outline-none px-1 py-2 [appearance:textfield]
+            className="w-14 bg-transparent text-center text-zinc-700 outline-none px-1 py-2 [appearance:textfield]
                        [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           <button
@@ -449,21 +450,27 @@ const handleQuantityChange = (value: number) => {
               quantity={quantity}
               sku={product.sku || ''}
             />
-            <Link href="/cart" className="text-blue-600 hover:underline">
-              Vidi košaricu
+            <div>
+            <Link href="/cart">
+              <button
+              type='button'
+              className='bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff]'>
+              Košarica
+              <span><TiShoppingCart className='text-[#343a40]' /></span>
+              </button>
             </Link>
+            </div>
           </div>
-          <div className='flex items-center justify-center mt-8'>
-          <button className='mt-8 cursor-pointer'
+        </div>
+        <div className='flex items-center justify-center mt-8'>
+          <button className='mt-8 bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff]'
         onClick={() => router.back()}>
-          <span className='paragraph-color uppercase text-sm flex items-center justify-center gap-2'>
-          <IoReturnDownBackOutline className='w-5 h-5' />
+          <span className='uppercase text-sm font-bold flex items-center justify-center gap-2'>
+          <GiReturnArrow className='w-5 h-5' />
             Nazad
             </span>
         </button>  
-
           </div>
-        </div>
       </div>
     </>
   );

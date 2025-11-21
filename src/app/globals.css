@@ -105,11 +105,17 @@
   --secondary-color: rgba(0, 150, 199, 1);
   --paragraph-color: rgb(199, 143, 255);
   --border-color: rgb(165, 180, 252);
+  --button-color: rgba(248,249,250);
 }
 .primary-color { color: var(--primary-color); }
 .secondary-color { color: var(--secondary-color); }
 .paragraph-color { color: var(--paragraph-color); }
 .border-color { color: var(--border-color); }
+.button-color { color: var(--button-color);}
+
+.bg-button-color {
+  background-color: rgba(248,249,250);
+}
 
 .bg-gradient-custom {
   background: linear-gradient(

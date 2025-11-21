@@ -6,9 +6,9 @@ import he from 'he';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ShineBorder } from '../ui/shine-border';
-import ProductMenuDrawer from '../navigation/ProductMenuDrawer';
 import { FaSearchengin } from 'react-icons/fa';
 import { ProductCard } from './ProductCard';
+import { FaSpinner } from 'react-icons/fa6';
 
 // ——— Types ———
 type Brand = { name?: string | null; slug?: string | null };
@@ -365,10 +365,11 @@ export default function ProductListClient({
         <div className="mt-6 text-center">
           <button
             onClick={loadMore}
-            className="bg-gradient-custom text-zinc-200 px-6 py-2 rounded-xl disabled:opacity-50"
+            className="bg-gradient-custom text-zinc-100 px-6 py-2 rounded-xl disabled:opacity-50 flex items-center justify-center gap-3"
             disabled={loading || networkStatus === 3 /* refetch */}
           >
-            {loading ? 'Učitavanje…' : 'Učitaj više...'}
+            {loading ? 'Učitavanje…' : 'Učitaj više'}
+            <span><FaSpinner /></span>
           </button>
         </div>
       )}
@@ -376,9 +377,13 @@ export default function ProductListClient({
       {loading && !products.length && (
         <p className="mt-4 text-center">Učitavanje…</p>
       )}
-      {error && <p className="mt-4 text-red-600">Greška: {error.message}</p>}
+      {error && <p className="flex items-center justify-center mt-4 text-red-600">
+                 Greška: {error.message}
+               </p>}
       {!loading && !error && !products.length && (
-        <p className="mt-4 text-center text-gray-400">Nema rezultata.</p>
+        <p className="mt-4 text-center flex items-center justify-center text-gray-400">
+          Nema rezultata
+          </p>
       )}
     </div>
   );

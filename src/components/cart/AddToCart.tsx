@@ -41,10 +41,10 @@ export default function AddToCartBtn(props: {
       onClick={handleAdd}
       disabled={disabled}
       className={`
-        flex items-center px-4 py-2 rounded-3xl transition
+        flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd]
         ${disabled
           ? 'bg-gray-500 cursor-not-allowed opacity-60'
-          : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'}
+          : 'bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer'}
       `}
     >
       {image && image.trim() !== '' && (
@@ -54,12 +54,12 @@ export default function AddToCartBtn(props: {
           width={24}
           height={24}
           priority
-          className="object-cover w-4 h-4 rounded mr-2"
+          className="object-cover w-4 h-4 rounded mr-2 border border-[#adb5bd]"
         />
       )}
 
-      <span className="flex items-center justify-center gap-2 text-zinc-300">
-        Dodaj u <TiShoppingCart className='text-green-400' /> {existingQty > 0 && `(${existingQty})`}
+      <span className="flex items-center justify-center gap-2 text-[#007bff]">
+        Dodaj u <TiShoppingCart className='text-[#343a40]' /> {existingQty > 0 && `(${existingQty})`}
       </span>
     </button>
   );

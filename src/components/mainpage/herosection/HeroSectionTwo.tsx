@@ -3,6 +3,8 @@ import { motion } from "motion/react";
 import Marquee from "react-fast-marquee";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { MdOutlinePhoneForwarded } from "react-icons/md";
+import Link from "next/link";
 
 export function HeroSectionTwo() {
   return (
@@ -49,9 +51,14 @@ export function HeroSectionTwo() {
           </h2>
         </div>
         <div className="group relative z-10 mb-10">
-          <button className="rounded-lg bg-black px-8 py-2 font-medium text-white shadow-[0px_-2px_0px_0px_rgba(255,255,255,0.4)_inset] dark:bg-white dark:text-black">
-            Book a call
+          <Link href='/contact'>
+          <button
+           type="button"
+           className="bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff] font-semibold">
+            Kontakt
+            <span><MdOutlinePhoneForwarded className="w-5 h-5" /></span>
           </button>
+          </Link>
         </div>
         <LogoCloudMarquee />
       </div>
