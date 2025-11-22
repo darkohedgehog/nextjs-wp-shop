@@ -8,41 +8,43 @@ import { SkeletonThree } from "./SkeletonThree";
 import { SkeletonFour } from "./SkeletonFour";
 import { ShineBorder } from "@/components/ui/shine-border";
 import Link from "next/link";
+import { FaTruckFast } from "react-icons/fa6";
+import { MdWorkspacePremium } from "react-icons/md";
 
 
 export function IntroductionSection() {
   const features = [
     {
-      title: "Track issues effectively",
+      title: "Kategorije proizvoda",
       href: "/categories",
       description:
-        "Track and manage your project issues with ease using our intuitive interface.",
+        "Istražite našu trgovinu i otkrijte savršene proizvode za vaš dom",
       skeleton: <SkeletonOne />,
       className:
         "col-span-1 lg:col-span-4 border-b lg:border-r border-[#A07CFE]",
         
     },
     {
-      title: "Capture pictures with AI",
+      title: "Istražite našu ponudu",
       href: "/products",
       description:
-        "Capture stunning photos effortlessly using our advanced AI technology.",
+        "Posjetite nas sada i uljepšajte svoj dom s našim vrhunskim proizvodima",
       skeleton: <SkeletonTwo />,
       className: "border-b col-span-1 lg:col-span-2 border-[#FE8FB5]",
     },
     {
-      title: "Watch our AI on YouTube",
+      title: "WiFi smart vanjska kamera",
       description:
-        "Whether its you or Tyler Durden, you can get to know about our product on YouTube",
+        "Laka kontrola kamere preko aplikacije i vašeg mobitela",
       skeleton: <SkeletonThree />,
       className:
         "col-span-1 lg:col-span-3 lg:border-r border-[#FFBE7B]",
     },
     {
-      title: "Deploy in seconds",
+      title: "Budimo u kontaktu",
       href: "/contact",
       description:
-        "With our blazing fast, state of the art, cutting edge, we are so back cloud servies (read AWS) - you can deploy your model in seconds.",
+        "Trebate pomoć ili savjet? Slobodno nas pozovite ili posjetite",
       skeleton: <SkeletonFour />,
       className: "col-span-1 lg:col-span-3 border-b lg:border-none",
     },
@@ -51,13 +53,13 @@ export function IntroductionSection() {
     <div className="relative z-20 py-10 lg:py-40 max-w-7xl mx-auto">
       <div className="px-8">
         <h4 className="text-3xl lg:text-5xl lg:leading-tight max-w-5xl mx-auto text-center tracking-tight font-medium secondary-color">
-          Packed with thousands of features
+          Moderan izgled vašeg doma
         </h4>
 
-        <p className="text-lg lg:text-xl  max-w-2xl  my-4 mx-auto text-center font-normal paragraph-color">
-          From Image generation to video generation, Everything AI has APIs for
-          literally everything. It can even create this website copy for you.
-        </p>
+        <div className="flex items-center justify-center text-lg lg:text-xl  max-w-2xl  my-4 mx-auto text-center font-normal paragraph-color gap-2">
+        <span className="flex items-center justify-center gap-2"><FaTruckFast /> Brza dostava</span> 
+        | <span className="flex items-center justify-center gap-2"><MdWorkspacePremium />Kvalitet proizvoda</span>
+        </div>
       </div>
       <div className="relative">
        <ShineBorder shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]} />
