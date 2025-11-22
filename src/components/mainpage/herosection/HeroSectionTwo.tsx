@@ -12,7 +12,7 @@ export function HeroSectionTwo() {
       <div className="relative flex flex-col items-center justify-center overflow-hidden px-8 pb-4 md:px-8">
         <div className="relative mt-20 flex flex-col items-center justify-center">
           <FeaturedImages />
-          <h1 className="mb-8relative mx-auto mt-4 max-w-6xl text-center text-3xl font-bold tracking-tight text-zinc-300 md:text-4xl lg:text-7xl">
+          <h1 className="mb-8 relative mx-auto mt-4 max-w-6xl text-center text-3xl font-bold tracking-tight text-zinc-300 md:text-4xl lg:text-7xl">
           Opremite svoj dom s našim  {" "}
             <span className="relative z-10 bg-linear-to-b from-indigo-700 to-indigo-600 bg-clip-text text-transparent">
             vrhunskim proizvodima
