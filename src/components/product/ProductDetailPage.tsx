@@ -8,12 +8,11 @@ import he from 'he';
 import Image from 'next/image';
 import Link from 'next/link';
 import AddToCartWrapper from '@/components/cart/AddToCartWrapper';
-import { useRouter } from 'next/navigation';
 import { PiEyeClosedLight } from "react-icons/pi";
 import { HiArrowNarrowRight, HiArrowLeft } from "react-icons/hi";
 import { TbShoppingCartMinus, TbShoppingCartPlus } from 'react-icons/tb';
 import { TiShoppingCart } from 'react-icons/ti';
-import { GiReturnArrow } from 'react-icons/gi';
+import BackButton from '../ui/BackButton';
 
 // --- Tipovi ---
 type GalleryImage = {
@@ -108,7 +107,7 @@ export default function ProductDetailPage() {
   // Next App Router: useParams može vratiti string ili string[]
   const params = useParams() as Record<string, string | string[] | undefined>;
   const slug = getSlugParam(params, 'slug');
-  const router = useRouter();
+ 
 
   const { data, loading, error } = useQuery<{ product: Product }>(GET_PRODUCT, {
     variables: { id: slug as string },
@@ -462,15 +461,7 @@ const handleQuantityChange = (value: number) => {
             </div>
           </div>
         </div>
-        <div className='flex items-center justify-center mt-8'>
-          <button className='mt-8 bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff]'
-        onClick={() => router.back()}>
-          <span className='uppercase text-sm font-bold flex items-center justify-center gap-2'>
-          <GiReturnArrow className='w-5 h-5' />
-            Nazad
-            </span>
-        </button>  
-          </div>
+        <BackButton />
       </div>
     </>
   );
