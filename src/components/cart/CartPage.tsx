@@ -7,6 +7,7 @@ import CartQty from './CartQty';
 import { TiShoppingCart } from 'react-icons/ti';
 import BackButton from '../ui/BackButton';
 import { GiPayMoney } from 'react-icons/gi';
+import { TbMoodSad } from 'react-icons/tb';
 
 export default function CartPage() {
   const items = useCart((s) => s.items);
@@ -25,9 +26,10 @@ export default function CartPage() {
       height={200}
       priority 
       className='max-w-2xl h-auto object-cover'/>
-      <h1 className='text-3xl paragraph-color my-24'>
+      <div className='text-3xl paragraph-color my-24 flex items-center justify-center gap-3'>
         Vaša košarica je prazna
-      </h1>
+        <span className='text-zinc-300'><TbMoodSad /></span>
+      </div>
     <BackButton />
     </div>;
   }
