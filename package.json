@@ -11,6 +11,7 @@
   "dependencies": {
     "@apollo/client": "^4.0.7",
     "@apollo/client-integration-nextjs": "^0.14.1",
+    "@lottiefiles/dotlottie-react": "^0.17.8",
     "@tabler/icons-react": "^3.35.0",
     "clsx": "^2.1.1",
     "cobe": "^0.6.5",

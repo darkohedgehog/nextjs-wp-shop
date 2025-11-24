@@ -7,7 +7,7 @@ import Image from 'next/image';
 import BackButton from '../ui/BackButton';
 import { TbEyeCheck, TbMoodSad, TbTruckDelivery } from 'react-icons/tb';
 import { IoMdInformationCircleOutline } from 'react-icons/io';
-import { GiPayMoney } from 'react-icons/gi';
+import { GiNotebook, GiPayMoney } from 'react-icons/gi';
 import { LuPackageCheck } from 'react-icons/lu';
 
 // Tip za billing i shipping
@@ -36,6 +36,7 @@ export default function CheckoutPage() {
     cod: 'Cash on Delivery',
     bacs: 'Direct Bank Transfer',
   };
+  const [note, setNote] = useState('');
 
 
   // Inicijalno prazni billing i shipping
@@ -89,6 +90,7 @@ export default function CheckoutPage() {
       billing,
       shipping,
       line_items,
+      customer_note: note,
       shipping_lines: [
         { method_id: 'flat_rate', method_title: 'Flat Rate', total: shippingCost.toFixed(2) },
       ],
@@ -333,7 +335,20 @@ export default function CheckoutPage() {
               </div>
             </>
           )}
-  
+           <div className="mt-6 space-y-2">
+          <div className="text-center text-xl font-semibold tracking-tight text-zinc-300 md:text-2xl lg:text-2xl flex items-center justify-center gap-3">
+          Napomena uz narudžbu
+         <span className='primary-color'><GiNotebook /></span>
+           </div>
+
+          <textarea
+            name="note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Npr. nazvati prije dostave, ostaviti paket kod susjeda, poslati R1 račun…"
+            rows={4}
+            className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 resize-none"/>
+          </div>
           <div className="text-center text-xl font-semibold tracking-tight text-zinc-300 md:text-2xl lg:text-2xl flex items-center justify-center gap-3 mt-6">
             Način plaćanja
             <span className='primary-color'><GiPayMoney /></span>

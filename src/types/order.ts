@@ -30,5 +30,6 @@ export type Address = {
     payment_method: string;
     payment_method_title: string;
     line_items: LineItem[];
+    customer_note?: string | null;
     shipping_lines: ShippingLine[];
   };

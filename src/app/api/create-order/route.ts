@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { CreateOrderRequest } from '@/types/order';
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,7 @@ export async function POST(req: NextRequest) {
       payment_method,
       payment_method_title,
       line_items,
+      customer_note,
       shipping_lines,
     }: CreateOrderRequest = await req.json();
 
@@ -26,6 +28,7 @@ export async function POST(req: NextRequest) {
       billing,
       shipping,
       line_items,
+      customer_note,
       shipping_lines,
       status: 'processing',
     };
