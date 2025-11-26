@@ -48,7 +48,7 @@ export function ProductCard({
           />
         )}
 
-        <h2 className="text-md font-bold mb-1 mx-1 secondary-color">
+        <h2 className="text-md font-bold mb-1 mx-1 secondary-color line-clamp-2">
           {name}
         </h2>
 

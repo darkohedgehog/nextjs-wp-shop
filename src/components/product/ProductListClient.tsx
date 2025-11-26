@@ -19,10 +19,14 @@ interface Product {
   name: string;
   slug: string;
   description?: string | null;
-  date?: string | null; // ⬅️ za sortiranje po datumu
-  price?: string | null; // SimpleProduct
-  image?: { sourceUrl: string; altText?: string | null } | null; // SimpleProduct
-  terms?: { nodes?: Brand[] } | null; // PWB_BRAND termini
+  date?: string | null;
+  price?: string | null;
+  image?: { sourceUrl: string; altText?: string | null } | null;
+  terms?: { nodes?: Brand[] } | null;
+
+  effectivePrice?: number;
+  regularPrice?: number;
+  discountPercent?: number;
 }
 
 interface PageInfo {
@@ -50,18 +54,15 @@ const GET_PRODUCTS = gql`
         slug
         description
 
-        # ⬇️ datum tražimo preko interfejsa
         ... on Product {
           date
         }
 
-        # price / image su samo na SimpleProduct
         ... on SimpleProduct {
           price
           image { sourceUrl altText }
         }
 
-        # PWB brend termini — za sve tipove
         ... on SimpleProduct {
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
             nodes { __typename ... on PwbBrand { name slug } ... on TermNode { name slug } }
@@ -224,6 +225,9 @@ export default function ProductListClient({
   const [pageInfo, setPageInfo] = useState<PageInfo>(
     initialPageInfo ?? { endCursor: null, hasNextPage: false },
   );
+  const [priceMap, setPriceMap] = useState<
+    Record<number, { effective: number; regular: number; discountPercent: number }>
+  >({});
 
   // ——— Query ———
   const { data, loading, error, fetchMore, refetch, networkStatus } =
@@ -270,6 +274,113 @@ export default function ProductListClient({
     }
   };
 
+  // ——— B2B/B2C cene preko REST-a (WC) ———
+  useEffect(() => {
+    const ids = Array.from(
+      new Set(
+        (products ?? [])
+          .map((p) => p.databaseId)
+          .filter((id): id is number => typeof id === 'number'),
+      ),
+    );
+
+    if (!ids.length) return;
+
+    (async () => {
+      try {
+        const params = new URLSearchParams();
+        params.set('include', ids.join(','));
+        params.set('per_page', String(ids.length));
+
+        // 👇 pripremi header sa JWT-om iz localStorage (wpUser)
+        let headers: Record<string, string> = {};
+
+        try {
+          if (typeof window !== 'undefined') {
+            const raw = localStorage.getItem('wpUser');
+            if (raw) {
+              const user = JSON.parse(raw);
+              const token: string | undefined =
+                user?.token ?? user?.data?.token ?? user?.jwt;
+
+              if (token && typeof token === 'string') {
+                headers.Authorization = `Bearer ${token}`;
+              }
+            }
+          }
+        } catch (e) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('Ne mogu da pročitam wpUser iz localStorage:', e);
+          }
+        }
+
+        const res = await fetch(`/api/products?${params.toString()}`, {
+          headers,
+        });
+
+        if (!res.ok) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn(
+              'Ne mogu da dohvatim B2B cene:',
+              res.status,
+              await res.text(),
+            );
+          }
+          // fallback: ne punimo priceMap → koristi GraphQL price
+          return;
+        }
+
+        type RestProduct = {
+          id: number;
+          price?: string;
+          regular_price?: string;
+          zvo_regular_price?: number;
+          zvo_effective_price?: number;
+          zvo_discount_percent?: number;
+        };
+
+        const restProducts: RestProduct[] = await res.json();
+
+        const map: Record<
+          number,
+          { effective: number; regular: number; discountPercent: number }
+        > = {};
+
+        for (const p of restProducts) {
+          const regular =
+            typeof p.zvo_regular_price === 'number'
+              ? p.zvo_regular_price
+              : Number(p.regular_price ?? p.price ?? 0);
+
+          const effective =
+            typeof p.zvo_effective_price === 'number'
+              ? p.zvo_effective_price
+              : Number(p.price ?? p.regular_price ?? 0);
+
+          let discountPercent =
+            typeof p.zvo_discount_percent === 'number'
+              ? p.zvo_discount_percent
+              : 0;
+
+          if (!discountPercent && regular > 0 && effective < regular) {
+            discountPercent = Math.round(
+              ((regular - effective) / regular) * 100,
+            );
+          }
+
+          map[p.id] = { effective, regular, discountPercent };
+        }
+
+        setPriceMap(map);
+      } catch (err) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('Greška pri dohvaćanju B2B cena:', err);
+        }
+        // fallback: ostavi priceMap prazno → koristi GraphQL price
+      }
+    })();
+  }, [products]);
+
   // ——— Search submit ———
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,7 +413,6 @@ export default function ProductListClient({
           className="my-4 flex gap-2 w-full max-w-xl mx-auto"
         >
           <div className="relative flex-1">
-            {/* INPUT */}
             <div className="relative z-20">
               <input
                 type="text"
@@ -319,7 +429,6 @@ export default function ProductListClient({
                 style={{ WebkitTextFillColor: '#fff' }}
               />
             </div>
-            {/* SHINE BORDER — samo vizuelni overlay, bez eventa */}
             <div className="pointer-events-none absolute inset-0 rounded-xl">
               <ShineBorder
                 shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']}
@@ -343,7 +452,15 @@ export default function ProductListClient({
       <div className="grid grid-cols-2 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
         {products.map((product) => {
           const brandName = getBrandName(product);
-          const displayPrice = cleanPrice(product.price);
+
+          const priceInfo =
+            typeof product.databaseId === 'number'
+              ? priceMap[product.databaseId]
+              : undefined;
+
+          const displayPrice = priceInfo
+            ? `${priceInfo.effective.toFixed(2)} €`
+            : cleanPrice(product.price);
 
           return (
             <ProductCard
@@ -369,7 +486,9 @@ export default function ProductListClient({
             disabled={loading || networkStatus === 3 /* refetch */}
           >
             {loading ? 'Učitavanje…' : 'Učitaj više'}
-            <span><FaSpinner /></span>
+            <span>
+              <FaSpinner />
+            </span>
           </button>
         </div>
       )}
@@ -377,13 +496,15 @@ export default function ProductListClient({
       {loading && !products.length && (
         <p className="mt-4 text-center">Učitavanje…</p>
       )}
-      {error && <p className="flex items-center justify-center mt-4 text-red-600">
-                 Greška: {error.message}
-               </p>}
+      {error && (
+        <p className="flex items-center justify-center mt-4 text-red-600">
+          Greška: {error.message}
+        </p>
+      )}
       {!loading && !error && !products.length && (
         <p className="mt-4 text-center flex items-center justify-center text-gray-400">
           Nema rezultata
-          </p>
+        </p>
       )}
     </div>
   );

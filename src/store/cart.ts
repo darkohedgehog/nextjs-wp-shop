@@ -4,9 +4,18 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 export type CartItem = {
   product_id: number;
   name: string;
+
+  // efektivna cena koju ćeš prikazivati i sabirati (B2B ili B2C)
   price: number;
+
+  // opciono: regularna cena (bez rabata) – za prikaz precrtane cene u košarici/checkoutu
+  regularPrice?: number;
+
+  // opciono: procenat popusta – čisto za UI
+  discountPercent?: number;
+
   quantity: number;
-  image: string; // URL
+  image: string;   // URL
   imageAlt: string;
   sku?: string;
 };

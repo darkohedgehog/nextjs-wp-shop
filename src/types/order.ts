@@ -25,6 +25,7 @@ export type Address = {
   };
   
   export type CreateOrderRequest = {
+    customer_id?: number;
     billing: Address;
     shipping: Address;
     payment_method: string;

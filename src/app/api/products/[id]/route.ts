@@ -1,11 +1,13 @@
-// src/app/api/products/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 const WP_REST_ROOT = process.env.WP_REST_ROOT;
 const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   if (!WP_REST_ROOT || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
     console.error('WooCommerce credencijali nisu podešeni u .env');
     return NextResponse.json(
@@ -14,18 +16,17 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const search  = req.nextUrl.searchParams;
-  const include = search.get('include') ?? '';
-  const perPage = search.get('per_page') ?? '10';
+  const { id } = await ctx.params;
 
-  // Bazni URL – ovako dobijaš:
-  // https://wp.zivic-elektro.shop/wp-json/wc/v3/products
-  const url = new URL(`${WP_REST_ROOT}/wc/v3/products`);
+  // ❌ OVO NE:
+  // const url = new URL(`/wc/v3/products/${id}`, WP_REST_ROOT);
 
-  if (include) url.searchParams.set('include', include);
-  url.searchParams.set('per_page', perPage);
+  // ✅ VARIJANTA 1 – najjednostavnije:
+  const url = new URL(`${WP_REST_ROOT}/wc/v3/products/${id}`);
 
-  // Basic auth sa ck/cs — isto kao u [id] ruti
+  // ✅ (alternativa bi bila bez leading slasha, isto OK)
+  // const url = new URL(`wc/v3/products/${id}`, WP_REST_ROOT);
+
   const authHeader =
     'Basic ' +
     Buffer.from(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`).toString('base64');
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
   const text = await res.text();
 
   if (!res.ok) {
-    console.error('Woo products error:', text);
+    console.error('Woo single product error:', text);
     return new NextResponse(text, {
       status: res.status,
       headers: { 'Content-Type': 'application/json' },

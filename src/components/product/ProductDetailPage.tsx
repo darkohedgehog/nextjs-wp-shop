@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react'; // ✅ za Apollo 4.0.7
+import { useQuery } from '@apollo/client/react';
 import he from 'he';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -36,7 +36,6 @@ type Product = {
   image?: { sourceUrl: string; altText?: string | null } | null;
   galleryImages?: { nodes: GalleryImage[] } | null;
 
-  // Novo:
   sku?: string | null;
   stockStatus?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'ON_BACKORDER' | string;
   stockQuantity?: number | null;
@@ -91,49 +90,41 @@ function getSlugParam(
   return Array.isArray(raw) ? raw[0] ?? null : raw;
 }
 
-// util: parsiranje WP/GraphQL RAW cene u broj
+// util: parsiranje WP/GraphQL RAW cene u broj (fallback)
 function parsePrice(raw?: string | null): number {
   if (!raw) return 0;
   const cleaned = he
     .decode(raw)
-    .replace(/&nbsp;|\u00A0/g, '') // HTML NBSP & real NBSP
+    .replace(/&nbsp;|\u00A0/g, '')
     .replace(/\s+/g, '')
-    .replace(',', '.'); // podrži zarez kao decimalni separator
+    .replace(',', '.');
   const n = parseFloat(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
 
 export default function ProductDetailPage() {
-  // Next App Router: useParams može vratiti string ili string[]
   const params = useParams() as Record<string, string | string[] | undefined>;
   const slug = getSlugParam(params, 'slug');
- 
 
   const { data, loading, error } = useQuery<{ product: Product }>(GET_PRODUCT, {
     variables: { id: slug as string },
-    skip: !slug, // ne šalji query dok slug nije spreman
+    skip: !slug,
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
 
-  // --- STATE za modal / lightbox ---
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-
-  // --- Izvedeni podaci iz query-ja (uvek posle hookova, pre return-a) ---
   const product = data?.product ?? null;
   const galleryNodes = product?.galleryImages?.nodes ?? [];
 
-  // EAN / barcode iz metaData – prilagodi ključeve ako tvoj plugin koristi druge
-const ean =
-product?.metaData?.find((m) =>
-  ['_ean', 'ean', '_barcode', 'barcode', 'EAN', 'BARCODE', 'GTIN', 'UPC'].includes(
-    m.key.trim()
-  )
-)?.value ?? null;
+  // EAN / barcode iz metaData
+  const ean =
+    product?.metaData?.find((m) =>
+      ['_ean', 'ean', '_barcode', 'barcode', 'EAN', 'BARCODE', 'GTIN', 'UPC'].includes(
+        m.key.trim()
+      )
+    )?.value ?? null;
 
-// Da li je proizvod na zalihi
-const isInStock = product?.stockStatus === 'IN_STOCK';
+  const isInStock = product?.stockStatus === 'IN_STOCK';
 
   const mainImage: GalleryImage | null =
     product?.image?.sourceUrl
@@ -149,34 +140,110 @@ const isInStock = product?.stockStatus === 'IN_STOCK';
   ];
 
   const hasImages = allImages.length > 0;
-
-  const priceNum = parsePrice(
-    product?.price ?? product?.regularPrice ?? undefined
-  );
+  // 👉 STATE za B2B/B2C cenu iz Woo REST-a
+  const [priceInfo, setPriceInfo] = useState<{
+    effective: number;
+    regular: number;
+    discountPercent: number;
+  } | null>(null);
 
   const [quantity, setQuantity] = useState<number>(1);
 
-useEffect(() => {
   // kad se promijeni proizvod, resetuj količinu
-  setQuantity(1);
-}, [product?.databaseId]);
+  useEffect(() => {
+    setQuantity(1);
+  }, [product?.databaseId]);
 
-const handleQuantityChange = (value: number) => {
-  if (Number.isNaN(value)) return;
+  // REST poziv na /api/products/[id] koji vraća wc/v3 product + zvo_* polja
+  useEffect(() => {
+    if (!product?.databaseId) return;
 
-  let next = value;
+    (async () => {
+      try {
+        const res = await fetch(`/api/products/${product.databaseId}`);
+        if (!res.ok) {
+          console.warn(
+            'Ne mogu da dohvatim detalje proizvoda iz Woo:',
+            await res.text()
+          );
+          setPriceInfo(null);
+          return;
+        }
 
-  if (!next || next < 1) next = 1;
+        type RestProduct = {
+          id: number;
+          price?: string;
+          regular_price?: string;
+          zvo_regular_price?: number;
+          zvo_effective_price?: number;
+          zvo_discount_percent?: number;
+        };
 
-  // ako imaš info o stockQuantity, limitiraj
-  if (product?.stockQuantity != null) {
-    next = Math.min(next, product.stockQuantity);
-  }
+        const p: RestProduct = await res.json();
 
-  setQuantity(next);
-};
+        const regular =
+          typeof p.zvo_regular_price === 'number'
+            ? p.zvo_regular_price
+            : Number(p.regular_price ?? p.price ?? 0);
 
-  // ESC + strelice levo/desno na tastaturi
+        const effective =
+          typeof p.zvo_effective_price === 'number'
+            ? p.zvo_effective_price
+            : Number(p.price ?? p.regular_price ?? 0);
+
+        let discountPercent =
+          typeof p.zvo_discount_percent === 'number'
+            ? p.zvo_discount_percent
+            : 0;
+
+        if (!discountPercent && regular > 0 && effective < regular) {
+          discountPercent = Math.round(
+            ((regular - effective) / regular) * 100
+          );
+        }
+
+        setPriceInfo({ effective, regular, discountPercent });
+      } catch (err) {
+        console.warn('Greška pri dohvaćanju B2B/B2C cene:', err);
+        setPriceInfo(null);
+      }
+    })();
+  }, [product?.databaseId]);
+
+  // vrednosti za prikaz (fallback GraphQL ako nema REST priceInfo)
+  const fallbackEffective = parsePrice(
+    product?.price ?? product?.regularPrice ?? undefined
+  );
+  const fallbackRegular = parsePrice(
+    product?.regularPrice ?? product?.price ?? undefined
+  );
+
+  const priceNum = priceInfo ? priceInfo.effective : fallbackEffective;
+  const regularNum = priceInfo ? priceInfo.regular : fallbackRegular;
+  const discountPercent =
+    priceInfo?.discountPercent ??
+    (regularNum > 0 && priceNum < regularNum
+      ? Math.round(((regularNum - priceNum) / regularNum) * 100)
+      : 0);
+
+  const handleQuantityChange = (value: number) => {
+    if (Number.isNaN(value)) return;
+
+    let next = value;
+
+    if (!next || next < 1) next = 1;
+
+    if (product?.stockQuantity != null) {
+      next = Math.min(next, product.stockQuantity);
+    }
+
+    setQuantity(next);
+  };
+
+  // --- modal state ---
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+
   useEffect(() => {
     if (!hasImages) return;
 
@@ -198,7 +265,6 @@ const handleQuantityChange = (value: number) => {
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, hasImages, allImages.length]);
 
-  // helper da otvori modal na određenom indexu
   const openAtIndex = (index: number) => {
     if (!hasImages) return;
     setCurrentIndex(index);
@@ -215,7 +281,7 @@ const handleQuantityChange = (value: number) => {
     setCurrentIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
 
-  // --- Sada tek idu early return-ovi (posle svih hookova!) ---
+  // --- early returns ---
   if (!slug) {
     return (
       <div className="p-4 flex items-center justify-center paragraph-color">
@@ -240,7 +306,7 @@ const handleQuantityChange = (value: number) => {
     );
   }
 
-  // --- Komponenta za modal slika ---
+  // --- modal komponenta ---
   const ImageModal = () => {
     if (!isOpen || !hasImages) return null;
 
@@ -253,9 +319,8 @@ const handleQuantityChange = (value: number) => {
       >
         <div
           className="relative max-w-4xl max-h-[90vh] w-full px-4"
-          onClick={(e) => e.stopPropagation()} // da klik na sliku ne zatvara modal
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* X dugme */}
           <button
             onClick={() => setIsOpen(false)}
             className="absolute top-4 right-4 bg-primary-color text-zinc-300 rounded-full w-8 h-8 flex items-center justify-center font-bold"
@@ -264,7 +329,6 @@ const handleQuantityChange = (value: number) => {
             <PiEyeClosedLight />
           </button>
 
-          {/* Strelica levo */}
           {allImages.length > 1 && (
             <button
               onClick={(e) => {
@@ -278,18 +342,17 @@ const handleQuantityChange = (value: number) => {
             </button>
           )}
 
-          {/* Slika */}
           <div className="flex items-center justify-center">
             <Image
               src={currentImage.sourceUrl}
               alt={currentImage.altText || product.name}
               width={1600}
               height={1600}
+              priority
               className="object-contain max-h-[80vh] rounded-lg"
             />
           </div>
 
-          {/* Strelica desno */}
           {allImages.length > 1 && (
             <button
               onClick={(e) => {
@@ -309,7 +372,6 @@ const handleQuantityChange = (value: number) => {
 
   return (
     <>
-      {/* Modal za zoom + strelice */}
       <ImageModal />
 
       <div className="p-4 max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
@@ -322,46 +384,62 @@ const handleQuantityChange = (value: number) => {
             alt={product.image.altText || product.name}
             className="w-56 h-56 object-cover mb-2 mx-auto rounded-xl shadow-lg shadow-blue-400 cursor-pointer"
             priority
-            onClick={() => {
-              // featured slika je index 0 u allImages
-              openAtIndex(0);
-            }}
+            onClick={() => openAtIndex(0)}
           />
         )}
 
-  <div>
-        <h1 className="text-2xl font-bold text-zinc-300 mb-2">
-         {product.name}
-        </h1>
-        {/* SKU + EAN */}
-         <div className="text-sm text-zinc-400 space-y-0.5 mb-3">
-        {product.sku && (
-         <p>
-        <span className="font-semibold text-zinc-400">SKU:</span> {product.sku}
-          </p>
-         )}
-         {ean && (
-         <p>
-           <span className="font-semibold text-zinc-500">EAN:</span> {ean}
-         </p>
-             )}
-        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-300 mb-2">
+            {product.name}
+          </h1>
 
-      {/* Cena + status zalihe */}
-     <div className="flex items-center gap-3 mb-4">
-          <p className="text-xl text-blue-500">
-            {priceNum > 0 ? `${priceNum.toFixed(2)} €` : '—'}
-            </p>
+          {/* SKU + EAN */}
+          <div className="text-sm text-zinc-400 space-y-0.5 mb-3">
+            {product.sku && (
+              <p>
+                <span className="font-semibold text-zinc-400">SKU:</span>{' '}
+                {product.sku}
+              </p>
+            )}
+            {ean && (
+              <p>
+                <span className="font-semibold text-zinc-500">EAN:</span> {ean}
+              </p>
+            )}
+          </div>
 
-          {product.stockStatus && (
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide
-            ${
-            isInStock
-              ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/40'
-              : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/40'}`}>
-              {isInStock ? 'Na zalihi' : 'Nema na zalihi'}
-              </span>)}
-    </div>
+          {/* CENA + STATUS + POPUST */}
+          <div className="flex items-center flex-wrap gap-3 mb-4">
+            <div className="flex items-baseline gap-2">
+              {regularNum > 0 && priceNum < regularNum && (
+                <span className="text-sm line-through text-zinc-500">
+                  {regularNum.toFixed(2)} €
+                </span>
+              )}
+              <p className="text-xl text-blue-500">
+                {priceNum > 0 ? `${priceNum.toFixed(2)} €` : '—'}
+              </p>
+              {discountPercent > 0 && (
+                <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/40">
+                  -{discountPercent.toFixed(0)}%
+                </span>
+              )}
+            </div>
+
+            {product.stockStatus && (
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide
+                ${
+                  isInStock
+                    ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/40'
+                    : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/40'
+                }`}
+              >
+                {isInStock ? 'Na zalihi' : 'Nema na zalihi'}
+              </span>
+            )}
+          </div>
+
           {product.shortDescription && (
             <div
               className="prose prose-lg mb-8 text-zinc-300"
@@ -369,11 +447,10 @@ const handleQuantityChange = (value: number) => {
             />
           )}
 
-          {/* Gallery slike */}
+          {/* Gallery */}
           {galleryNodes.length > 0 && (
             <div className="grid grid-cols-2 gap-2 mb-8">
               {galleryNodes.map((img, idx) => {
-                // ako postoji mainImage, gallery počinje od indexa 1, inače od 0
                 const baseIndex = mainImage ? 1 : 0;
                 const imageIndex = baseIndex + idx;
 
@@ -386,62 +463,62 @@ const handleQuantityChange = (value: number) => {
                     alt={img.altText || product.name}
                     priority
                     className="w-44 h-44 object-cover mb-2 mx-auto rounded-xl cursor-pointer"
-                    onClick={() => {
-                      openAtIndex(imageIndex);
-                    }}
+                    onClick={() => openAtIndex(imageIndex)}
                   />
                 );
               })}
             </div>
           )}
 
-      {/* Količina */}
-      <div className="mb-4 flex items-center gap-3">
-        <span className="text-sm text-zinc-300">Količina:</span>
-        <div className="inline-flex items-center rounded-lg bg-[#f8f9fa] border border-[#adb5bd] shadow-lg shadow-[#adb5bd]">
-          <button
-            type="button"
-            onClick={() => handleQuantityChange(quantity - 1)}
-            disabled={!isInStock || quantity <= 1}
-            className="px-3 py-2 text-lg text-red-600 disabled:opacity-40"
-          >
-            <TbShoppingCartMinus />
-          </button>
-          <input
-            type="number"
-            min={1}
-            max={product.stockQuantity ?? undefined}
-            value={quantity}
-            onChange={(e) =>
-              handleQuantityChange(parseInt(e.target.value, 10))
-            }
-            disabled={!isInStock}
-            className="w-14 bg-transparent text-center text-zinc-700 outline-none px-1 py-2 [appearance:textfield]
-                       [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
-          <button
-            type="button"
-            onClick={() => handleQuantityChange(quantity + 1)}
-            disabled={
-              !isInStock ||
-              (product?.stockQuantity != null &&
-                quantity >= product.stockQuantity)
-            }
-            className="px-3 py-2 text-lg text-green-400 disabled:opacity-40"
-          >
-            <TbShoppingCartPlus />
-          </button>
-        </div>
-        {product?.stockQuantity != null && (
-          <span className="text-xs text-zinc-300">
-            Na zalihi: {product.stockQuantity}
-          </span>
-        )}
-      </div>
+          {/* Količina */}
+          <div className="mb-4 flex items-center gap-3">
+            <span className="text-sm text-zinc-300">Količina:</span>
+            <div className="inline-flex items-center rounded-lg bg-[#f8f9fa] border border-[#adb5bd] shadow-lg shadow-[#adb5bd]">
+              <button
+                type="button"
+                onClick={() => handleQuantityChange(quantity - 1)}
+                disabled={!isInStock || quantity <= 1}
+                className="px-3 py-2 text-lg text-red-600 disabled:opacity-40"
+              >
+                <TbShoppingCartMinus />
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={product.stockQuantity ?? undefined}
+                value={quantity}
+                onChange={(e) =>
+                  handleQuantityChange(parseInt(e.target.value, 10))
+                }
+                disabled={!isInStock}
+                className="w-14 bg-transparent text-center text-zinc-700 outline-none px-1 py-2 [appearance:textfield]
+                         [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <button
+                type="button"
+                onClick={() => handleQuantityChange(quantity + 1)}
+                disabled={
+                  !isInStock ||
+                  (product?.stockQuantity != null &&
+                    quantity >= product.stockQuantity)
+                }
+                className="px-3 py-2 text-lg text-green-400 disabled:opacity-40"
+              >
+                <TbShoppingCartPlus />
+              </button>
+            </div>
+            {product?.stockQuantity != null && (
+              <span className="text-xs text-zinc-300">
+                Na zalihi: {product.stockQuantity}
+              </span>
+            )}
+          </div>
+
           <div className="mt-12 flex items-center gap-4">
             <AddToCartWrapper
               product_id={product.databaseId}
               name={product.name}
+              // 👇 ovde sad ide B2B/B2C effective cena iz REST-a
               price={priceNum}
               image={product.image?.sourceUrl || ''}
               imageAlt={product.image?.altText || product.name}
@@ -450,17 +527,21 @@ const handleQuantityChange = (value: number) => {
               sku={product.sku || ''}
             />
             <div>
-            <Link href="/cart">
-              <button
-              type='button'
-              className='bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff]'>
-              Košarica
-              <span><TiShoppingCart className='text-[#343a40]' /></span>
-              </button>
-            </Link>
+              <Link href="/cart">
+                <button
+                  type="button"
+                  className="bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff]"
+                >
+                  Košarica
+                  <span>
+                    <TiShoppingCart className="text-[#343a40]" />
+                  </span>
+                </button>
+              </Link>
             </div>
           </div>
         </div>
+
         <BackButton />
       </div>
     </>

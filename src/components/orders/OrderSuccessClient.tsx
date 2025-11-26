@@ -7,7 +7,6 @@ import Image from 'next/image';
 import LottieAnimation from './LottieAnimation';
 import { MdOutlineShoppingCart } from 'react-icons/md';
 
-
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
@@ -35,6 +34,7 @@ type Order = {
     city: string;
     email: string;
     phone: string | number;
+    company?: string; // 👈 dodato
   };
 };
 
@@ -93,27 +93,34 @@ export default function OrderSuccessClient() {
       .then((data) => setOrder(data))
       .catch((e) => setError(e.message));
   }, [orderId]);
+
   const toNumber = (v: string | number) => {
     const n = typeof v === "string" ? parseFloat(v.replace(",", ".")) : v;
     return Number.isFinite(n) ? n : 0;
   };
+
   const itemsSubtotal = useMemo(() => {
     if (!order) return 0;
     return order.line_items.reduce((acc, li) => acc + toNumber(li.total), 0);
   }, [order]);
+
   if (error) {
     return <p className="p-4 text-red-600 flex items-center justify-center">Greška: {error}</p>;
   }
-  if (!order) return <p className="p-4 flex items-center justify-center text-lg text-zinc-300">
-    Učitavanje narudžbe…
-    </p>;
+
+  if (!order) {
+    return (
+      <p className="p-4 flex items-center justify-center text-lg text-zinc-300">
+        Učitavanje narudžbe…
+      </p>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 md:py-10">
       {/* Success header */}
       <div className="mb-6 rounded-2xl border border-[#adb5bd] shadow-sm shadow-[#adb5bd] bg-gradient-custom p-5 md:p-6 flex flex-col md:flex-row items-center gap-4 md:gap-6">
         <div className="w-[180px] md:w-[320px] shrink-0">
-          {/* Lottie */}
           <LottieAnimation />
         </div>
 
@@ -208,14 +215,27 @@ export default function OrderSuccessClient() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="space-y-1">
                 <p className="text-zinc-300">Kupac</p>
-                <p className="font-semibold text-zinc-200">
-                  {order.billing.first_name} {order.billing.last_name}
-                </p>
+                {order.billing.company?.trim() ? (
+                  <>
+                    <p className="font-semibold text-zinc-200">
+                      {order.billing.company}
+                    </p>
+                    <p className="text-sm text-zinc-300">
+                      {order.billing.first_name} {order.billing.last_name}
+                    </p>
+                  </>
+                ) : (
+                  <p className="font-semibold text-zinc-200">
+                    {order.billing.first_name} {order.billing.last_name}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
                 <p className="text-zinc-300">Email</p>
-                <p className="font-semibold break-all text-zinc-200">{order.billing.email}</p>
+                <p className="font-semibold break-all text-zinc-200">
+                  {order.billing.email}
+                </p>
               </div>
 
               <div className="space-y-1 md:col-span-2">
@@ -224,21 +244,23 @@ export default function OrderSuccessClient() {
                   {order.billing.address_1}, {order.billing.city}
                 </p>
               </div>
+
               <div className="space-y-1 md:col-span-2">
                 <p className="text-zinc-300">Telefon</p>
                 <p className="font-semibold text-zinc-200">
                   {order.billing.phone}
                 </p>
               </div>
+
               <div className="space-y-1 md:col-span-2">
                 <p className="text-zinc-300">Napomena:</p>
                 {order.customer_note?.trim() ? (
-                <p className="font-semibold text-zinc-200">
-                  {order.customer_note}
+                  <p className="font-semibold text-zinc-200">
+                    {order.customer_note}
                   </p>
-                 ) : (
-                     <p className="text-zinc-500 italic">Nema napomene.</p>
-                 )}
+                ) : (
+                  <p className="text-zinc-500 italic">Nema napomene.</p>
+                )}
               </div>
             </div>
           </div>
@@ -262,6 +284,8 @@ export default function OrderSuccessClient() {
                   <span className="text-zinc-300">Dostava</span>
                   <span className="font-semibold text-zinc-200">
                     {formatMoney(order.shipping_total, order.currency)}
+                    {toNumber(order.shipping_total) === 0 &&
+                      ' (B2B besplatna dostava)'}
                   </span>
                 </div>
 

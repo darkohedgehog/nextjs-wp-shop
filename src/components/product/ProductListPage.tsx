@@ -2,26 +2,123 @@ import { gql } from '@apollo/client';
 import { client } from '@/lib/apollo-client';
 import ProductListClient from '@/components/product/ProductListClient';
 
+// isti Brand / Product tip kao u ProductListClient
+type Brand = { name?: string | null; slug?: string | null };
+
 interface Product {
+  databaseId?: number;
   id: string | number;
   name: string;
   slug: string;
-  description?: string;
-  price?: string;
-  image?: { sourceUrl: string; altText?: string };
+  description?: string | null;
+  date?: string | null;
+  price?: string | null;
+  image?: { sourceUrl: string; altText?: string | null } | null;
+  terms?: { nodes?: Brand[] } | null;
 }
-interface PageInfo { endCursor: string | null; hasNextPage: boolean; }
+
+interface PageInfo {
+  endCursor: string | null;
+  hasNextPage: boolean;
+}
+
 interface ProductsData {
   products: { pageInfo: PageInfo; nodes: Product[] };
 }
 
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
-    products(first: 6, after: $after, where: { search: $search, categoryIn: $category }) {
-      pageInfo { endCursor hasNextPage }
+    products(
+      first: 6
+      after: $after
+      where: { search: $search, categoryIn: $category }
+    ) {
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
       nodes {
-        id name slug description
-        ... on SimpleProduct { price image { sourceUrl altText } }
+        databaseId
+        id
+        name
+        slug
+        description
+
+        # datum preko interfejsa Product
+        ... on Product {
+          date
+        }
+
+        # price / image na SimpleProduct
+        ... on SimpleProduct {
+          price
+          image {
+            sourceUrl
+            altText
+          }
+        }
+
+        # PWB brend termini — za sve tipove
+        ... on SimpleProduct {
+          terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
+            nodes {
+              __typename
+              ... on PwbBrand {
+                name
+                slug
+              }
+              ... on TermNode {
+                name
+                slug
+              }
+            }
+          }
+        }
+        ... on VariableProduct {
+          terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
+            nodes {
+              __typename
+              ... on PwbBrand {
+                name
+                slug
+              }
+              ... on TermNode {
+                name
+                slug
+              }
+            }
+          }
+        }
+        ... on ExternalProduct {
+          terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
+            nodes {
+              __typename
+              ... on PwbBrand {
+                name
+                slug
+              }
+              ... on TermNode {
+                name
+                slug
+              }
+            }
+          }
+        }
+        ... on GroupProduct {
+          terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
+            nodes {
+              __typename
+              ... on PwbBrand {
+                name
+                slug
+              }
+              ... on TermNode {
+                name
+                slug
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -29,8 +126,11 @@ const GET_PRODUCTS = gql`
 
 export default async function ProductsPage({
   searchParams,
-}: { searchParams?: Record<string, string | string[] | undefined> }) {
-  const search = typeof searchParams?.q === 'string' ? searchParams.q : undefined;
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
+  const search =
+    typeof searchParams?.q === 'string' ? searchParams.q : undefined;
 
   const { data } = await client.query<ProductsData>({
     query: GET_PRODUCTS,
@@ -38,9 +138,9 @@ export default async function ProductsPage({
   });
 
   const initialProducts = data?.products?.nodes ?? [];
-  const initialPageInfo = data?.products?.pageInfo ?? { endCursor: null, hasNextPage: false };
+  const initialPageInfo =
+    data?.products?.pageInfo ?? { endCursor: null, hasNextPage: false };
 
-  // ⛔️ NE prosleđuj DocumentNode!
   return (
     <ProductListClient
       initialProducts={initialProducts}
