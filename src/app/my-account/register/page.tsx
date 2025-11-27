@@ -1,3 +1,4 @@
+// src/app/register/page.tsx  (ili gde već držiš register rutu)
 'use client';
 
 import { useState } from 'react';
@@ -5,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { LuUserPlus } from 'react-icons/lu';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import Link from 'next/link';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -72,243 +74,216 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div
-        className="
-          w-full
-          max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl
-          mx-auto
-          border border-[#adb5bd]/70
-          bg-linear-to-br from-zinc-900/80 via-zinc-900/60 to-zinc-800/80
-          rounded-2xl
-          shadow-[0_20px_60px_rgba(0,0,0,0.45)]
-          backdrop-blur-md
-          p-6 md:p-10
-        "
+    <AuthLayout
+      title="Registracija"
+      subtitle="Kreiraj novi korisnički račun kako bi mogao pratiti narudžbe i brže naručivati."
+      icon={<LuUserPlus />}
+    >
+      <form
+        onSubmit={handle}
+        className="space-y-6 md:space-y-7 max-w-xl mx-auto"
       >
-        {/* Header */}
-        <div className="flex flex-col items-center justify-center gap-3 mb-8">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl md:text-4xl text-[#adb5bd]">
-              <LuUserPlus />
-            </span>
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">
-              Registracija
-            </h1>
-          </div>
-          <p className="text-sm md:text-base text-zinc-400 text-center max-w-lg">
-            Kreiraj novi korisnički račun kako bi mogao pratiti narudžbe i
-            brže naručivati.
+        {error && (
+          <p className="text-sm text-red-400 bg-red-950/40 border border-red-500/50 rounded-lg px-3 py-2">
+            {error}
           </p>
-        </div>
+        )}
 
-        <form
-          onSubmit={handle}
-          className="space-y-6 md:space-y-7 max-w-xl mx-auto"
-        >
-          {error && (
-            <p className="text-sm text-red-400 bg-red-950/40 border border-red-500/50 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          {/* Username */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Korisničko ime
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Npr. ivan.korisnik"
-              value={form.username}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, username: e.target.value }))
-              }
-              className="
-                w-full
-                border border-[#adb5bd]
-                bg-zinc-900/70
-                text-zinc-100
-                rounded-lg
-                px-3.5 py-2.5
-                shadow-sm shadow-[#adb5bd]/40
-                placeholder:text-zinc-500
-                focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
-                text-sm md:text-base
-              "
-            />
-          </div>
-
-          {/* Email */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              placeholder="tvoj.email@example.com"
-              value={form.email}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, email: e.target.value }))
-              }
-              className="
-                w-full
-                border border-[#adb5bd]
-                bg-zinc-900/70
-                text-zinc-100
-                rounded-lg
-                px-3.5 py-2.5
-                shadow-sm shadow-[#adb5bd]/40
-                placeholder:text-zinc-500
-                focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
-                text-sm md:text-base
-              "
-            />
-          </div>
-
-          {/* Lozinka */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Lozinka
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                placeholder="Lozinka (min. 8 znakova)"
-                value={form.password}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, password: e.target.value }))
-                }
-                className="
-                  w-full
-                  border border-[#adb5bd]
-                  bg-zinc-900/70
-                  text-zinc-100
-                  rounded-lg
-                  px-3.5 py-2.5
-                  pr-10
-                  shadow-sm shadow-[#adb5bd]/40
-                  placeholder:text-zinc-500
-                  focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
-                  text-sm md:text-base
-                "
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="
-                  absolute inset-y-0 right-0
-                  flex items-center pr-3
-                  text-zinc-400 hover:text-zinc-200
-                "
-                aria-label={
-                  showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'
-                }
-              >
-                {showPassword ? (
-                  <FiEyeOff className="w-5 h-5" />
-                ) : (
-                  <FiEye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Ponovi lozinku */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Potvrdi lozinku
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword2 ? 'text' : 'password'}
-                required
-                placeholder="Ponovi lozinku"
-                value={password2}
-                onChange={(e) => setPassword2(e.target.value)}
-                className="
-                  w-full
-                  border border-[#adb5bd]
-                  bg-zinc-900/70
-                  text-zinc-100
-                  rounded-lg
-                  px-3.5 py-2.5
-                  pr-10
-                  shadow-sm shadow-[#adb5bd]/40
-                  placeholder:text-zinc-500
-                  focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
-                  text-sm md:text-base
-                "
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword2((prev) => !prev)}
-                className="
-                  absolute inset-y-0 right-0
-                  flex items-center pr-3
-                  text-zinc-400 hover:text-zinc-200
-                "
-                aria-label={
-                  showPassword2 ? 'Sakrij lozinku' : 'Prikaži lozinku'
-                }
-              >
-                {showPassword2 ? (
-                  <FiEyeOff className="w-5 h-5" />
-                ) : (
-                  <FiEye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
+        {/* Username */}
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-zinc-200">
+            Korisničko ime
+          </label>
+          <input
+            type="text"
+            required
+            placeholder="Npr. ivan.korisnik"
+            value={form.username}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, username: e.target.value }))
+            }
             className="
-              mt-2
-              inline-flex items-center justify-center
-              gap-2
               w-full
-              rounded-3xl
-              border-2 border-[#adb5bd]
-              bg-[#f8f9fa]
-              text-[#007bff]
-              font-semibold
-              px-4 py-2.5
-              shadow-lg shadow-[#adb5bd]
-              hover:bg-[#dee2e6]
-              disabled:opacity-60 disabled:cursor-not-allowed
-              transition
+              border border-[#adb5bd]
+              bg-zinc-900/70
+              text-zinc-100
+              rounded-lg
+              px-3.5 py-2.5
+              shadow-sm shadow-[#adb5bd]/40
+              placeholder:text-zinc-500
+              focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
               text-sm md:text-base
             "
-          >
-            {loading ? (
-              <>
-                <span className="inline-block w-4 h-4 border-2 border-[#007bff] border-t-transparent rounded-full animate-spin" />
-                Kreiram račun...
-              </>
-            ) : (
-              <>Registriraj se</>
-              
-            )}
-          </button>
+          />
+        </div>
 
-          {/* Link na login */}
-          <div className="pt-2 text-center text-xs md:text-sm text-zinc-400">
-            Već imaš račun?{' '}
-            <Link
-              href="/my-account/login"
-              className="text-[#66b2ff] hover:text-[#99ccff] underline-offset-4 hover:underline"
+        {/* Email */}
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-zinc-200">
+            Email
+          </label>
+          <input
+            type="email"
+            required
+            placeholder="tvoj.email@example.com"
+            value={form.email}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, email: e.target.value }))
+            }
+            className="
+              w-full
+              border border-[#adb5bd]
+              bg-zinc-900/70
+              text-zinc-100
+              rounded-lg
+              px-3.5 py-2.5
+              shadow-sm shadow-[#adb5bd]/40
+              placeholder:text-zinc-500
+              focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
+              text-sm md:text-base
+            "
+          />
+        </div>
+
+        {/* Lozinka */}
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-zinc-200">
+            Lozinka
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              placeholder="Lozinka (min. 8 znakova)"
+              value={form.password}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, password: e.target.value }))
+              }
+              className="
+                w-full
+                border border-[#adb5bd]
+                bg-zinc-900/70
+                text-zinc-100
+                rounded-lg
+                px-3.5 py-2.5
+                pr-10
+                shadow-sm shadow-[#adb5bd]/40
+                placeholder:text-zinc-500
+                focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
+                text-sm md:text-base
+              "
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="
+                absolute inset-y-0 right-0
+                flex items-center pr-3
+                text-zinc-400 hover:text-zinc-200
+              "
+              aria-label={
+                showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'
+              }
             >
-              Prijavi se
-            </Link>
+              {showPassword ? (
+                <FiEyeOff className="w-5 h-5" />
+              ) : (
+                <FiEye className="w-5 h-5" />
+              )}
+            </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        {/* Potvrda lozinke */}
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-zinc-200">
+            Potvrdi lozinku
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword2 ? 'text' : 'password'}
+              required
+              placeholder="Ponovi lozinku"
+              value={password2}
+              onChange={(e) => setPassword2(e.target.value)}
+              className="
+                w-full
+                border border-[#adb5bd]
+                bg-zinc-900/70
+                text-zinc-100
+                rounded-lg
+                px-3.5 py-2.5
+                pr-10
+                shadow-sm shadow-[#adb5bd]/40
+                placeholder:text-zinc-500
+                focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
+                text-sm md:text-base
+              "
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword2((prev) => !prev)}
+              className="
+                absolute inset-y-0 right-0
+                flex items-center pr-3
+                text-zinc-400 hover:text-zinc-200
+              "
+              aria-label={
+                showPassword2 ? 'Sakrij lozinku' : 'Prikaži lozinku'
+              }
+            >
+              {showPassword2 ? (
+                <FiEyeOff className="w-5 h-5" />
+              ) : (
+                <FiEye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="
+            mt-2
+            inline-flex items-center justify-center
+            gap-2
+            w-full
+            rounded-3xl
+            border-2 border-[#adb5bd]
+            bg-[#f8f9fa]
+            text-[#007bff]
+            font-semibold
+            px-4 py-2.5
+            shadow-lg shadow-[#adb5bd]
+            hover:bg-[#dee2e6]
+            disabled:opacity-60 disabled:cursor-not-allowed
+            transition
+            text-sm md:text-base
+          "
+        >
+          {loading ? (
+            <>
+              <span className="inline-block w-4 h-4 border-2 border-[#007bff] border-t-transparent rounded-full animate-spin" />
+              Kreiram račun...
+            </>
+          ) : (
+            <>Registriraj se</>
+          )}
+        </button>
+
+        {/* Link na login */}
+        <div className="pt-2 text-center text-xs md:text-sm text-zinc-400">
+          Već imaš račun?{' '}
+          <Link
+            href="/my-account/login"
+            className="text-[#66b2ff] hover:text-[#99ccff] underline-offset-4 hover:underline"
+          >
+            Prijavi se
+          </Link>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }

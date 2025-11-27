@@ -3,14 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LiaUserCheckSolid } from 'react-icons/lia';
-import { BsSendCheckFill } from 'react-icons/bs';
-import { HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' });
-  const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const router = useRouter();
 
   const handle = async (e: React.FormEvent) => {
@@ -18,88 +20,83 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    try {
-      const res = await fetch('/api/store-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
+    const res = await fetch('/api/store-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    });
 
-      const data = await res.json();
-      console.log('Login response:', data);
+    const data = await res.json();
+    console.log('Login response:', data);
+    setLoading(false);
 
-      if (!res.ok || !data.data?.token) {
-        setError(data?.message || 'Greška pri prijavi. Pokušaj ponovo.');
-        return;
-      }
-
-      // token + user u localStorage
-      localStorage.setItem('wpToken', data.data.token);
-      localStorage.setItem('wpUser', JSON.stringify(data.data));
-
-      router.push('/my-account');
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Došlo je do greške. Pokušaj ponovo.');
-    } finally {
-      setLoading(false);
+    if (!res.ok || !data.data?.token) {
+      setError(data?.message || 'Greška pri prijavi.');
+      return;
     }
+
+    localStorage.setItem('wpToken', data.data.token);
+    localStorage.setItem('wpUser', JSON.stringify(data.data));
+    router.push('/my-account');
   };
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div
-        className="
-          w-full
-          max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl
-          mx-auto
-          border border-[#adb5bd]/70
-          bg-linear-to-br from-zinc-900/80 via-zinc-900/60 to-zinc-800/80
-          rounded-2xl
-          shadow-[0_20px_60px_rgba(0,0,0,0.45)]
-          backdrop-blur-md
-          p-6 md:p-10
-        "
+    <AuthLayout
+      title="Prijava"
+      subtitle="Prijavi se svojim korisničkim računom za pregled narudžbi i bržu kupovinu."
+      icon={<LiaUserCheckSolid />}
+    >
+      <form
+        onSubmit={handle}
+        className="space-y-6 md:space-y-7"
       >
-        {/* Header */}
-        <div className="flex flex-col items-center justify-center gap-3 mb-8">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl md:text-4xl text-[#adb5bd]">
-              <LiaUserCheckSolid />
-            </span>
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">
-              Prijava na račun
-            </h1>
-          </div>
-          <p className="text-sm md:text-base text-zinc-400 text-center max-w-lg">
-            Prijavi se svojim korisničkim imenom ili email adresom kako bi
-            vidio povijest narudžbi i svoje podatke.
+        {error && (
+          <p className="text-sm text-red-400 bg-red-950/40 border border-red-500/50 rounded-lg px-3 py-2">
+            {error}
           </p>
+        )}
+
+        {/* Username / Email */}
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-zinc-200">
+            Korisničko ime ili email
+          </label>
+          <input
+            type="text"
+            required
+            placeholder="Npr. ivan.korisnik ili email"
+            value={form.username}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, username: e.target.value }))
+            }
+            className="
+              w-full
+              border border-[#adb5bd]
+              bg-zinc-900/70
+              text-zinc-100
+              rounded-lg
+              px-3.5 py-2.5
+              shadow-sm shadow-[#adb5bd]/40
+              placeholder:text-zinc-500
+              focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
+              text-sm md:text-base
+            "
+          />
         </div>
 
-        {/* Forma */}
-        <form
-          onSubmit={handle}
-          className="space-y-6 md:space-y-7 max-w-xl mx-auto"
-        >
-          {error && (
-            <p className="text-sm text-red-400 bg-red-950/40 border border-red-500/50 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          {/* Username */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Korisničko ime ili email
-            </label>
+        {/* Password + oko */}
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-zinc-200">
+            Lozinka
+          </label>
+          <div className="relative">
             <input
-              type="text"
+              type={showPassword ? 'text' : 'password'}
               required
-              placeholder="npr. ivan123 ili ivan@example.com"
-              value={form.username}
+              placeholder="Tvoja lozinka"
+              value={form.password}
               onChange={(e) =>
-                setForm((f) => ({ ...f, username: e.target.value }))
+                setForm((f) => ({ ...f, password: e.target.value }))
               }
               className="
                 w-full
@@ -107,115 +104,84 @@ export default function LoginPage() {
                 bg-zinc-900/70
                 text-zinc-100
                 rounded-lg
-                px-3.5 py-2.5
+                px-3.5 py-2.5 pr-10
                 shadow-sm shadow-[#adb5bd]/40
                 placeholder:text-zinc-500
                 focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
                 text-sm md:text-base
               "
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="
+                absolute inset-y-0 right-0
+                flex items-center pr-3
+                text-zinc-400 hover:text-zinc-200
+              "
+              aria-label={showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'}
+            >
+              {showPassword ? (
+                <FiEyeOff className="w-5 h-5" />
+              ) : (
+                <FiEye className="w-5 h-5" />
+              )}
+            </button>
           </div>
+        </div>
 
-          {/* Password + toggle */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Zaporka
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                placeholder="Unesi svoju zaporku"
-                value={form.password}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, password: e.target.value }))
-                }
-                className="
-                  w-full
-                  border border-[#adb5bd]
-                  bg-zinc-900/70
-                  text-zinc-100
-                  rounded-lg
-                  px-3.5 pr-10 py-2.5
-                  shadow-sm shadow-[#adb5bd]/40
-                  placeholder:text-zinc-500
-                  focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
-                  text-sm md:text-base
-                "
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="
-                  absolute inset-y-0 right-2.5
-                  flex items-center
-                  text-zinc-400 hover:text-zinc-200
-                  transition
-                "
-                aria-label={
-                  showPassword ? 'Sakrij zaporku' : 'Prikaži zaporku'
-                }
-              >
-                {showPassword ? (
-                  <HiOutlineEyeOff className="w-5 h-5" />
-                ) : (
-                  <HiOutlineEye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="
+            mt-2
+            inline-flex items-center justify-center
+            gap-2
+            w-full
+            rounded-3xl
+            border-2 border-[#adb5bd]
+            bg-[#f8f9fa]
+            text-[#007bff]
+            font-semibold
+            px-4 py-2.5
+            shadow-lg shadow-[#adb5bd]
+            hover:bg-[#dee2e6]
+            disabled:opacity-60 disabled:cursor-not-allowed
+            transition
+            text-sm md:text-base
+          "
+        >
+          {loading ? (
+            <>
+              <span className="inline-block w-4 h-4 border-2 border-[#007bff] border-t-transparent rounded-full animate-spin" />
+              Prijavljujem...
+            </>
+          ) : (
+            <>Prijavi se</>
+          )}
+        </button>
 
-          {/* Forgot password link */}
-          <div className="flex items-center justify-between text-xs md:text-sm">
-            <span className="text-zinc-500">
-              Zaboravio si zaporku?
-            </span>
-            <a
-              href="/lost-password"
+        {/* Links */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 text-xs md:text-sm text-zinc-400">
+          <a
+            href="/lost-password"
+            className="text-[#66b2ff] hover:text-[#99ccff] underline-offset-4 hover:underline"
+          >
+            Zaboravljena lozinka?
+          </a>
+
+          <span>
+            Nemaš račun?{' '}
+            <Link
+              href="/my-account/register"
               className="text-[#66b2ff] hover:text-[#99ccff] underline-offset-4 hover:underline"
             >
-              Resetiraj zaporku
-            </a>
-          </div>
-
-          {/* Submit dugme */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="
-              mt-4
-              inline-flex items-center justify-center
-              gap-2
-              w-full
-              rounded-3xl
-              border-2 border-[#adb5bd]
-              bg-[#f8f9fa]
-              text-[#007bff]
-              font-semibold
-              px-4 py-2.5
-              shadow-lg shadow-[#adb5bd]
-              hover:bg-[#dee2e6]
-              disabled:opacity-60 disabled:cursor-not-allowed
-              transition
-              text-sm md:text-base
-            "
-          >
-            {loading ? (
-              <>
-                <span className="inline-block w-4 h-4 border-2 border-[#007bff] border-t-transparent rounded-full animate-spin" />
-                Prijava u tijeku...
-              </>
-            ) : (
-              <>
-                Prijavi se
-                <span className="w-5 h-5">
-                  <BsSendCheckFill />
-                </span>
-              </>
-            )}
-          </button>
-        </form>
-      </div>
-    </div>
+              Registriraj se
+            </Link>
+          </span>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }
