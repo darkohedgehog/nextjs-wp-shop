@@ -1,67 +1,63 @@
 'use client';
 
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { LuUserPlus } from 'react-icons/lu';
+import { LuKeyRound } from 'react-icons/lu';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import Link from 'next/link';
 
-export default function RegisterPage() {
+export default function ResetPasswordPage() {
+  const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [form, setForm] = useState({
-    username: '',
-    email: '',
-    password: '',
-  });
-  const [password2, setPassword2] = useState('');
+  const key   = searchParams.get('key') ?? '';
+  const login = searchParams.get('login') ?? '';
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showPassword2, setShowPassword2] = useState(false);
+  const [password, setPassword]   = useState('');
+  const [password2, setPassword2] = useState('');
+  const [showPassword, setShowPassword]     = useState(false);
+  const [showPassword2, setShowPassword2]   = useState(false);
 
   const [error, setError]     = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(false);
 
-    // Minimalna validacija
-    if (!form.username.trim()) {
-      setError('Korisničko ime je obavezno.');
+    if (!key || !login) {
+      setError('Link za reset je neispravan ili je istekao.');
       return;
     }
 
-    if (!form.email.trim()) {
-      setError('Email je obavezan.');
-      return;
-    }
-
-    if (form.password.length < 8) {
+    if (password.length < 8) {
       setError('Lozinka mora imati najmanje 8 znakova.');
       return;
     }
 
-    if (form.password !== password2) {
+    if (password !== password2) {
       setError('Lozinke se ne podudaraju.');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch('/api/store-register', {
+      const res = await fetch('/api/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ key, login, password }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        setError(data?.message || 'Greška pri registraciji.');
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Greška pri promjeni lozinke.');
       } else {
-        // posle uspešne registracije ideš na login
-        router.push('/my-account/login');
+        setSuccess(true);
+        // kratka pauza pa redirect na login
+        setTimeout(() => router.push('/my-account/login'), 2000);
       }
     } catch (err) {
       console.error(err);
@@ -90,15 +86,15 @@ export default function RegisterPage() {
         <div className="flex flex-col items-center justify-center gap-3 mb-8">
           <div className="flex items-center gap-3">
             <span className="text-3xl md:text-4xl text-[#adb5bd]">
-              <LuUserPlus />
+              <LuKeyRound />
             </span>
             <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">
-              Registracija
+              Postavi novu zaporku
             </h1>
           </div>
           <p className="text-sm md:text-base text-zinc-400 text-center max-w-lg">
-            Kreiraj novi korisnički račun kako bi mogao pratiti narudžbe i
-            brže naručivati.
+            Upiši novu zaporku za svoj račun. Nakon spremanja bićeš preusmjeren
+            na stranicu za prijavu.
           </p>
         </div>
 
@@ -112,76 +108,23 @@ export default function RegisterPage() {
             </p>
           )}
 
-          {/* Username */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Korisničko ime
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Npr. ivan.korisnik"
-              value={form.username}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, username: e.target.value }))
-              }
-              className="
-                w-full
-                border border-[#adb5bd]
-                bg-zinc-900/70
-                text-zinc-100
-                rounded-lg
-                px-3.5 py-2.5
-                shadow-sm shadow-[#adb5bd]/40
-                placeholder:text-zinc-500
-                focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
-                text-sm md:text-base
-              "
-            />
-          </div>
+          {success && (
+            <p className="text-sm text-emerald-300 bg-emerald-950/40 border border-emerald-500/50 rounded-lg px-3 py-2">
+              Lozinka je uspješno promijenjena. Preusmjeravam na prijavu…
+            </p>
+          )}
 
-          {/* Email */}
+          {/* Nova lozinka */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-zinc-200">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              placeholder="tvoj.email@example.com"
-              value={form.email}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, email: e.target.value }))
-              }
-              className="
-                w-full
-                border border-[#adb5bd]
-                bg-zinc-900/70
-                text-zinc-100
-                rounded-lg
-                px-3.5 py-2.5
-                shadow-sm shadow-[#adb5bd]/40
-                placeholder:text-zinc-500
-                focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
-                text-sm md:text-base
-              "
-            />
-          </div>
-
-          {/* Lozinka */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Lozinka
+              Nova zaporka
             </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
-                required
-                placeholder="Lozinka (min. 8 znakova)"
-                value={form.password}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, password: e.target.value }))
-                }
+                placeholder="Nova zaporka (min. 8 znakova)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="
                   w-full
                   border border-[#adb5bd]
@@ -195,6 +138,7 @@ export default function RegisterPage() {
                   focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
                   text-sm md:text-base
                 "
+                required
               />
               <button
                 type="button"
@@ -204,9 +148,7 @@ export default function RegisterPage() {
                   flex items-center pr-3
                   text-zinc-400 hover:text-zinc-200
                 "
-                aria-label={
-                  showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'
-                }
+                aria-label={showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'}
               >
                 {showPassword ? (
                   <FiEyeOff className="w-5 h-5" />
@@ -220,13 +162,12 @@ export default function RegisterPage() {
           {/* Ponovi lozinku */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-zinc-200">
-              Potvrdi lozinku
+              Ponovi zaporku
             </label>
             <div className="relative">
               <input
                 type={showPassword2 ? 'text' : 'password'}
-                required
-                placeholder="Ponovi lozinku"
+                placeholder="Ponovi novu zaporku"
                 value={password2}
                 onChange={(e) => setPassword2(e.target.value)}
                 className="
@@ -242,6 +183,7 @@ export default function RegisterPage() {
                   focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
                   text-sm md:text-base
                 "
+                required
               />
               <button
                 type="button"
@@ -289,22 +231,21 @@ export default function RegisterPage() {
             {loading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-[#007bff] border-t-transparent rounded-full animate-spin" />
-                Kreiram račun...
+                Spremam novu zaporku...
               </>
             ) : (
-              <>Registriraj se</>
-              
+              <>Spremi novu zaporku</>
             )}
           </button>
 
-          {/* Link na login */}
+          {/* Link nazad na login */}
           <div className="pt-2 text-center text-xs md:text-sm text-zinc-400">
-            Već imaš račun?{' '}
+            Znaš staru zaporku?{' '}
             <Link
               href="/my-account/login"
               className="text-[#66b2ff] hover:text-[#99ccff] underline-offset-4 hover:underline"
             >
-              Prijavi se
+              Vrati se na prijavu
             </Link>
           </div>
         </form>

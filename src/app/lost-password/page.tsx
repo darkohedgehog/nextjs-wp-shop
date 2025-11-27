@@ -1,45 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { LiaUserCheckSolid } from 'react-icons/lia';
 import { BsSendCheckFill } from 'react-icons/bs';
-import { HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
+import Link from 'next/link';
 
-export default function LoginPage() {
-  const [form, setForm] = useState({ username: '', password: '' });
+export default function LostPasswordPage() {
+  const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
-  const handle = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
+
+    // minimalna validacija
+    if (!email || !email.includes('@')) {
+      setError('Unesi ispravnu email adresu.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch('/api/store-login', {
+      const res = await fetch('/api/lost-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ email }),
       });
 
       const data = await res.json();
-      console.log('Login response:', data);
+      console.log('Lost-password response:', data);
 
-      if (!res.ok || !data.data?.token) {
-        setError(data?.message || 'Greška pri prijavi. Pokušaj ponovo.');
+      if (!res.ok || !data.success) {
+        setError(
+          data?.message ||
+            'Došlo je do greške pri slanju zahtjeva za reset lozinke.'
+        );
         return;
       }
 
-      // token + user u localStorage
-      localStorage.setItem('wpToken', data.data.token);
-      localStorage.setItem('wpUser', JSON.stringify(data.data));
-
-      router.push('/my-account');
+      setSuccess(
+        'Ako email postoji u sustavu, poslan je link za resetiranje lozinke.'
+      );
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('Lost-password error:', err);
       setError('Došlo je do greške. Pokušaj ponovo.');
     } finally {
       setLoading(false);
@@ -68,18 +75,18 @@ export default function LoginPage() {
               <LiaUserCheckSolid />
             </span>
             <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">
-              Prijava na račun
+              Zaboravljena zaporka
             </h1>
           </div>
           <p className="text-sm md:text-base text-zinc-400 text-center max-w-lg">
-            Prijavi se svojim korisničkim imenom ili email adresom kako bi
-            vidio povijest narudžbi i svoje podatke.
+            Upiši email adresu povezanu s tvojim računom. Poslat ćemo ti link za
+            resetiranje zaporke.
           </p>
         </div>
 
         {/* Forma */}
         <form
-          onSubmit={handle}
+          onSubmit={handleSubmit}
           className="space-y-6 md:space-y-7 max-w-xl mx-auto"
         >
           {error && (
@@ -88,19 +95,23 @@ export default function LoginPage() {
             </p>
           )}
 
-          {/* Username */}
+          {success && (
+            <p className="text-sm text-emerald-300 bg-emerald-950/40 border border-emerald-500/50 rounded-lg px-3 py-2">
+              {success}
+            </p>
+          )}
+
+          {/* Email */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-zinc-200">
-              Korisničko ime ili email
+              Email adresa
             </label>
             <input
-              type="text"
+              type="email"
               required
-              placeholder="npr. ivan123 ili ivan@example.com"
-              value={form.username}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, username: e.target.value }))
-              }
+              placeholder="npr. ivan@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="
                 w-full
                 border border-[#adb5bd]
@@ -116,74 +127,18 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Password + toggle */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-zinc-200">
-              Zaporka
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                placeholder="Unesi svoju zaporku"
-                value={form.password}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, password: e.target.value }))
-                }
-                className="
-                  w-full
-                  border border-[#adb5bd]
-                  bg-zinc-900/70
-                  text-zinc-100
-                  rounded-lg
-                  px-3.5 pr-10 py-2.5
-                  shadow-sm shadow-[#adb5bd]/40
-                  placeholder:text-zinc-500
-                  focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
-                  text-sm md:text-base
-                "
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="
-                  absolute inset-y-0 right-2.5
-                  flex items-center
-                  text-zinc-400 hover:text-zinc-200
-                  transition
-                "
-                aria-label={
-                  showPassword ? 'Sakrij zaporku' : 'Prikaži zaporku'
-                }
-              >
-                {showPassword ? (
-                  <HiOutlineEyeOff className="w-5 h-5" />
-                ) : (
-                  <HiOutlineEye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Forgot password link */}
-          <div className="flex items-center justify-between text-xs md:text-sm">
-            <span className="text-zinc-500">
-              Zaboravio si zaporku?
-            </span>
-            <a
-              href="/lost-password"
-              className="text-[#66b2ff] hover:text-[#99ccff] underline-offset-4 hover:underline"
-            >
-              Resetiraj zaporku
-            </a>
-          </div>
+          {/* Info tekst */}
+          <p className="text-xs md:text-sm text-zinc-500">
+            * Iz sigurnosnih razloga uvijek šaljemo istu poruku, bez obzira
+            postoji li korisnik s tom email adresom.
+          </p>
 
           {/* Submit dugme */}
           <button
             type="submit"
             disabled={loading}
             className="
-              mt-4
+              mt-2
               inline-flex items-center justify-center
               gap-2
               w-full
@@ -203,17 +158,28 @@ export default function LoginPage() {
             {loading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-[#007bff] border-t-transparent rounded-full animate-spin" />
-                Prijava u tijeku...
+                Slanje u tijeku...
               </>
             ) : (
               <>
-                Prijavi se
+                Pošalji link za reset
                 <span className="w-5 h-5">
                   <BsSendCheckFill />
                 </span>
               </>
             )}
           </button>
+
+          {/* Back to login */}
+          <div className="pt-2 text-center text-xs md:text-sm text-zinc-400">
+            Sjećaš se zaporke?{' '}
+            <Link
+              href="/my-account/login"
+              className="text-[#66b2ff] hover:text-[#99ccff] underline-offset-4 hover:underline"
+            >
+              Vrati se na prijavu
+            </Link>
+          </div>
         </form>
       </div>
     </div>
