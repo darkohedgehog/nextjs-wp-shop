@@ -2,6 +2,8 @@ import { client } from '@/lib/apollo-client';
 import { gql } from '@apollo/client';
 import he from 'he';
 import { ProductCard } from '@/components/product/ProductCard';
+import { CategoryProductsClient } from '@/components/categories/CategoryProductsClient';
+
 
 // --- Tipovi podataka
 type Category = {
@@ -35,6 +37,11 @@ type CategoryData = {
   productCategory?: Category | null;
 };
 
+type PageInfo = {
+  endCursor: string | null;
+  hasNextPage: boolean;
+};
+
 // GraphQL queries
 const GET_CATEGORY_TREE = gql`
   query CategoryTree($slug: ID!) {
@@ -58,16 +65,22 @@ const GET_CATEGORY_TREE = gql`
 `;
 
 const GET_PRODUCTS_BY_CATEGORY = gql`
-  query ProductsByCategory($categoryId: Int!) {
-    products(first: 24, where: { categoryId: $categoryId }) {
-      pageInfo { endCursor hasNextPage }
+  query ProductsByCategory($categoryId: Int!, $after: String) {
+    products(first: 24, after: $after, where: { categoryId: $categoryId }) {
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
       nodes {
         id
         name
         slug
         ... on SimpleProduct {
           price
-          image { sourceUrl altText }
+          image {
+            sourceUrl
+            altText
+          }
         }
       }
     }
@@ -148,27 +161,29 @@ export default async function CategorySlugPage({
 
   const showSubcategories = !childSlug && childNodes.length > 0;
 
-  // 2) Ako je leaf (nema podkategorija ili smo na child-u) → fetch proizvode
-  let products: Product[] = [];
-
-  if (!showSubcategories) {
-    const categoryId = currentCat.databaseId;
-
-    const prodRes = await client.query<ProductsData>({
-      query: GET_PRODUCTS_BY_CATEGORY,
-      variables: { categoryId },
-      context: {
-        fetchOptions: {
-          next: { revalidate: 300 },
-          cache: 'force-cache',
+    // 2) Ako je leaf (nema podkategorija ili smo na child-u) → fetch proizvode
+    let products: Product[] = [];
+    let initialPageInfo: PageInfo = { endCursor: null, hasNextPage: false };
+  
+    if (!showSubcategories) {
+      const categoryId = currentCat.databaseId;
+  
+      const prodRes = await client.query<ProductsData>({
+        query: GET_PRODUCTS_BY_CATEGORY,
+        variables: { categoryId, after: null },
+        context: {
+          fetchOptions: {
+            next: { revalidate: 300 },
+            cache: 'force-cache',
+          },
         },
-      },
-    });
-
-    const productsData = prodRes.data?.products;
-    const nodes = productsData?.nodes ?? [];
-    products = nodes.filter((p): p is Product => Boolean(p));
-  }
+      });
+  
+      const productsData = prodRes.data?.products;
+      const nodes = productsData?.nodes ?? [];
+      products = nodes.filter((p): p is Product => Boolean(p));
+      initialPageInfo = productsData?.pageInfo ?? { endCursor: null, hasNextPage: false };
+    }
 
   // 3) Render
   return (
@@ -190,29 +205,13 @@ export default async function CategorySlugPage({
             />
           ))}
         </div>
-      ) : (
-        <>
-          {products.length ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  href={`/products/${product.slug}`}
-                  name={product.name}
-                  imageUrl={product.image?.sourceUrl ?? null}
-                  imageAlt={product.image?.altText || product.name}
-                  price={product.price ? cleanPrice(product.price) : undefined}
-                  brandName={undefined}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="mt-4 text-center text-sm text-gray-400">
-              Nema proizvoda u ovoj kategoriji.
-            </p>
+           ) : (
+            <CategoryProductsClient
+              initialProducts={products}
+              initialPageInfo={initialPageInfo}
+              categoryId={currentCat.databaseId}
+            />
           )}
-        </>
-      )}
     </div>
   );
 }
