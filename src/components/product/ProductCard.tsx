@@ -3,6 +3,25 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShineBorder } from '@/components/ui/shine-border';
+import he from 'he';
+
+// 🔥 Globalni helper koji automatski čisti cenu
+function cleanPrice(raw?: string | null): string {
+  if (!raw) return "";
+
+  let price = he.decode(raw);
+
+  // uklanjanje &nbsp; i svih non-breaking space karaktera
+  price = price.replace(/&nbsp;|\u00A0/g, "").replace(/\s+/g, " ").trim();
+
+  // ako već postoji €, samo osiguraj razmak
+  if (price.includes("€")) {
+    return price.replace(/\s*€/, " €");
+  }
+
+  // ako nema €, dodaj ga
+  return `${price} €`;
+}
 
 interface ProductCardProps {
   href: string;
@@ -23,9 +42,12 @@ export function ProductCard({
   price,
   brandLabel = 'Proizvođač',
 }: ProductCardProps) {
+
+  const formattedPrice = price ? cleanPrice(price) : null;
+
   return (
     <div className="relative">
-      {/* Dekorativni shine border u pozadini */}
+      {/* Shine border */}
       <div className="pointer-events-none absolute inset-0 rounded-xl">
         <ShineBorder
           shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']}
@@ -59,9 +81,9 @@ export function ProductCard({
           </p>
         )}
 
-        {price && (
+        {formattedPrice && (
           <p className="text-sm font-semibold mb-2 mx-1 text-fuchsia-300">
-            {price}
+            {formattedPrice}
           </p>
         )}
       </Link>

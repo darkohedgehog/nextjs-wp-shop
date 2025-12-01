@@ -20,6 +20,7 @@ type B2BForm = {
   company_phone: string;
   company_address: string;
   company_city: string;
+  company_postcode: string;
   company_country: string;
 };
 
@@ -37,6 +38,7 @@ export default function B2BRegisterPage() {
     company_phone: '',
     company_address: '',
     company_city: '',
+    company_postcode: '',
     company_country: 'HR',
   });
 
@@ -368,6 +370,24 @@ export default function B2BRegisterPage() {
               value={form.company_city}
               onChange={handleChange}
               className="
+                border border-[#adb5bd]
+                bg-zinc-900/70
+                text-zinc-100
+                rounded-lg
+                px-3.5 py-2.5
+                shadow-sm shadow-[#adb5bd]/40
+                placeholder:text-zinc-500
+                focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-[#007bff]
+                text-sm md:text-base
+              "
+            />
+            <input
+             name="company_postcode"
+             placeholder="Poštanski broj"
+             required
+             value={form.company_postcode}
+             onChange={handleChange}
+             className="
                 border border-[#adb5bd]
                 bg-zinc-900/70
                 text-zinc-100
