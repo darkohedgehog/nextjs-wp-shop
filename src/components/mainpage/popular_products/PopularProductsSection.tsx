@@ -2,6 +2,8 @@ import Link from "next/link";
 import { client } from "@/lib/apollo-client";
 import { gql } from "@apollo/client";
 import { ProductCard } from "@/components/product/ProductCard";
+import { GiBinoculars } from "react-icons/gi";
+import { RiUserStarLine } from "react-icons/ri";
 
 // 1) Query za kategoriju po slugu
 const GET_CATEGORY_BY_SLUG = gql`
@@ -109,19 +111,21 @@ export default async function PopularProductsSection() {
     <section className="w-full py-10 lg:py-16">
       <div className="mx-auto max-w-5xl px-4">
         {/* Header */}
-        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-6 flex items-center justify-center">
           <div>
-            <h2 className="text-xl font-semibold tracking-tight md:text-2xl secondary-color">
+            <h2 className="text-3xl lg:text-5xl lg:leading-tight max-w-5xl mx-auto text-center tracking-tight font-medium secondary-color">
               Najpopularniji proizvodi
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Brzi pregled proizvoda koje kupci najčešće naručuju.
-            </p>
+            <div className="flex items-center justify-center text-lg lg:text-xl  max-w-2xl  my-4 mx-auto text-center font-normal paragraph-color gap-2">
+            <span className="flex items-center justify-center gap-2"><RiUserStarLine /> 
+             Naši kupci najčešće naručuju
+             </span> 
+        </div>
           </div>
         </div>
 
         {/* Grid: 2 na mobilnom, 4 na desktopu */}
-        <div className="grid grid-cols-2 gap-4 md:gap-5 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-4">
           {products.map((product) => (
             <ProductCard
               key={product.id}
@@ -137,12 +141,15 @@ export default async function PopularProductsSection() {
         </div>
 
         {/* Dugme ka kategoriji */}
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex justify-center items-center">
           <Link
             href={`/categories/${POPULAR_CATEGORY_SLUG}`}
-            className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-2.5 text-sm font-medium tracking-wide shadow-sm transition hover:bg-accent hover:text-accent-foreground"
+            className="mt-8 bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff]"
           >
-            Pogledaj sve najpopularnije proizvode
+            Pogledaj sve
+            <span className='uppercase text-sm font-bold flex items-center justify-center gap-2'>
+          <GiBinoculars className='w-5 h-5' />
+            </span>
           </Link>
         </div>
       </div>
