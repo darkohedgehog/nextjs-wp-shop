@@ -9,6 +9,7 @@ const Navbar = () => {
       children: [
         { name: "Naslovna", link: "/" },
         { name: "O nama", link: "/about" },
+        { name: "Blog", link: "/blog" },
         { name: "Kontakt", link: "/contact" },
       ],
     },
@@ -36,7 +37,7 @@ const Navbar = () => {
       children: [
         { name: "Prijava", link: "/my-account/login" },
         { name: "Registracija", link: "/my-account/register" },
-        { name: "B2B kupci", link: "/my-account/b2b-register" },
+        { name: "B2B registracija", link: "/my-account/b2b-register" },
         { name: "Moj račun", link: "/my-account" },
       ],
     },

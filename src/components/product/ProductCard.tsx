@@ -66,6 +66,7 @@ export function ProductCard({
             height={400}
             src={imageUrl}
             alt={imageAlt || name}
+            priority
             className="w-48 h-48 object-cover mb-2 mx-auto rounded-xl"
           />
         )}

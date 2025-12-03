@@ -21,10 +21,10 @@ const GET_CATEGORY_BY_SLUG = gql`
 const GET_POPULAR_PRODUCTS = gql`
   query PopularProductsByCategory($categoryId: Int!) {
     products(
-      first: 4
+      first: 3
       where: {
         categoryId: $categoryId
-        orderby: { field: DATE, order: DESC }
+        orderby: { field: DATE, order: ASC }
       }
     ) {
       nodes {
@@ -125,11 +125,11 @@ export default async function PopularProductsSection() {
         </div>
 
         {/* Grid: 2 na mobilnom, 4 na desktopu */}
-        <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-3">
           {products.map((product) => (
             <ProductCard
               key={product.id}
-              href={`/products/${product.slug}`} // promeni ako ti je drugačiji detalj proizvoda
+              href={`/products/${product.slug}`}
               name={product.name}
               imageUrl={product.image?.sourceUrl ?? null}
               imageAlt={product.image?.altText ?? product.name}

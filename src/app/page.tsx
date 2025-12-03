@@ -1,3 +1,4 @@
+import BlogIntroSection from "@/components/blog/BlogIntroSection";
 import { HeroSectionTwo } from "@/components/mainpage/herosection/HeroSectionTwo";
 import { IntroductionSection } from "@/components/mainpage/introduction/IntroductionSection";
 import PopularProductsSection from "@/components/mainpage/popular_products/PopularProductsSection";
@@ -12,6 +13,7 @@ export default function Home() {
     <FeaturedProducts count={8} />
     <IntroductionSection />
     <PopularProductsSection />
+    <BlogIntroSection />
     </>
   );
 }
