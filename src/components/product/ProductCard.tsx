@@ -58,7 +58,7 @@ export function ProductCard({
 
       <Link
         href={href}
-        className="relative z-10 block p-4 rounded-xl transition"
+        className="relative z-10 block p-4 rounded-3xl bg-slate-900/20 transition group-hover:bg-slate-900/60"
       >
         {imageUrl && (
           <Image

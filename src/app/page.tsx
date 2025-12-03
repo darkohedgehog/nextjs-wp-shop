@@ -38,6 +38,12 @@ const BlogIntroSection = dynamic(
     ssr: true,
   }
 );
+const FaqSection = dynamic<FeaturedProductsProps>(
+  () => import("@/components/mainpage/faqsection/FaqSection"),
+  {
+    ssr: true,
+  }
+);
 
 export default function Home() {
   return (
@@ -47,6 +53,7 @@ export default function Home() {
       <IntroductionSection />
       <PopularProductsSection />
       <BlogIntroSection />
+      <FaqSection />
     </>
   );
 }

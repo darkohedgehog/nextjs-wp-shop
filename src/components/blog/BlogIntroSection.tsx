@@ -165,7 +165,7 @@ export default async function BlogIntroSection() {
 
             <Link
               href={`/blog/${post.slug}`}
-              className="relative z-10 flex h-full flex-col rounded-2xl bg-slate-900/20 p-4 transition group-hover:bg-slate-900/60"
+              className="relative z-10 flex h-full flex-col rounded-3xl bg-slate-900/20 p-4 transition group-hover:bg-slate-900/60"
             >
               {/* Slika */}
               {post.featuredImage?.node?.sourceUrl && (

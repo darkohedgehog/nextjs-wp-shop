@@ -109,7 +109,7 @@ export default async function PopularProductsSection() {
 
   return (
     <section className="w-full py-10 lg:py-16">
-      <div className="mx-auto max-w-5xl px-4">
+      <div className="mx-auto max-w-6xl px-4">
         {/* Header */}
         <div className="mb-6 flex items-center justify-center">
           <div>
