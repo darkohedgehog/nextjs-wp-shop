@@ -1,19 +1,52 @@
-import BlogIntroSection from "@/components/blog/BlogIntroSection";
-import { HeroSectionTwo } from "@/components/mainpage/herosection/HeroSectionTwo";
-import { IntroductionSection } from "@/components/mainpage/introduction/IntroductionSection";
-import PopularProductsSection from "@/components/mainpage/popular_products/PopularProductsSection";
-import FeaturedProducts from "@/components/product/FeaturedProducts";
+import dynamic from "next/dynamic";
 
+const HeroSectionTwo = dynamic(
+  () =>
+    import("@/components/mainpage/herosection/HeroSectionTwo").then(
+      (m) => m.HeroSectionTwo
+    ),
+);
 
+const IntroductionSection = dynamic(
+  () =>
+    import("@/components/mainpage/introduction/IntroductionSection").then(
+      (m) => m.IntroductionSection
+    ),
+);
+
+type PopularProductsSectionProps = {};
+const PopularProductsSection = dynamic<PopularProductsSectionProps>(
+  () =>
+    import(
+      "@/components/mainpage/popular_products/PopularProductsSection"
+    ),
+);
+
+type FeaturedProductsProps = {
+  count?: number;
+};
+const FeaturedProducts = dynamic<FeaturedProductsProps>(
+  () => import("@/components/product/FeaturedProducts"),
+  {
+    ssr: true,
+  }
+);
+
+const BlogIntroSection = dynamic(
+  () => import("@/components/blog/BlogIntroSection"),
+  {
+    ssr: true,
+  }
+);
 
 export default function Home() {
   return (
     <>
-    <HeroSectionTwo/>
-    <FeaturedProducts count={8} />
-    <IntroductionSection />
-    <PopularProductsSection />
-    <BlogIntroSection />
+      <HeroSectionTwo />
+      <FeaturedProducts count={8} />
+      <IntroductionSection />
+      <PopularProductsSection />
+      <BlogIntroSection />
     </>
   );
 }

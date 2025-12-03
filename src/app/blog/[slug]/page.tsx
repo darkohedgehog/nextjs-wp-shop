@@ -1,10 +1,12 @@
 // app/blog/[slug]/page.tsx
+import dynamic from 'next/dynamic';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BlogGallery, {
   BlogGalleryImage,
 } from "@/components/blog/BlogGallery";
+const BackButton = dynamic(() => import('@/components/ui/BackButton'));
 
 type Category = {
   id: string;
@@ -244,17 +246,17 @@ export default async function BlogPostPage({ params }: PageProps) {
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pb-24 pt-20 md:px-6 lg:px-8 lg:flex-row">
         {/* Left: meta */}
-        <aside className="order-2 w-full space-y-6 text-sm text-slate-300 lg:order-1 lg:w-64 lg:pt-10">
+        <aside className="order-2 w-full space-y-6 text-sm text-zinc-300 lg:order-1 lg:w-64 lg:pt-10">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 transition hover:text-cyan-300"
+            className="inline-flex items-center gap-1 text-xs font-medium text-zinc-200 transition hover:text-cyan-300"
           >
             ← Nazad na blog
           </Link>
 
           {mainCategory && (
             <div className="mt-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-300">
                 Kategorija
               </p>
               <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-100">
@@ -275,11 +277,11 @@ export default async function BlogPostPage({ params }: PageProps) {
             </time>
           </div>
 
-          <div className="hidden border-t border-slate-800 pt-6 text-xs text-slate-400 lg:block">
+          <div className="hidden border-t border-slate-400 pt-6 text-xs text-slate-400 lg:block">
             <p className="mb-2 font-medium text-slate-300">
               O čemu je ovaj tekst?
             </p>
-            <p className="text-xs leading-relaxed text-slate-400">
+            <p className="text-xs leading-relaxed text-slate-100">
               {post.excerpt
                 ?.replace(/<[^>]+>/g, "")
                 .slice(0, 200)
@@ -303,7 +305,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               Blog objava
             </div>
 
-            <h1 className="text-balance text-3xl font-semibold tracking-tight text-slate-50 sm:text-4xl md:text-5xl">
+            <h1 className="text-balance text-3xl font-semibold tracking-tight text-slate-50 sm:text-4xl md:text-5xl my-6">
               {post.title}
             </h1>
 
@@ -317,10 +319,13 @@ export default async function BlogPostPage({ params }: PageProps) {
           </header>
 
           {/* Content – BEZ slika, one su gore u galeriji */}
-          <div className="prose prose-invert prose-lg max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:text-slate-50 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-strong:text-slate-50 prose-img:rounded-2xl prose-figcaption:text-xs prose-figcaption:text-slate-400">
+          <div className="prose prose-invert prose-lg max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:text-zinc-100 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-strong:text-slate-50 prose-img:rounded-2xl prose-figcaption:text-xs prose-figcaption:text-slate-400">
             <div
               dangerouslySetInnerHTML={{ __html: cleanedContent }}
             />
+          </div>
+          <div className="flex items-center justify-center">
+          <BackButton />
           </div>
         </article>
       </div>

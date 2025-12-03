@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
 import { Providers } from "./providers";
 import { NavbarWithChildren } from "@/components/navigation/Nav";
-import Footer from "@/components/footer/Footer";
+
+const Footer = dynamic(() => import('@/components/footer/Footer'));
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

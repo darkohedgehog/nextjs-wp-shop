@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
 
 @theme inline {
   --animate-first: moveVertical 30s ease infinite;

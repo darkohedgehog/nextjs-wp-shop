@@ -3,6 +3,7 @@ import { gql } from '@apollo/client';
 import he from 'he';
 import { ProductCard } from '@/components/product/ProductCard';
 import { CategoryProductsClient } from '@/components/categories/CategoryProductsClient';
+import BackButton from '@/components/ui/BackButton';
 
 
 // --- Tipovi podataka
@@ -212,6 +213,9 @@ export default async function CategorySlugPage({
               categoryId={currentCat.databaseId}
             />
           )}
+          <div>
+            <BackButton />
+          </div>
     </div>
   );
 }

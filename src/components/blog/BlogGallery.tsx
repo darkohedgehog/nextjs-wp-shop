@@ -132,7 +132,7 @@ export default function BlogGallery({ images, title }: BlogGalleryProps) {
 
       <div className="mb-8">
         {/* glavna slika */}
-        <div className="relative mb-4 cursor-pointer overflow-hidden rounded-3xl border border-white/10 bg-slate-950/80 shadow-xl shadow-black/40">
+        <div className="relative mb-8 cursor-pointer overflow-hidden rounded-3xl border border-[#adb5bd] bg-[#f8f9fa] shadow-lg shadow-[#adb5bd]">
           <div className="relative aspect-video w-full">
             <Image
               src={mainImage.sourceUrl}
@@ -154,7 +154,7 @@ export default function BlogGallery({ images, title }: BlogGalleryProps) {
               <button
                 key={`${img.sourceUrl}-${idx}`}
                 type="button"
-                className="relative h-20 overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/80 transition hover:border-cyan-400/60"
+                className="relative h-32 md:h-48 lg:h-48 overflow-hidden rounded-2xl border border-[#adb5bd] bg-[#f8f9fa] transition hover:border-cyan-400/60 object-cover"
                 onClick={() => openAtIndex(idx + 1)}
               >
                 <Image
@@ -163,7 +163,7 @@ export default function BlogGallery({ images, title }: BlogGalleryProps) {
                   fill
                   priority
                   sizes="120px"
-                  className="object-cover"
+                  className="object-cover w-full h-56"
                 />
               </button>
             ))}
