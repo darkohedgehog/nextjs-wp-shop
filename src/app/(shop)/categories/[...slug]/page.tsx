@@ -1,10 +1,12 @@
+// src/app/(shop)/categories/[...slug]/page.tsx
+
 import { client } from '@/lib/apollo-client';
 import { gql } from '@apollo/client';
 import he from 'he';
 import { ProductCard } from '@/components/product/ProductCard';
 import { CategoryProductsClient } from '@/components/categories/CategoryProductsClient';
 import BackButton from '@/components/ui/BackButton';
-
+import ShopShell from '@/components/shop/ShopShell';
 
 // --- Tipovi podataka
 type Category = {
@@ -94,15 +96,20 @@ function cleanPrice(raw?: string | null) {
   return he.decode(raw).replace(/&nbsp;|\u00A0/g, '').trim();
 }
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 export default async function CategorySlugPage({
   params,
+  searchParams,
 }: {
-  // 👇 u Next 15 / React 19 params je Promise
+  // u Next 15 / React 19 params je Promise
   params: Promise<{ slug?: string | string[] }>;
+  searchParams: Promise<SearchParams>;
 }) {
-  // ⬇️ ovde ga "otvaramo"
-  const resolved = await params;
-  const slugInput = resolved.slug;
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+
+  const slugInput = resolvedParams.slug;
 
   // slug može biti string ili string[] – normalizuj u niz
   const slugArr = Array.isArray(slugInput)
@@ -116,9 +123,11 @@ export default async function CategorySlugPage({
 
   if (!parentSlug) {
     return (
-      <p className="p-4 max-w-5xl mx-auto text-sm paragraph-color text-center">
-        Učitavanje…
-      </p>
+      <ShopShell searchParams={resolvedSearchParams}>
+        <p className="p-4 max-w-5xl mx-auto text-sm paragraph-color text-center">
+          Učitavanje…
+        </p>
+      </ShopShell>
     );
   }
 
@@ -138,9 +147,11 @@ export default async function CategorySlugPage({
 
   if (!parentCat) {
     return (
-      <p className="p-4 max-w-5xl mx-auto text-sm text-red-600 text-center">
-        Kategorija nije pronađena.
-      </p>
+      <ShopShell searchParams={resolvedSearchParams}>
+        <p className="p-4 max-w-5xl mx-auto text-sm text-red-600 text-center">
+          Kategorija nije pronađena.
+        </p>
+      </ShopShell>
     );
   }
 
@@ -154,68 +165,74 @@ export default async function CategorySlugPage({
 
   if (!currentCat) {
     return (
-      <p className="p-4 max-w-5xl mx-auto text-sm text-red-600 text-center">
-        Podkategorija nije pronađena.
-      </p>
+      <ShopShell searchParams={resolvedSearchParams}>
+        <p className="p-4 max-w-5xl mx-auto text-sm text-red-600 text-center">
+          Podkategorija nije pronađena.
+        </p>
+      </ShopShell>
     );
   }
 
   const showSubcategories = !childSlug && childNodes.length > 0;
 
-    // 2) Ako je leaf (nema podkategorija ili smo na child-u) → fetch proizvode
-    let products: Product[] = [];
-    let initialPageInfo: PageInfo = { endCursor: null, hasNextPage: false };
-  
-    if (!showSubcategories) {
-      const categoryId = currentCat.databaseId;
-  
-      const prodRes = await client.query<ProductsData>({
-        query: GET_PRODUCTS_BY_CATEGORY,
-        variables: { categoryId, after: null },
-        context: {
-          fetchOptions: {
-            next: { revalidate: 300 },
-            cache: 'force-cache',
-          },
+  // 2) Ako je leaf → fetch proizvode
+  let products: Product[] = [];
+  let initialPageInfo: PageInfo = { endCursor: null, hasNextPage: false };
+
+  if (!showSubcategories) {
+    const categoryId = currentCat.databaseId;
+
+    const prodRes = await client.query<ProductsData>({
+      query: GET_PRODUCTS_BY_CATEGORY,
+      variables: { categoryId, after: null },
+      context: {
+        fetchOptions: {
+          next: { revalidate: 300 },
+          cache: 'force-cache',
         },
-      });
-  
-      const productsData = prodRes.data?.products;
-      const nodes = productsData?.nodes ?? [];
-      products = nodes.filter((p): p is Product => Boolean(p));
-      initialPageInfo = productsData?.pageInfo ?? { endCursor: null, hasNextPage: false };
-    }
+      },
+    });
 
-  // 3) Render
+    const productsData = prodRes.data?.products;
+    const nodes = productsData?.nodes ?? [];
+    products = nodes.filter((p): p is Product => Boolean(p));
+    initialPageInfo =
+      productsData?.pageInfo ?? { endCursor: null, hasNextPage: false };
+  }
+
   return (
-    <div className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 secondary-color">{currentCat.name}</h1>
+    <ShopShell searchParams={resolvedSearchParams}>
+      <div className="p-4 max-w-5xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 secondary-color">
+          {currentCat.name}
+        </h1>
 
-      {showSubcategories ? (
-        // 👉 PODKATEGORIJE – isti UI kao na CategoriesPage.tsx
-        <div className="grid grid-cols-2 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
-          {childNodes.map((sub) => (
-            <ProductCard
-              key={sub.id}
-              href={`/categories/${parentSlug}/${sub.slug}`}
-              name={sub.name}
-              imageUrl={sub.image?.sourceUrl ?? parentCat.image?.sourceUrl ?? null}
-              imageAlt={sub.image?.altText || sub.name}
-              price={undefined}
-              brandName={undefined}
-            />
-          ))}
-        </div>
-           ) : (
-            <CategoryProductsClient
-              initialProducts={products}
-              initialPageInfo={initialPageInfo}
-              categoryId={currentCat.databaseId}
-            />
-          )}
-          <div>
-            <BackButton />
+        {showSubcategories ? (
+          <div className="grid grid-cols-2 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
+            {childNodes.map((sub) => (
+              <ProductCard
+                key={sub.id}
+                href={`/categories/${parentSlug}/${sub.slug}`}
+                name={sub.name}
+                imageUrl={sub.image?.sourceUrl ?? parentCat.image?.sourceUrl ?? null}
+                imageAlt={sub.image?.altText || sub.name}
+                price={undefined}
+                brandName={undefined}
+              />
+            ))}
           </div>
-    </div>
+        ) : (
+          <CategoryProductsClient
+            initialProducts={products}
+            initialPageInfo={initialPageInfo}
+            categoryId={currentCat.databaseId}
+          />
+        )}
+
+        <div className="mt-6">
+          <BackButton />
+        </div>
+      </div>
+    </ShopShell>
   );
 }

@@ -1,3 +1,5 @@
+// src/components/product/ProductListPage.tsx
+
 import { gql } from '@apollo/client';
 import { client } from '@/lib/apollo-client';
 import ProductListClient from '@/components/product/ProductListClient';
@@ -124,11 +126,11 @@ const GET_PRODUCTS = gql`
   }
 `;
 
-export default async function ProductsPage({
-  searchParams,
-}: {
+export type ProductListPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
-}) {
+};
+
+export default async function ProductListPage({ searchParams }: ProductListPageProps) {
   const search =
     typeof searchParams?.q === 'string' ? searchParams.q : undefined;
 
