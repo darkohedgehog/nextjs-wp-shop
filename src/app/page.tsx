@@ -38,6 +38,14 @@ const BlogIntroSection = dynamic(
     ssr: true,
   }
 );
+
+const InfoBanner = dynamic(
+  () => import("@/components/mainpage/info/InfoBanner"),
+  {
+    ssr: true,
+  }
+);
+
 const FaqSection = dynamic<FeaturedProductsProps>(
   () => import("@/components/mainpage/faqsection/FaqSection"),
   {
@@ -53,6 +61,7 @@ export default function Home() {
       <IntroductionSection />
       <PopularProductsSection />
       <BlogIntroSection />
+      <InfoBanner />
       <FaqSection />
     </>
   );

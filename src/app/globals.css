@@ -1,8 +1,12 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-
+/* =========================================================
+ * 1) Tailwind @theme inline – animacije & custom varijable
+ *    (koriste se kroz Tailwind i custom komponente)
+ * =======================================================*/
 @theme inline {
+  /* Custom animation tokens */
   --animate-first: moveVertical 30s ease infinite;
   --animate-second: moveInCircle 20s reverse infinite;
   --animate-third: moveInCircle 40s linear infinite;
@@ -10,15 +14,36 @@
   --animate-fifth: moveInCircle 20s ease infinite;
   --animate-shine: shine var(--duration) infinite linear;
 
+  /* Input glow */
   @keyframes input-glow {
-    0%   { box-shadow: 0 0 0 rgba(255,255,255,0.00); }
-    100% { box-shadow: 0 0 18px rgba(255,255,255,0.25); }
+    0% {
+      box-shadow: 0 0 0 rgba(255, 255, 255, 0.0);
+    }
+    100% {
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.25);
+    }
   }
+
+  /* Border “breathing” effect (npr. shine-focus u fokusu) */
   @keyframes border-breathe {
-    0%   { box-shadow: 0 0 0 0 rgba(160,124,254,0.20), 0 0 0 0 rgba(254,143,181,0.12); }
-    50%  { box-shadow: 0 0 24px 2px rgba(160,124,254,0.35), 0 0 40px 8px rgba(254,143,181,0.18); }
-    100% { box-shadow: 0 0 0 0 rgba(160,124,254,0.20), 0 0 0 0 rgba(254,143,181,0.12); }
+    0% {
+      box-shadow:
+        0 0 0 0 rgba(160, 124, 254, 0.20),
+        0 0 0 0 rgba(254, 143, 181, 0.12);
+    }
+    50% {
+      box-shadow:
+        0 0 24px 2px rgba(160, 124, 254, 0.35),
+        0 0 40px 8px rgba(254, 143, 181, 0.18);
+    }
+    100% {
+      box-shadow:
+        0 0 0 0 rgba(160, 124, 254, 0.20),
+        0 0 0 0 rgba(254, 143, 181, 0.12);
+    }
   }
+
+  /* Background / blob animacije */
   @keyframes moveHorizontal {
     0% {
       transform: translateX(-50%) translateY(-10%);
@@ -54,6 +79,8 @@
       transform: translateY(-50%);
     }
   }
+
+  /* Shine efekt (koristi se u ShineBorder-u) */
   @keyframes shine {
     0% {
       background-position: 0% 0%;
@@ -61,12 +88,42 @@
     50% {
       background-position: 100% 100%;
     }
-    to {
+    100% {
       background-position: 0% 0%;
     }
   }
 }
 
+/* =========================================================
+ * 2) Global animacije (van @theme) – npr. pulse underline
+ * =======================================================*/
+
+/* Pulsirajuća linija (koristi se u InfoBanner headingu) */
+@keyframes pulse-underline {
+  0% {
+    transform: scaleX(0.7);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(0.7);
+    opacity: 0.4;
+  }
+}
+
+.pulse-underline {
+  animation: pulse-underline 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* =========================================================
+ * 3) Shine / input utility klase
+ * =======================================================*/
+
+/* Sve u shine inputu je bijelo (za tamnu pozadinu) */
 .shine-input,
 .shine-input * {
   color: #fff !important;
@@ -89,7 +146,7 @@
   animation: border-breathe 1.8s ease-in-out infinite;
 }
 
-/* poštuj reduced-motion */
+/* Poštuj reduced-motion preferencu korisnika */
 @media (prefers-reduced-motion: reduce) {
   .input-focus-glow:focus,
   .shine-focus:focus-within {
@@ -97,28 +154,59 @@
   }
 }
 
-/* ako tvoj ShineBorder renderuje apsolutne dekorativne slojeve */
+/* Ako tvoj ShineBorder renderuje apsolutne dekorativne slojeve
+   unutar kontenjera – ne želimo da prekriju klikove/hovere. */
 .shine-focus > *[class*="absolute"] {
   pointer-events: none;
 }
+
+/* =========================================================
+ * 4) Design tokens – CSS varijable (boje)
+ * =======================================================*/
 
 :root {
   --primary-color: rgba(0, 119, 182, 1);
   --secondary-color: rgba(0, 150, 199, 1);
   --paragraph-color: rgb(199, 143, 255);
   --border-color: rgb(165, 180, 252);
-  --button-color: rgba(248,249,250);
+  --button-color: rgba(248, 249, 250);
 }
-.primary-color { color: var(--primary-color); }
-.secondary-color { color: var(--secondary-color); }
-.paragraph-color { color: var(--paragraph-color); }
-.border-color { color: var(--border-color); }
-.button-color { color: var(--button-color);}
 
+/* =========================================================
+ * 5) Utility klase bazirane na varijablama
+ * =======================================================*/
+
+/* Tekstualne boje */
+.primary-color {
+  color: var(--primary-color);
+}
+.secondary-color {
+  color: var(--secondary-color);
+}
+.paragraph-color {
+  color: var(--paragraph-color);
+}
+.border-color {
+  color: var(--border-color);
+}
+.button-color {
+  color: var(--button-color);
+}
+
+/* Background boje */
 .bg-button-color {
-  background-color: rgba(248,249,250);
+  background-color: rgba(248, 249, 250);
 }
 
+.bg-primary-color {
+  background-color: rgba(0, 119, 182, 1);
+}
+
+.bg-secondary-color {
+  background-color: rgba(0, 150, 199, 1);
+}
+
+/* Gradijent background – možeš koristiti kao utility klasu */
 .bg-gradient-custom {
   background: linear-gradient(
     135deg,
@@ -142,10 +230,11 @@
   );
 }
 
+/* =========================================================
+ * 6) “Component-style” util klase (glassmorphism, titlovi...)
+ * =======================================================*/
 
-.bg-primary-color {
-  background-color: rgba(0, 119, 182, 1);
-}
+/* Glass pill za primary stil (badge / chip / CTA background) */
 .glass-primary {
   background: rgba(140, 100, 255, 0.2);
   backdrop-filter: blur(10px);
@@ -154,14 +243,11 @@
   border-radius: 9999px; /* full rounded */
 }
 
-.bg-secondary-color {
-  background-color: rgba(0, 150, 199, 1);
-}
-
+/* Naslov za glavne stranice – koristi Tailwind @apply */
 .titlemain {
-  @apply bg-linear-to-br from-slate-300 to-slate-500 
-         dark:from-slate-300 dark:to-slate-500 
-         py-4 bg-clip-text text-center 
-         text-2xl md:text-5xl 
-         font-medium tracking-tight text-transparent;
+  @apply bg-linear-to-br from-slate-300 to-slate-500
+    dark:from-slate-300 dark:to-slate-500
+    py-4 bg-clip-text text-center
+    text-2xl md:text-5xl
+    font-medium tracking-tight text-transparent;
 }
