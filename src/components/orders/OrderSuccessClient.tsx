@@ -297,7 +297,7 @@ export default function OrderSuccessClient() {
                 </div>
               </div>
 
-              <div className="mt-5 text-xs text-zinc-100">
+              <div className="mt-5 text-sm font-semibold text-zinc-100 tracking-tight">
                 Ako imate pitanja oko narudžbe, slobodno nas kontaktirajte na prodaja@zivic-elektro.com
               </div>
 

@@ -112,7 +112,7 @@ export function CategoryProductsClient({
   return (
     <>
       {/* Grid proizvoda */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
         {products.map((product) => (
           <ProductCard
             key={product.id}

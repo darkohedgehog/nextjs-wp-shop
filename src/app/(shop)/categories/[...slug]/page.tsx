@@ -208,7 +208,7 @@ export default async function CategorySlugPage({
         </h1>
 
         {showSubcategories ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
             {childNodes.map((sub) => (
               <ProductCard
                 key={sub.id}

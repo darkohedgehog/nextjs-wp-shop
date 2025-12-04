@@ -263,29 +263,30 @@ export default function CheckoutPage() {
           <div
             className="
               space-y-6
-              border border-[#adb5bd]
-              shadow-lg shadow-[#adb5bd]
-              bg-gradient-custom
-              rounded-xl
+              border border-[#adb5bd]/70
+              bg-linear-to-br from-zinc-900/20 via-zinc-900/10 to-zinc-800/20
+              rounded-2xl
+              shadow-[0_20px_60px_rgba(0,0,0,0.45)]
+              backdrop-blur-md
               p-4
               lg:col-span-2
             "
           >
             <div className="text-center text-2xl font-semibold tracking-tight text-zinc-300 md:text-3xl lg:text-3xl flex items-center justify-center gap-2">
               Podaci o naplati
-              <span className="primary-color">
+              <span className="text-cyan-400">
                 <IoMdInformationCircleOutline />
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-cyan-200">
               <input
                 name="first_name"
                 value={billing.first_name}
                 onChange={handleBillingChange}
                 required
                 placeholder="Ime"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
               />
               <input
                 name="last_name"
@@ -293,14 +294,14 @@ export default function CheckoutPage() {
                 onChange={handleBillingChange}
                 required
                 placeholder="Prezime"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
               />
               <input
                 name="company"
                 value={billing.company}
                 onChange={handleBillingChange}
                 placeholder="Naziv firme (R1)"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 col-span-2"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 col-span-2"
               />
               <input
                 name="email"
@@ -309,7 +310,7 @@ export default function CheckoutPage() {
                 onChange={handleBillingChange}
                 required
                 placeholder="Email"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 col-span-2"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 col-span-2"
               />
               <input
                 name="phone"
@@ -318,7 +319,7 @@ export default function CheckoutPage() {
                 onChange={handleBillingChange}
                 required
                 placeholder="Telefon"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 col-span-2"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 col-span-2"
               />
               <input
                 name="address_1"
@@ -326,14 +327,14 @@ export default function CheckoutPage() {
                 onChange={handleBillingChange}
                 required
                 placeholder="Adresa"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 col-span-2"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 col-span-2"
               />
               <input
                 name="address_2"
                 value={billing.address_2}
                 onChange={handleBillingChange}
                 placeholder="Adresa 2 (opcionalno)"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 col-span-2"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 col-span-2"
               />
               <input
                 name="city"
@@ -341,7 +342,7 @@ export default function CheckoutPage() {
                 onChange={handleBillingChange}
                 required
                 placeholder="Grad"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
               />
               <input
                 name="state"
@@ -349,7 +350,7 @@ export default function CheckoutPage() {
                 onChange={handleBillingChange}
                 required
                 placeholder="Županija/Država"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
               />
               <input
                 name="postcode"
@@ -357,7 +358,7 @@ export default function CheckoutPage() {
                 onChange={handleBillingChange}
                 required
                 placeholder="Poštanski broj"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
               />
               <input
                 name="country"
@@ -365,11 +366,11 @@ export default function CheckoutPage() {
                 onChange={handleBillingChange}
                 required
                 placeholder="Država (npr. HR)"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
               />
             </div>
 
-            <div className="flex items-center space-x-2 text-zinc-900">
+            <div className="flex items-center space-x-2 text-zinc-200">
               <input
                 id="sameAsBilling"
                 type="checkbox"
@@ -384,19 +385,19 @@ export default function CheckoutPage() {
               <>
                 <div className="text-center text-xl font-semibold tracking-tight text-zinc-300 md:text-2xl lg:text-2xl flex items-center justify-center gap-3 mt-6">
                   Podaci o dostavi
-                  <span className="primary-color">
+                  <span className="text-cyan-400">
                     <TbTruckDelivery />
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 text-cyan-200">
                   <input
                     name="first_name"
                     value={shipping.first_name}
                     onChange={handleShippingChange}
                     required
                     placeholder="Ime (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
                   />
                   <input
                     name="last_name"
@@ -404,14 +405,14 @@ export default function CheckoutPage() {
                     onChange={handleShippingChange}
                     required
                     placeholder="Prezime (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
                   />
                   <input
                     name="company"
                     value={shipping.company}
                     onChange={handleShippingChange}
                     placeholder="Naziv firme (R1)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 col-span-2"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 col-span-2"
                   />
                   <input
                     name="address_1"
@@ -419,14 +420,14 @@ export default function CheckoutPage() {
                     onChange={handleShippingChange}
                     required
                     placeholder="Adresa (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 col-span-2"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 col-span-2"
                   />
                   <input
                     name="address_2"
                     value={shipping.address_2}
                     onChange={handleShippingChange}
                     placeholder="Adresa 2 (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 col-span-2"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 col-span-2"
                   />
                   <input
                     name="city"
@@ -434,7 +435,7 @@ export default function CheckoutPage() {
                     onChange={handleShippingChange}
                     required
                     placeholder="Grad (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
                   />
                   <input
                     name="state"
@@ -442,7 +443,7 @@ export default function CheckoutPage() {
                     onChange={handleShippingChange}
                     required
                     placeholder="Županija/Država (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
                   />
                   <input
                     name="postcode"
@@ -450,7 +451,7 @@ export default function CheckoutPage() {
                     onChange={handleShippingChange}
                     required
                     placeholder="Poštanski broj (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
                   />
                   <input
                     name="country"
@@ -458,7 +459,7 @@ export default function CheckoutPage() {
                     onChange={handleShippingChange}
                     required
                     placeholder="Država (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600"
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
                   />
                 </div>
               </>
@@ -467,7 +468,7 @@ export default function CheckoutPage() {
             <div className="mt-6 space-y-2">
               <div className="text-center text-xl font-semibold tracking-tight text-zinc-300 md:text-2xl lg:text-2xl flex items-center justify-center gap-3">
                 Napomena uz narudžbu
-                <span className="primary-color">
+                <span className="text-cyan-400">
                   <GiNotebook />
                 </span>
               </div>
@@ -478,19 +479,19 @@ export default function CheckoutPage() {
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Npr. nazvati prije dostave, ostaviti paket kod susjeda, poslati R1 račun…"
                 rows={4}
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-600 resize-none"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 resize-none"
               />
             </div>
 
             <div className="text-center text-xl font-semibold tracking-tight text-zinc-300 md:text-2xl lg:text-2xl flex items-center justify-center gap-3 mt-6">
               Način plaćanja
-              <span className="primary-color">
+              <span className="text-cyan-400">
                 <GiPayMoney />
               </span>
             </div>
 
             <div className="space-y-2">
-              <label className="inline-flex items-center mr-2 text-zinc-900">
+              <label className="inline-flex items-center mr-2 text-zinc-200">
                 <input
                   type="radio"
                   name="payment_method"
@@ -503,7 +504,7 @@ export default function CheckoutPage() {
               </label>
 
               {isB2B && (
-                <label className="inline-flex items-center text-zinc-900">
+                <label className="inline-flex items-center text-zinc-200">
                   <input
                     type="radio"
                     name="payment_method"
@@ -522,10 +523,15 @@ export default function CheckoutPage() {
           <div className="mt-6 lg:mt-0 lg:col-span-1">
             <div className="lg:sticky lg:top-24 space-y-4">
               {/* Summary */}
-              <div className="border border-[#adb5bd] shadow-lg shadow-[#adb5bd] bg-gradient-custom rounded-xl p-4 text-blue-600 space-y-3 bg-white/5">
-                <div className="text-center text-lg font-semibold text-zinc-200 gap-2 flex items-center justify-center">
+              <div className="border
+              border-[#adb5bd]/70
+              bg-linear-to-br from-zinc-900/20 via-zinc-900/10 to-zinc-800/20
+              rounded-2xl
+              shadow-[0_20px_60px_rgba(0,0,0,0.45)]
+              backdrop-blur-md p-4 text-blue-600 space-y-3">
+                <div className="text-center text-lg font-semibold text-slate-300 gap-2 flex items-center justify-center">
                   Pregled narudžbe
-                  <span className="primary-color">
+                  <span className="text-cyan-400">
                     <TbEyeCheck />
                   </span>
                 </div>
@@ -548,17 +554,17 @@ export default function CheckoutPage() {
                       )}
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-zinc-100 leading-snug wrap-break-word">
+                        <p className="text-sm font-bold text-slate-100 leading-snug wrap-break-word">
                           {item.name}
                         </p>
 
                         {item.sku && (
-                          <p className="text-xs text-zinc-300 mt-0.5">
+                          <p className="text-xs text-slate-200 mt-0.5">
                             SKU: {item.sku}
                           </p>
                         )}
 
-                        <div className="flex items-center justify-between mt-1 text-sm text-zinc-200">
+                        <div className="flex items-center justify-between mt-1 text-sm text-slate-100">
                           <span>
                             {item.quantity} × {item.price.toFixed(2)} €
                           </span>
@@ -572,12 +578,12 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="pt-2 space-y-1 text-sm">
-                  <div className="flex items-center justify-between text-blue-500">
+                  <div className="flex items-center justify-between text-cyan-200">
                     <span>Stavke:</span>
                     <span>{itemsTotal.toFixed(2)} €</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-blue-500">
+                  <div className="flex items-center justify-between text-blue-300">
                     <span>Dostava:</span>
                     <span>
                       {shippingCost.toFixed(2)} €
@@ -585,13 +591,13 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between font-bold text-base text-primary-color pt-1 border-t border-white/20">
+                  <div className="flex items-center justify-between font-bold text-base text-cyan-400 pt-1 border-t border-cyan-900/50">
                     <span>Ukupno:</span>
                     <span>{grandTotal.toFixed(2)} €</span>
                   </div>
 
-                  <p className="text-xs text-zinc-400 pt-1">
-                    Ukupno prema cijenama u košarici (B2B/B2C pravila iz plugina).
+                  <p className="text-sm text-slate-200 pt-1 font-semibold">
+                    Ukupno prema cijenama u košarici.
                   </p>
                 </div>
               </div>
