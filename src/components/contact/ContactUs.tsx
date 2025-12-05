@@ -17,7 +17,7 @@ export default function ContactUs() {
             {/* Pulsirajući glow iza slike */}
             <div className="pointer-events-none absolute -inset-4 -z-10 rounded-4xl bg-linear-to-br from-emerald-400/40 via-cyan-400/40 to-blue-500/40 blur-2xl glow-pulse-img" />
 
-            <div className="h-full overflow-hidden rounded-4xl border border-white/10 bg-blue-950/70 shadow-[0_0_45px_rgba(56,189,248,0.28)] backdrop-blur-xl flex">
+            <div className="h-full overflow-hidden rounded-4xl border border-white/10 bg-slate-950/80 shadow-[0_0_45px_rgba(56,189,248,0.28)] backdrop-blur-xl flex">
               <Image
                 src="https://wp.zivic-elektro.shop/wp-content/uploads/2025/12/contact_us.png"
                 alt="Kontakt Živić Elektro"
@@ -32,20 +32,20 @@ export default function ContactUs() {
           {/* RIGHT INFORMATION BLOCK – iste dimenzije kao slika + animated border */}
           <div className="relative flex-1">
             <div className="h-full animated-border">
-              <div className="h-full animated-border-inner border border-white/10 bg-blue-950/70 p-8 shadow-[0_0_40px_rgba(56,189,248,0.25)] backdrop-blur-xl flex flex-col rounded-4xl">
+              <div className="h-full animated-border-inner border border-white/10 bg-slate-950/80 p-8 shadow-[0_0_40px_rgba(56,189,248,0.25)] backdrop-blur-xl flex flex-col rounded-4xl">
                 {/* TITLE */}
                 <div className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.14em] text-emerald-200 shadow-[0_0_20px_rgba(52,211,153,0.5)] text-center">
                   Kontakt
                 </div>
 
-                <h2 className="mt-4 text-3xl font-semibold text-slate-50">
+                <h2 className="mt-4 text-3xl font-semibold text-cyan-400">
                   Uvijek smo tu za vas
                 </h2>
 
                 {/* INFO */}
                 <div className="mt-6 space-y-6 text-slate-200">
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-300">Naša adresa</h3>
+                    <h3 className="text-sm font-semibold text-cyan-300">Naša adresa</h3>
                     <p className="mt-2 text-slate-100">
                       Maloprodaja: Lokvanjski sokak 6, Vukovar
                     </p>
@@ -55,7 +55,7 @@ export default function ContactUs() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-300">Radno vrijeme</h3>
+                    <h3 className="text-sm font-semibold text-cyan-300">Radno vrijeme</h3>
                     <p className="mt-2 text-slate-100">
                       Ponedjeljak - Petak: 07:30h - 19:30h
                     </p>
@@ -63,7 +63,7 @@ export default function ContactUs() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-300">Kontakt</h3>
+                    <h3 className="text-sm font-semibold text-cyan-300">Kontakt</h3>
                     <p className="mt-2 text-slate-100">
                       Email: prodaja@zivic-elektro.com
                     </p>
@@ -73,7 +73,7 @@ export default function ContactUs() {
 
                 {/* SOCIAL ICONS */}
                 <div className="mt-auto flex flex-col items-center pt-10">
-                  <h3 className="mb-4 text-sm font-semibold text-zinc-400">
+                  <h3 className="mb-4 text-sm font-semibold text-cyan-400">
                     Budimo u kontaktu
                   </h3>
 

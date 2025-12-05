@@ -10,10 +10,10 @@ export default function AboutUs() {
     >
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:px-8">
         {/* Tekstualni deo */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 animated-border">
           {/* Subtle glowing frame */}
           <div className="pointer-events-none absolute -inset-0.5 -z-10 rounded-3xl bg-linear-to-br from-emerald-500/40 via-cyan-500/40 to-sky-500/40 opacity-70 blur-xl" />
-          <div className="rounded-3xl border border-white/10 bg-slate-950/50 p-6 shadow-[0_0_40px_rgba(34,211,238,0.18)] backdrop-blur-xl sm:p-8">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-[0_0_40px_rgba(34,211,238,0.18)] backdrop-blur-xl sm:p-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.14em] text-emerald-200 shadow-[0_0_20px_rgba(52,211,153,0.5)]">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
               O nama
@@ -51,7 +51,7 @@ export default function AboutUs() {
             {/* Company details blok */}
             <div className="mt-6 space-y-4 text-sm text-slate-200 sm:text-[0.95rem]">
               <div>
-                <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
                   Podaci o tvrtki
                 </h2>
                 <p className="mt-2 font-medium text-slate-100">
@@ -64,7 +64,7 @@ export default function AboutUs() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                     Identifikacija
                   </p>
                   <p className="text-slate-300">
@@ -85,7 +85,7 @@ export default function AboutUs() {
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                     Poslovni račun
                   </p>
                   <p className="text-slate-300">
@@ -105,7 +105,7 @@ export default function AboutUs() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                     Pravna forma
                   </p>
                   <p className="text-slate-300">
@@ -121,7 +121,7 @@ export default function AboutUs() {
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                     Djelatnost
                   </p>
                   <p className="text-slate-300">
@@ -133,25 +133,27 @@ export default function AboutUs() {
             </div>
           </div>
         </div>
-
         {/* Lottie deo */}
-        <div className="relative flex-1">
-          {/* Glow frame oko animacije */}
-          <div className="pointer-events-none absolute -inset-4 -z-10 rounded-[2.25rem] bg-linear-to-tr from-emerald-400/40 via-cyan-400/40 to-sky-400/40 opacity-70 blur-2xl glow-pulse" />
-          <div className="relative mx-auto flex max-w-md items-center justify-center rounded-4xl border border-white/10 bg-slate-950/50 p-4 shadow-[0_0_45px_rgba(56,189,248,0.35)] backdrop-blur-xl sm:p-6 lg:max-w-lg">
-            <div className="aspect-video w-full">
-              <LottieAboutUs />
-            </div>
-          </div>
-
-          {/* Mali badge ispod animacije */}
-          <div className="mt-4 flex justify-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-900/80 px-3 py-1 text-[11px] font-medium text-slate-200 shadow-[0_0_20px_rgba(15,23,42,0.8)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-              Vaš partner za elektro materijal od 1998.
-            </div>
-          </div>
+          <div className="relative flex-1">
+        {/* Glow frame oko animacije */}
+       <div className="pointer-events-none absolute -inset-4 -z-10 rounded-4xl bg-linear-to-tr from-emerald-400/40 via-cyan-400/40 to-sky-400/40 opacity-70 blur-2xl"
+            aria-hidden="true"/>
+        {/* ANIMATED BORDER OKO LOTTIE KARTICE */}
+        <div className="animated-border rounded-4xl">
+         <div className="animated-border-inner rounded-4xl overflow-hidden border border-white/10 bg-slate-950/80 shadow-[0_0_45px_rgba(56,189,248,0.35)] backdrop-blur-xl">
+        <div className="aspect-video w-full overflow-hidden rounded-4xl my-4">
+        <LottieAboutUs />
         </div>
+        </div>
+         </div>
+      {/* BADGE OSTAVLJEN VAN OKVIRA */}
+  <div className="mt-4 flex justify-center">
+    <div className="inline-flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-900/80 px-3 py-1 text-[11px] font-medium text-slate-200 shadow-[0_0_20px_rgba(15,23,42,0.8)]">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
+      Vaš partner za elektro materijal od 1998.
+    </div>
+  </div>
+</div>
       </div>
       <div className="flex items-center justify-center my-16">
           <Link href='/contact'>
