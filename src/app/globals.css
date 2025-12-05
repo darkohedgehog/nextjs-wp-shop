@@ -118,7 +118,71 @@
   animation: pulse-underline 1.8s ease-in-out infinite;
   transform-origin: center;
 }
+/* Glow impuls za Lottie animaciju u AboutUs.tsx */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.25);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.03);
+    box-shadow: 0 0 60px rgba(56, 189, 248, 0.55);
+  }
+}
 
+.glow-pulse {
+  animation: glow-pulse 3.4s ease-in-out infinite;
+}
+/* Za komonentu ContactUs.tsx */
+@keyframes glow-pulse-img {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1);
+    filter: blur(32px);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.06);
+    filter: blur(40px);
+  }
+}
+
+.glow-pulse-img {
+  animation: glow-pulse-img 4.2s ease-in-out infinite;
+}
+
+@keyframes border-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-border {
+  position: relative;
+  border-radius: 2rem; /* ~ rounded-4xl */
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    rgba(16, 185, 129, 0.8),
+    rgba(56, 189, 248, 0.95),
+    rgba(59, 130, 246, 0.85)
+  );
+  background-size: 200% 200%;
+  animation: border-flow 7s linear infinite;
+}
+
+.animated-border-inner {
+  border-radius: calc(2rem - 2px);
+}
 /* =========================================================
  * 3) Shine / input utility klase
  * =======================================================*/
