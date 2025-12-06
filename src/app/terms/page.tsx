@@ -1,8 +1,11 @@
-import React from 'react'
+import Terms from "@/components/terms/Terms";
+
 
 const TermsPage = () => {
   return (
-    <div>TermsPage</div>
+    <>
+    <Terms />
+    </>
   )
 }
 

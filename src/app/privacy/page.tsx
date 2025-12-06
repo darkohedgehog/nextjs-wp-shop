@@ -1,8 +1,10 @@
-import React from 'react'
+import Privacy from "@/components/privacy/Privacy";
 
 const PrivacyPage = () => {
   return (
-    <div>PrivacyPage</div>
+    <>
+    <Privacy />
+    </>
   )
 }
 

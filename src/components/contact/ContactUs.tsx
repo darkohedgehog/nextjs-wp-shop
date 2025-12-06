@@ -120,7 +120,7 @@ export default function ContactUs() {
         <div className="relative mt-16">
           <div className="pointer-events-none absolute -inset-4 -z-10 rounded-4xl bg-linear-to-br from-cyan-400/30 via-emerald-400/30 to-blue-400/30 opacity-70 blur-2xl" />
 
-          <div className="overflow-hidden rounded-4xl border border-white/10 bg-slate-950/60 shadow-[0_0_40px_rgba(56,189,248,0.25)] backdrop-blur-xl">
+          <div className="overflow-hidden rounded-4xl border animated-border bg-slate-950/60 shadow-[0_0_40px_rgba(56,189,248,0.25)] backdrop-blur-xl">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4831.210175285545!2d18.997743266709854!3d45.35279852954131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x475c8fb963e34a33%3A0x1b603b27797e96a2!2sUl.%20Lokvanjski%20sokak%206%2C%2032000%2C%20Vukovar!5e0!3m2!1shr!2hr!4v1712951137165!5m2!1hr!2hr"
               width="100%"

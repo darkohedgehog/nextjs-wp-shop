@@ -1,8 +1,11 @@
-import React from 'react'
+import Complaint from "@/components/complaint/Complaint";
+
 
 const ComplaintPage = () => {
   return (
-    <div>ComplaintPage</div>
+    <>
+    <Complaint />
+    </>
   )
 }
 
