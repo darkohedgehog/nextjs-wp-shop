@@ -374,7 +374,7 @@ export default function ProductDetailPage() {
     <>
       <ImageModal />
 
-      <div className="p-4 max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+      <div className="p-4 max-w-4xl mx-auto grid md:grid-cols-2 gap-6 mt-8">
         {/* Glavna slika proizvoda */}
         {product.image?.sourceUrl && (
           <Image
@@ -382,14 +382,14 @@ export default function ProductDetailPage() {
             height={600}
             src={product.image.sourceUrl}
             alt={product.image.altText || product.name}
-            className="w-56 h-56 object-cover mb-2 mx-auto rounded-xl shadow-lg shadow-blue-400 cursor-pointer"
+            className="w-56 h-56 object-cover mb-2 mx-auto shadow-lg shadow-blue-400 cursor-pointer animated-border"
             priority
             onClick={() => openAtIndex(0)}
           />
         )}
 
         <div>
-          <h1 className="text-2xl font-bold text-zinc-300 mb-2">
+          <h1 className="text-2xl font-bold text-cyan-400 mb-2">
             {product.name}
           </h1>
 
@@ -442,7 +442,7 @@ export default function ProductDetailPage() {
 
           {product.shortDescription && (
             <div
-              className="prose prose-lg mb-8 text-zinc-300"
+              className="prose prose-invert prose-lg max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:text-zinc-100 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-strong:text-slate-50 prose-img:rounded-2xl prose-figcaption:text-xs prose-figcaption:text-slate-400 mb-8"
               dangerouslySetInnerHTML={{ __html: product.shortDescription }}
             />
           )}
@@ -462,7 +462,7 @@ export default function ProductDetailPage() {
                     src={img.sourceUrl}
                     alt={img.altText || product.name}
                     priority
-                    className="w-44 h-44 object-cover mb-2 mx-auto rounded-xl cursor-pointer"
+                    className="w-44 h-44 object-cover mb-2 mx-auto animated-border cursor-pointer"
                     onClick={() => openAtIndex(imageIndex)}
                   />
                 );

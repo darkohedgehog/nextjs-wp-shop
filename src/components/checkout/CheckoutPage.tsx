@@ -26,7 +26,7 @@ type BillingShipping = {
 };
 
 // fiksna dostava za B2C
-const BASE_SHIPPING = 4.5;
+const BASE_SHIPPING = 5.5;
 
 export default function CheckoutPage() {
   const image     = '/assets/Add-to-Cart-amico.svg';

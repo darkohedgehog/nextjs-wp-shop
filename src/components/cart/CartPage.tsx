@@ -10,16 +10,16 @@ import { GiPayMoney } from 'react-icons/gi';
 import { TbMoodSad } from 'react-icons/tb';
 import { useEffect, useState } from 'react';
 
-const SHIPPING_FALLBACK = 4.5;
+const SHIPPING_FALLBACK = 5.5;
 
 export default function CartPage() {
   const items = useCart((s) => s.items);
   const image = '/assets/Add-to-Cart-amico.svg';
 
-  // B2B flag – određuje shipping = 0 ili 4.5
+  // B2B flag – određuje shipping = 0 ili 5.5
   const [isB2B, setIsB2B] = useState(false);
 
-  // ✅ Detekcija B2B korisnika – agresivno resetovanje kad nije B2B
+  // Detekcija B2B korisnika – agresivno resetovanje kad nije B2B
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -74,7 +74,7 @@ export default function CartPage() {
     }
   }, []);
 
-  // 🔢 Lokalni total – cijene u items već dolaze kao B2B/B2C effective price (iz plugina)
+  // Lokalni total – cijene u items već dolaze kao B2B/B2C effective price (iz plugina)
   const itemsTotal = items.reduce(
     (sum, i) => sum + i.price * i.quantity,
     0

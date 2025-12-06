@@ -1,4 +1,3 @@
-// app/blog/[slug]/page.tsx
 import dynamic from 'next/dynamic';
 import type { Metadata } from "next";
 import Link from "next/link";
