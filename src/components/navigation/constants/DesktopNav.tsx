@@ -7,6 +7,7 @@ import { MenuItem } from "./MenuItem";
 import { Menu } from "./Menu";
 import { HoveredLink } from "./HoveredLink";
 import { ProductItem } from "./ProductItem";
+import CartButton from "@/components/cart/CartButton";
 
 type NavChild = {
   name: string;
@@ -77,10 +78,10 @@ const DesktopNav = ({ navItems }: DesktopNavProps) => {
           ))}
         </Menu>
       </div>
-
-      <button className="hidden rounded-full bg-black px-8 py-2 text-sm font-bold text-white shadow-[0px_-2px_0px_0px_rgba(255,255,255,0.4)_inset] md:block dark:bg-white dark:text-black">
-        Košarica
-      </button>
+      {/* CART BUTTON */}
+      <div className="hidden md:block">
+        <CartButton />
+      </div>
     </motion.div>
   );
 };
