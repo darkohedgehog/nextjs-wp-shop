@@ -264,7 +264,7 @@ export default function CheckoutPage() {
             className="
               space-y-6
               border border-[#adb5bd]/70
-              bg-linear-to-br from-zinc-900/20 via-zinc-900/10 to-zinc-800/20
+              bg-linear-to-br from-zinc-900/50 via-zinc-900/30 to-zinc-800/50
               rounded-2xl
               shadow-[0_20px_60px_rgba(0,0,0,0.45)]
               backdrop-blur-md
@@ -525,7 +525,7 @@ export default function CheckoutPage() {
               {/* Summary */}
               <div className="border
               border-[#adb5bd]/70
-              bg-linear-to-br from-zinc-900/20 via-zinc-900/10 to-zinc-800/20
+              bg-linear-to-br from-zinc-900/50 via-zinc-900/30 to-zinc-800/50
               rounded-2xl
               shadow-[0_20px_60px_rgba(0,0,0,0.45)]
               backdrop-blur-md p-4 text-blue-600 space-y-3">
@@ -563,7 +563,11 @@ export default function CheckoutPage() {
                             SKU: {item.sku}
                           </p>
                         )}
-
+                        {item.ean && (
+                          <p className="text-xs text-slate-200 mt-0.5">
+                            Barcode: {item.ean}
+                          </p>
+                        )}
                         <div className="flex items-center justify-between mt-1 text-sm text-slate-100">
                           <span>
                             {item.quantity} × {item.price.toFixed(2)} €

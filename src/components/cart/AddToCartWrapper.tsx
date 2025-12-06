@@ -2,7 +2,17 @@
 
 import AddToCartBtn from './AddToCart';
 
-export default function AddToCartWrapper(props: {
+export default function AddToCartWrapper({
+  product_id,
+  name,
+  price,
+  image,
+  imageAlt,
+  disabled,
+  quantity,
+  sku,
+  ean,
+}: {
   product_id: number;
   name: string;
   price: number;
@@ -11,6 +21,19 @@ export default function AddToCartWrapper(props: {
   disabled?: boolean;
   quantity?: number;
   sku?: string;
+  ean?: string;
 }) {
-  return <AddToCartBtn {...props} />;
+  return (
+    <AddToCartBtn
+      product_id={product_id}
+      name={name}
+      price={price}
+      image={image}
+      imageAlt={imageAlt}
+      disabled={disabled}
+      quantity={quantity}
+      sku={sku}
+      ean={ean}
+    />
+  );
 }

@@ -18,6 +18,7 @@ export type CartItem = {
   image: string;   // URL
   imageAlt: string;
   sku?: string;
+  ean?: string;
 };
 
 type CartState = {

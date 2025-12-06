@@ -24,6 +24,23 @@ type ProductMeta = {
   key: string;
   value: string;
 };
+type Brand = {
+  name: string;
+  slug: string;
+};
+
+type CategoryNode = {
+  databaseId: number;
+  name: string;
+  slug: string;
+  parent?: {
+    node: {
+      databaseId: number;
+      name: string;
+      slug: string;
+    } | null;
+  } | null;
+};
 
 type Product = {
   databaseId: number;
@@ -41,6 +58,8 @@ type Product = {
   stockStatus?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'ON_BACKORDER' | string;
   stockQuantity?: number | null;
   metaData?: ProductMeta[];
+  productCategories?: { nodes: CategoryNode[] } | null;
+  pwbBrands?: { nodes: Brand[] } | null;
 };
 
 // --- GraphQL ---
@@ -53,6 +72,30 @@ const GET_PRODUCT = gql`
       slug
       shortDescription
       globalUniqueId
+
+      # 👇 KATEGORIJE
+      productCategories(first: 10) {
+        nodes {
+          databaseId
+          name
+          slug
+          parent {
+            node {
+              databaseId
+              name
+              slug
+            }
+          }
+        }
+      }
+
+      # 👇 BRAND (iz Perfect WooCommerce Brands plugina)
+      pwbBrands(first: 5) {
+        nodes {
+          name
+          slug
+        }
+      }
 
       ... on SimpleProduct {
         sku
@@ -118,6 +161,19 @@ export default function ProductDetailPage() {
 
   const product = data?.product ?? null;
   const galleryNodes = product?.galleryImages?.nodes ?? [];
+
+    // --- brand & kategorije ---
+    const brand = product?.pwbBrands?.nodes?.[0] ?? null;
+    const categories = product?.productCategories?.nodes ?? [];
+  
+    const primaryCategory = categories[0] ?? null;
+    const parentCategory = primaryCategory?.parent?.node ?? null;
+  
+    const mainCategory = parentCategory ?? primaryCategory;
+    const subCategory =
+      parentCategory && primaryCategory && parentCategory.databaseId !== primaryCategory.databaseId
+        ? primaryCategory
+        : null;
 
   const isInStock = product?.stockStatus === 'IN_STOCK';
 
@@ -558,6 +614,7 @@ export default function ProductDetailPage() {
                     disabled={!isInStock}
                     quantity={quantity}
                     sku={product.sku || ''}
+                    ean={product.ean || product.globalUniqueId || ''}
                   />
                   <Link href="/cart">
                     <button
@@ -575,16 +632,67 @@ export default function ProductDetailPage() {
 
           {/* Opis proizvoda – full width ispod grida */}
           {product.shortDescription && (
-            <div className="mt-8 rounded-2xl border border-zinc-600/80 bg-zinc-900/40 p-4 md:p-6">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-500 mb-3">
-                Opis i specifikacije
-              </h2>
-              <div
-                className="prose prose-invert max-w-none prose-p:text-sm prose-p:text-zinc-200 prose-li:text-sm prose-li:text-zinc-200 prose-headings:text-zinc-50 prose-headings:text-base prose-strong:text-zinc-50 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-table:text-sm prose-th:border-zinc-700 prose-td:border-zinc-800"
-                dangerouslySetInnerHTML={{ __html: product.shortDescription }}
-              />
-            </div>
+  <div className="mt-8 rounded-2xl border border-zinc-600/80 bg-zinc-900/40 p-4 md:p-6">
+    <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-500 mb-3">
+      Opis i specifikacije
+    </h2>
+    <div
+      className="prose prose-invert max-w-none prose-p:text-sm prose-p:text-zinc-200 prose-li:text-sm prose-li:text-zinc-200 prose-headings:text-zinc-50 prose-headings:text-base prose-strong:text-zinc-50 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-table:text-sm prose-th:border-zinc-700 prose-td:border-zinc-800"
+      dangerouslySetInnerHTML={{ __html: product.shortDescription }}
+    />
+
+    {(brand || mainCategory) && (
+      <div className="mt-5 border-t border-zinc-800/80 pt-4">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-500 mb-2">
+          Dodatne informacije
+        </h3>
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+          {/* brand link */}
+          {brand && (
+            <Link
+              href={`/products?brand=${encodeURIComponent(brand.slug)}`}
+              className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-cyan-400/70 hover:bg-zinc-900/90 hover:text-cyan-200 transition-colors"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+              Brand:{' '}
+              <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
+                {brand.name}
+              </span>
+            </Link>
           )}
+
+          {/* glavna kategorija */}
+          {mainCategory && (
+            <Link
+              href={`/categories/${mainCategory.slug}`}
+              className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-emerald-400/70 hover:bg-zinc-900/90 hover:text-emerald-200 transition-colors"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              Kategorija:{' '}
+              <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
+                {mainCategory.name}
+              </span>
+            </Link>
+          )}
+
+          {/* podkategorija */}
+          {subCategory && (
+            <Link
+              href={`/categories/${subCategory.slug}`}
+              className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-fuchsia-400/70 hover:bg-zinc-900/90 hover:text-fuchsia-200 transition-colors"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400" />
+              Podkategorija:{' '}
+              <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
+                {subCategory.name}
+              </span>
+            </Link>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+)}
         </div>
       </div>
     </>
