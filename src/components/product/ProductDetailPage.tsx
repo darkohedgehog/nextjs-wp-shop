@@ -8,8 +8,8 @@ import he from 'he';
 import Image from 'next/image';
 import Link from 'next/link';
 import AddToCartWrapper from '@/components/cart/AddToCartWrapper';
-import { PiEyeClosedLight } from "react-icons/pi";
-import { HiArrowNarrowRight, HiArrowLeft } from "react-icons/hi";
+import { PiEyeClosedLight } from 'react-icons/pi';
+import { HiArrowNarrowRight, HiArrowLeft } from 'react-icons/hi';
 import { TbShoppingCartMinus, TbShoppingCartPlus } from 'react-icons/tb';
 import { TiShoppingCart } from 'react-icons/ti';
 import BackButton from '../ui/BackButton';
@@ -35,8 +35,9 @@ type Product = {
   shortDescription?: string | null;
   image?: { sourceUrl: string; altText?: string | null } | null;
   galleryImages?: { nodes: GalleryImage[] } | null;
-
   sku?: string | null;
+  ean?: string | null;
+  globalUniqueId?: string | null;
   stockStatus?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'ON_BACKORDER' | string;
   stockQuantity?: number | null;
   metaData?: ProductMeta[];
@@ -51,9 +52,11 @@ const GET_PRODUCT = gql`
       name
       slug
       shortDescription
+      globalUniqueId
 
       ... on SimpleProduct {
         sku
+        ean
         stockStatus
         stockQuantity
 
@@ -116,14 +119,6 @@ export default function ProductDetailPage() {
   const product = data?.product ?? null;
   const galleryNodes = product?.galleryImages?.nodes ?? [];
 
-  // EAN / barcode iz metaData
-  const ean =
-    product?.metaData?.find((m) =>
-      ['_ean', 'ean', '_barcode', 'barcode', 'EAN', 'BARCODE', 'GTIN', 'UPC'].includes(
-        m.key.trim()
-      )
-    )?.value ?? null;
-
   const isInStock = product?.stockStatus === 'IN_STOCK';
 
   const mainImage: GalleryImage | null =
@@ -140,6 +135,7 @@ export default function ProductDetailPage() {
   ];
 
   const hasImages = allImages.length > 0;
+
   // 👉 STATE za B2B/B2C cenu iz Woo REST-a
   const [priceInfo, setPriceInfo] = useState<{
     effective: number;
@@ -323,7 +319,7 @@ export default function ProductDetailPage() {
         >
           <button
             onClick={() => setIsOpen(false)}
-            className="absolute top-4 right-4 bg-primary-color text-zinc-300 rounded-full w-8 h-8 flex items-center justify-center font-bold"
+            className="absolute top-4 right-4 bg-zinc-900/80 border border-zinc-700 text-zinc-200 rounded-full w-8 h-8 flex items-center justify-center shadow-lg shadow-black/40"
             aria-label="Zatvori"
           >
             <PiEyeClosedLight />
@@ -335,7 +331,7 @@ export default function ProductDetailPage() {
                 e.stopPropagation();
                 showPrev();
               }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl shadow-lg shadow-black/50"
               aria-label="Prethodna slika"
             >
               <HiArrowLeft />
@@ -349,7 +345,7 @@ export default function ProductDetailPage() {
               width={1600}
               height={1600}
               priority
-              className="object-contain max-h-[80vh] rounded-lg"
+              className="object-contain max-h-[80vh] rounded-2xl border border-zinc-800/80 bg-zinc-900/60"
             />
           </div>
 
@@ -359,7 +355,7 @@ export default function ProductDetailPage() {
                 e.stopPropagation();
                 showNext();
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl shadow-lg shadow-black/50"
               aria-label="Sledeća slika"
             >
               <HiArrowNarrowRight />
@@ -374,175 +370,222 @@ export default function ProductDetailPage() {
     <>
       <ImageModal />
 
-      <div className="p-4 max-w-4xl mx-auto grid md:grid-cols-2 gap-6 mt-8">
-        {/* Glavna slika proizvoda */}
-        {product.image?.sourceUrl && (
-          <Image
-            width={600}
-            height={600}
-            src={product.image.sourceUrl}
-            alt={product.image.altText || product.name}
-            className="w-56 h-56 object-cover mb-2 mx-auto shadow-lg shadow-blue-400 cursor-pointer animated-border"
-            priority
-            onClick={() => openAtIndex(0)}
-          />
-        )}
-
-        <div>
-          <h1 className="text-2xl font-bold text-cyan-400 mb-2">
-            {product.name}
-          </h1>
-
-          {/* SKU + EAN */}
-          <div className="text-sm text-zinc-400 space-y-0.5 mb-3">
-            {product.sku && (
-              <p>
-                <span className="font-semibold text-zinc-400">SKU:</span>{' '}
-                {product.sku}
-              </p>
-            )}
-            {ean && (
-              <p>
-                <span className="font-semibold text-zinc-500">EAN:</span> {ean}
-              </p>
-            )}
+      <div className="max-w-5xl mx-auto px-4 pb-16 pt-8 space-y-8">
+        {/* Top bar + back */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col">
+            <span className="text-xs uppercase tracking-[0.2em] text-cyan-400/70">
+              Detalji proizvoda
+            </span>
+            <span className="text-xs text-zinc-500">
+              Web shop · Živić elektro materijal
+            </span>
           </div>
-
-          {/* CENA + STATUS + POPUST */}
-          <div className="flex items-center flex-wrap gap-3 mb-4">
-            <div className="flex items-baseline gap-2">
-              {regularNum > 0 && priceNum < regularNum && (
-                <span className="text-sm line-through text-zinc-500">
-                  {regularNum.toFixed(2)} €
-                </span>
-              )}
-              <p className="text-xl text-blue-500">
-                {priceNum > 0 ? `${priceNum.toFixed(2)} €` : '—'}
-              </p>
-              {discountPercent > 0 && (
-                <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/40">
-                  -{discountPercent.toFixed(0)}%
-                </span>
-              )}
-            </div>
-
-            {product.stockStatus && (
-              <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide
-                ${
-                  isInStock
-                    ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/40'
-                    : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/40'
-                }`}
-              >
-                {isInStock ? 'Na zalihi' : 'Nema na zalihi'}
-              </span>
-            )}
-          </div>
-
-          {product.shortDescription && (
-            <div
-              className="prose prose-invert prose-lg max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:text-zinc-100 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-strong:text-slate-50 prose-img:rounded-2xl prose-figcaption:text-xs prose-figcaption:text-slate-400 mb-8"
-              dangerouslySetInnerHTML={{ __html: product.shortDescription }}
-            />
-          )}
-
-          {/* Gallery */}
-          {galleryNodes.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 mb-8">
-              {galleryNodes.map((img, idx) => {
-                const baseIndex = mainImage ? 1 : 0;
-                const imageIndex = baseIndex + idx;
-
-                return (
-                  <Image
-                    width={200}
-                    height={200}
-                    key={`${img.sourceUrl}-${idx}`}
-                    src={img.sourceUrl}
-                    alt={img.altText || product.name}
-                    priority
-                    className="w-44 h-44 object-cover mb-2 mx-auto animated-border cursor-pointer"
-                    onClick={() => openAtIndex(imageIndex)}
-                  />
-                );
-              })}
-            </div>
-          )}
-
-          {/* Količina */}
-          <div className="mb-4 flex items-center gap-3">
-            <span className="text-sm text-zinc-300">Količina:</span>
-            <div className="inline-flex items-center rounded-lg bg-[#f8f9fa] border border-[#adb5bd] shadow-lg shadow-[#adb5bd]">
-              <button
-                type="button"
-                onClick={() => handleQuantityChange(quantity - 1)}
-                disabled={!isInStock || quantity <= 1}
-                className="px-3 py-2 text-lg text-red-600 disabled:opacity-40"
-              >
-                <TbShoppingCartMinus />
-              </button>
-              <input
-                type="number"
-                min={1}
-                max={product.stockQuantity ?? undefined}
-                value={quantity}
-                onChange={(e) =>
-                  handleQuantityChange(parseInt(e.target.value, 10))
-                }
-                disabled={!isInStock}
-                className="w-14 bg-transparent text-center text-zinc-700 outline-none px-1 py-2 [appearance:textfield]
-                         [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <button
-                type="button"
-                onClick={() => handleQuantityChange(quantity + 1)}
-                disabled={
-                  !isInStock ||
-                  (product?.stockQuantity != null &&
-                    quantity >= product.stockQuantity)
-                }
-                className="px-3 py-2 text-lg text-green-400 disabled:opacity-40"
-              >
-                <TbShoppingCartPlus />
-              </button>
-            </div>
-            {product?.stockQuantity != null && (
-              <span className="text-xs text-zinc-300">
-                Na zalihi: {product.stockQuantity}
-              </span>
-            )}
-          </div>
-
-          <div className="mt-12 flex items-center gap-4">
-            <AddToCartWrapper
-              product_id={product.databaseId}
-              name={product.name}
-              // 👇 ovde sad ide B2B/B2C effective cena iz REST-a
-              price={priceNum}
-              image={product.image?.sourceUrl || ''}
-              imageAlt={product.image?.altText || product.name}
-              disabled={!isInStock}
-              quantity={quantity}
-              sku={product.sku || ''}
-            />
-            <div>
-              <Link href="/cart">
-                <button
-                  type="button"
-                  className="bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff]"
-                >
-                  Košarica
-                  <span>
-                    <TiShoppingCart className="text-[#343a40]" />
-                  </span>
-                </button>
-              </Link>
-            </div>
-          </div>
+          <BackButton />
         </div>
 
-        <BackButton />
+        {/* Glavni card */}
+        <div className="rounded-3xl border border-zinc-800/80 bg-zinc-900/50 backdrop-blur-xl shadow-[0_0_60px_rgba(56,189,248,0.18)] shadow-cyan-500/30 px-4 py-6 md:px-8 md:py-8">
+          <div className="grid gap-8 md:grid-cols-2 items-start">
+            {/* Slika + mini galerija */}
+            <div className="space-y-4">
+              {product.image?.sourceUrl && (
+                <div
+                  className="relative mx-auto flex items-center justify-center rounded-2xl border border-cyan-500/30 bg-linear-to-br from-cyan-500/10 via-transparent to-fuchsia-500/10 p-px cursor-pointer group"
+                  onClick={() => openAtIndex(0)}
+                >
+                  <div className="relative w-full rounded-2xl bg-zinc-950/90 p-4 group-hover:bg-zinc-900/90 transition-colors duration-300">
+                    <Image
+                      width={600}
+                      height={600}
+                      src={product.image.sourceUrl}
+                      alt={product.image.altText || product.name}
+                      className="w-full h-auto max-h-80 object-contain mx-auto drop-shadow-[0_0_30px_rgba(34,211,238,0.35)]"
+                      priority
+                    />
+                    <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-cyan-500/20 group-hover:ring-cyan-300/50 transition-all duration-300" />
+                  </div>
+                </div>
+              )}
+
+              {/* Gallery thumbs */}
+              {galleryNodes.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {galleryNodes.map((img, idx) => {
+                    const baseIndex = mainImage ? 1 : 0;
+                    const imageIndex = baseIndex + idx;
+
+                    return (
+                      <button
+                        key={`${img.sourceUrl}-${idx}`}
+                        type="button"
+                        onClick={() => openAtIndex(imageIndex)}
+                        className="relative rounded-xl border border-zinc-800/80 bg-zinc-900/70 hover:border-cyan-400/60 hover:bg-zinc-900/90 transition-colors duration-200 overflow-hidden"
+                      >
+                        <Image
+                          width={200}
+                          height={200}
+                          src={img.sourceUrl}
+                          alt={img.altText || product.name}
+                          priority
+                          className="w-full h-24 object-contain p-2"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Desna strana – info + cena + CTA */}
+            <div className="space-y-6">
+              {/* Naziv + meta */}
+              <div className="space-y-3">
+                <h1 className="text-2xl md:text-3xl font-semibold text-zinc-50 leading-tight">
+                  {product.name}
+                </h1>
+
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+                  {product.sku && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                      SKU: {product.sku}
+                    </span>
+                  )}
+
+                  {(product.ean || product.globalUniqueId) && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/40 bg-cyan-500/10 px-2.5 py-1 text-cyan-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
+                      Barcode: {product.ean || product.globalUniqueId}
+                    </span>
+                  )}
+
+                  {product.stockStatus && (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide
+                      ${
+                        isInStock
+                          ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-red-500/10 text-red-300 border border-red-500/40'
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isInStock ? 'bg-emerald-400' : 'bg-red-400'
+                        }`}
+                      />
+                      {isInStock ? 'Na zalihi' : 'Nema na zalihi'}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* CENA + POPUST */}
+              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-baseline gap-2">
+                  {regularNum > 0 && priceNum < regularNum && (
+                    <span className="text-sm line-through text-zinc-500">
+                      {regularNum.toFixed(2)} €
+                    </span>
+                  )}
+                  <p className="text-2xl font-semibold text-cyan-400">
+                    {priceNum > 0 ? `${priceNum.toFixed(2)} €` : '—'}
+                  </p>
+                  {discountPercent > 0 && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/15 text-fuchsia-200 border border-fuchsia-500/40">
+                      Ušteda -{discountPercent.toFixed(0)}%
+                    </span>
+                  )}
+                </div>
+
+                {product?.stockQuantity != null && (
+                  <span className="text-xs text-zinc-400">
+                    Dostupno na zalihi:{' '}
+                    <span className="text-zinc-100 font-medium">
+                      {product.stockQuantity}
+                    </span>
+                  </span>
+                )}
+              </div>
+
+              {/* Količina + CTA */}
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-sm text-zinc-300">Količina</span>
+                  <div className="inline-flex items-center rounded-xl bg-zinc-900/80 border border-zinc-700/80 shadow-[0_0_25px_rgba(15,23,42,0.8)]">
+                    <button
+                      type="button"
+                      onClick={() => handleQuantityChange(quantity - 1)}
+                      disabled={!isInStock || quantity <= 1}
+                      className="px-3 py-2 text-lg text-zinc-300 disabled:opacity-40 hover:text-red-400 transition-colors"
+                    >
+                      <TbShoppingCartMinus />
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={product.stockQuantity ?? undefined}
+                      value={quantity}
+                      onChange={(e) =>
+                        handleQuantityChange(parseInt(e.target.value, 10))
+                      }
+                      disabled={!isInStock}
+                      className="w-14 bg-transparent text-center text-zinc-50 outline-none px-1 py-2 text-sm [appearance:textfield]
+                               [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleQuantityChange(quantity + 1)}
+                      disabled={
+                        !isInStock ||
+                        (product?.stockQuantity != null &&
+                          quantity >= product.stockQuantity)
+                      }
+                      className="px-3 py-2 text-lg text-zinc-300 disabled:opacity-40 hover:text-emerald-400 transition-colors"
+                    >
+                      <TbShoppingCartPlus />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4">
+                  <AddToCartWrapper
+                    product_id={product.databaseId}
+                    name={product.name}
+                    price={priceNum}
+                    image={product.image?.sourceUrl || ''}
+                    imageAlt={product.image?.altText || product.name}
+                    disabled={!isInStock}
+                    quantity={quantity}
+                    sku={product.sku || ''}
+                  />
+                  <Link href="/cart">
+                    <button
+                      type="button"
+                      className="bg-zinc-900/80 hover:bg-zinc-800/90 border border-zinc-700 text-zinc-200 cursor-pointer flex items-center px-4 py-2 rounded-2xl transition shadow-[0_0_25px_rgba(15,23,42,0.8)] gap-2 text-sm"
+                    >
+                      Košarica
+                      <TiShoppingCart className="text-cyan-300" />
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Opis proizvoda – full width ispod grida */}
+          {product.shortDescription && (
+            <div className="mt-8 rounded-2xl border border-zinc-600/80 bg-zinc-900/40 p-4 md:p-6">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-500 mb-3">
+                Opis i specifikacije
+              </h2>
+              <div
+                className="prose prose-invert max-w-none prose-p:text-sm prose-p:text-zinc-200 prose-li:text-sm prose-li:text-zinc-200 prose-headings:text-zinc-50 prose-headings:text-base prose-strong:text-zinc-50 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-table:text-sm prose-th:border-zinc-700 prose-td:border-zinc-800"
+                dangerouslySetInnerHTML={{ __html: product.shortDescription }}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
