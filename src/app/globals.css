@@ -287,20 +287,12 @@
  *  Gradijent background util klase
  * =================================== */
 
-/* Osnovni gradijent – pojednostavljen na from / via / to */
-.bg-gradient-custom {
-  @apply bg-linear-to-br
-  from-zinc-950/40
-  via-zinc-800/20
-  to-zinc-950/30
-}
-
 /* Hover gradijent – drugi karakter, ali opet samo jedna via boja */
 .bg-gradient-custom {
-  @apply bg-linear-to-br
-    from-zinc-950/40
-    via-zinc-800/20
-    to-zinc-950/30
+  @apply bg-linear-to-r
+    from-gray-800
+    via-blue-700
+    to-gray-900
     shadow-[0_20px_60px_rgba(0,0,0,0.45)];
 }
 .bg-gradient-custom-hover {
