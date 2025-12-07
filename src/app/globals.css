@@ -257,54 +257,81 @@
   color: var(--button-color);
 }
 
-/* Background boje */
-.bg-button-color {
-  background-color: rgba(248, 249, 250);
+/* ===================================
+ *  Background boje (Tailwind @apply)
+ * =================================== */
+
+ .bg-button-color {
+  @apply bg-zinc-100;
 }
 
 .bg-primary-color {
-  background-color: rgba(0, 119, 182, 1);
+  @apply bg-linear-to-br
+    from-[#6a4cff]
+    via-[#7b5aff]
+    to-[#8c64ff]
+    text-white
+    shadow-[0_12px_40px_rgba(140,100,255,0.35)];
 }
 
 .bg-secondary-color {
-  background-color: rgba(0, 150, 199, 1);
+  @apply bg-linear-to-br
+    from-[#00b4d8]
+    via-[#48cae4]
+    to-[#90e0ef]
+    text-black
+    shadow-[0_12px_40px_rgba(0,180,216,0.35)];
 }
 
-/* Gradijent background – možeš koristiti kao utility klasu */
+/* ===================================
+ *  Gradijent background util klase
+ * =================================== */
+
+/* Osnovni gradijent – pojednostavljen na from / via / to */
 .bg-gradient-custom {
-  background: linear-gradient(
-    135deg,
-    rgba(0, 119, 182, 1) 0%,
-    rgba(0, 150, 199, 1) 25%,
-    rgba(0, 180, 216, 1) 50%,
-    rgba(72, 202, 228, 1) 75%,
-    rgba(144, 224, 239, 1) 100%
-  );
+  @apply bg-linear-to-br
+  from-zinc-950/40
+  via-zinc-800/20
+  to-zinc-950/30
 }
 
+/* Hover gradijent – drugi karakter, ali opet samo jedna via boja */
+.bg-gradient-custom {
+  @apply bg-linear-to-br
+    from-zinc-950/40
+    via-zinc-800/20
+    to-zinc-950/30
+    shadow-[0_20px_60px_rgba(0,0,0,0.45)];
+}
 .bg-gradient-custom-hover {
-  background: linear-gradient(
-    135deg,
-    rgba(0, 119, 182, 1) 0%,
-    rgba(0, 150, 199, 1) 25%,
-    rgba(0, 180, 216, 1) 50%,
-    rgba(72, 202, 228, 1) 75%,
-    rgba(144, 224, 239, 1) 90%,
-    rgba(140, 100, 255, 1) 100%
-  );
+  @apply bg-linear-to-br
+    from-zinc-800/40
+    via-zinc-700/20
+    to-zinc-800/30
+    transition-all
+    duration-300
+    hover:brightness-110
+    shadow-[0_20px_60px_rgba(140,100,255,0.40)];
 }
 
 /* =========================================================
- * 6) “Component-style” util klase (glassmorphism, titlovi...)
- * =======================================================*/
+ *  Glass pill / badge stil
+ * ======================================================= */
 
-/* Glass pill za primary stil (badge / chip / CTA background) */
-.glass-primary {
-  background: rgba(140, 100, 255, 0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 9999px; /* full rounded */
+ .glass-primary {
+  @apply bg-linear-to-br
+    from-zinc-700/70
+    via-zinc-800/50
+    to-zinc-700/60
+    backdrop-blur-xl
+    border border-cyan-600/30
+    rounded-2xl
+    shadow-[0_25px_80px_rgba(0,0,0,0.55)];
+
+  /* neon inner glow — izgleda brutalno dobro */
+  box-shadow:
+    inset 0 0 20px rgba(140, 100, 255, 0.15),
+    0 25px 80px rgba(0, 0, 0, 0.55);
 }
 
 /* Naslov za glavne stranice – koristi Tailwind @apply */

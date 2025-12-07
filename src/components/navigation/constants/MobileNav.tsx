@@ -37,7 +37,7 @@ const MobileNav = ({ navItems }: MobileNavProps) => {
       <motion.div
         animate={{ borderRadius: open ? "4px" : "2rem" }}
         key={String(open)}
-        className="relative mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-gradient-custom px-4 py-2 lg:hidden"
+        className="relative mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-gradient-custom border border-cyan-700 shadow-md shadow-cyan-600 px-4 py-2 lg:hidden"
       >
         {/* TOP ROW: Logo | CartButton + Hamburger */}
         <div className="flex w-full flex-row items-center justify-between gap-3">
@@ -69,7 +69,7 @@ const MobileNav = ({ navItems }: MobileNavProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-x-0 top-16 z-20 flex w-full flex-col items-start justify-start gap-4 rounded-lg bg-primary-color px-4 py-8"
+              className="absolute inset-x-0 top-16 z-20 flex w-full flex-col items-start justify-start gap-4 rounded-lg bg-blue-900/95 px-4 py-8"
             >
               {navItems.map((navItem: NavItem, idx: number) => (
                 <div key={`navItem-${idx}`} className="w-full">
