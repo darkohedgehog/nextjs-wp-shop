@@ -1,7 +1,6 @@
-// app/api/create-order/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const WC_BASE_URL        = process.env.WC_BASE_URL;      // npr. https://wp.zivic-elektro.shop
+const WC_BASE_URL        = process.env.WC_BASE_URL;
 const WC_CONSUMER_KEY    = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
 
@@ -17,7 +16,7 @@ function basicAuthHeader() {
 }
 
 export async function GET() {
-  console.log('🟢 [/api/create-order] GET handler');
+  //console.log('🟢 [/api/create-order] GET handler');
   return NextResponse.json({
     ok: true,
     route: '/api/create-order',
@@ -149,9 +148,9 @@ async function fetchProductGroupPricing(
 
   const ok = (regular > 0 || effective > 0) && Number.isFinite(regular) && Number.isFinite(effective);
 
-  console.log(
-    `[create-order] Product ${productId} pricing -> regular=${regular}, effective=${effective}, ok=${ok}`
-  );
+  //console.log(
+  //  `[create-order] Product ${productId} pricing -> regular=${regular}, effective=${effective}, ok=${ok}`
+  //);
 
   if (!ok) {
     console.warn(
@@ -163,7 +162,7 @@ async function fetchProductGroupPricing(
 }
 
 export async function POST(req: NextRequest) {
-  console.log('🔥 [/api/create-order] POST handler START');
+  //console.log('🔥 [/api/create-order] POST handler START');
 
   if (!WC_BASE_URL || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
     console.error('[create-order] Missing env vars');
@@ -185,10 +184,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  console.log(
-    '[create-order] Received payload (raw from frontend):',
-    JSON.stringify(body, null, 2)
-  );
+  //console.log(
+    //'[create-order] Received payload (raw from frontend):',
+   // JSON.stringify(body, null, 2)
+//  );
 
   const customerId = body.customer_id ? Number(body.customer_id) : 0;
 
@@ -250,9 +249,9 @@ export async function POST(req: NextRequest) {
         total: lineTotal.toFixed(2),
       };
 
-      console.log(
-        `[create-order] Line item product ${productId} qty=${qty} -> unit=${unitPrice}, total=${lineTotal}`
-      );
+    //  console.log(
+      //  `[create-order] Line item product ${productId} qty=${qty} -> unit=${unitPrice}, total=${lineTotal}`
+    //  );
 
       adjustedLineItems.push(newItem);
     } catch (e) {
@@ -293,11 +292,11 @@ export async function POST(req: NextRequest) {
     line_items: adjustedLineItems,
   };
 
-  console.log('[create-order] Sending to Woo:', url.toString());
-  console.log(
-    '[create-order] Woo payload (sanitized):',
-    JSON.stringify(wooPayload, null, 2)
-  );
+ // console.log('[create-order] Sending to Woo:', url.toString());
+  //console.log(
+   // '[create-order] Woo payload (sanitized):',
+   // JSON.stringify(wooPayload, null, 2)
+  //);
 
   try {
     const wpRes = await fetch(url.toString(), {
