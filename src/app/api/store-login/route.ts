@@ -15,15 +15,28 @@ export async function POST(req: NextRequest) {
   const data = await wpRes.json();
   const res = NextResponse.json(data, { status: wpRes.status });
 
-  // ako je login uspešan, setuj httpOnly cookie sa tokenom
   const token = data?.data?.token;
+  const email = data?.data?.email;
+
   if (wpRes.ok && token) {
+    // httpOnly JWT cookie
     res.cookies.set('wpToken', token, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 dana
+    });
+  }
+
+  if (wpRes.ok && email) {
+    // email usera – isto httpOnly, da ga server može čitati
+    res.cookies.set('wpUserEmail', email, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
     });
   }
 

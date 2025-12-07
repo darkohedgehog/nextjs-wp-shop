@@ -1,19 +1,20 @@
-'use client';
+"use client";
 
-import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import LottieAnimation from './LottieAnimation';
-import { MdOutlineShoppingCart } from 'react-icons/md';
-import { HiCheckCircle } from 'react-icons/hi';
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import LottieAnimation from "./LottieAnimation";
+import { MdOutlineShoppingCart } from "react-icons/md";
+import { HiCheckCircle } from "react-icons/hi";
 
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 // Tipovi za narudžbu i stavke
 type OrderLineItem = {
   id: number | string;
+  product_id?: number; // 👈 bitno za B2B logiku
   name: string;
   quantity: number;
   total: string | number;
@@ -40,16 +41,20 @@ type Order = {
   };
 };
 
+type PriceInfo = {
+  effective: number; // stvarna (B2B) cijena
+  regular: number; // redovna cijena
+  discountPercent: number; // popust u %
+};
+
 const formatMoney = (value: string | number, currency: string) => {
   const num =
-    typeof value === 'string'
-      ? parseFloat(value.replace(',', '.'))
-      : value;
+    typeof value === "string" ? parseFloat(value.replace(",", ".")) : value;
 
   if (Number.isNaN(num)) return `${value} ${currency}`;
 
-  return new Intl.NumberFormat('hr-HR', {
-    style: 'currency',
+  return new Intl.NumberFormat("hr-HR", {
+    style: "currency",
     currency,
     maximumFractionDigits: 2,
   }).format(num);
@@ -59,23 +64,15 @@ const StatusBadge = ({ status }: { status: string }) => {
   const s = status?.toLowerCase();
 
   const map: Record<string, string> = {
-    processing:
-      'bg-amber-500/10 text-amber-300 border-amber-500/40',
-    completed:
-      'bg-emerald-500/10 text-emerald-300 border-emerald-500/40',
-    'on-hold':
-      'bg-sky-500/10 text-sky-300 border-sky-500/40',
-    cancelled:
-      'bg-red-500/10 text-red-300 border-red-500/40',
-    failed:
-      'bg-red-500/10 text-red-300 border-red-500/40',
-    pending:
-      'bg-zinc-500/10 text-zinc-300 border-zinc-500/40',
+    processing: "bg-amber-500/10 text-amber-300 border-amber-500/40",
+    completed: "bg-emerald-500/10 text-emerald-300 border-emerald-500/40",
+    "on-hold": "bg-sky-500/10 text-sky-300 border-sky-500/40",
+    cancelled: "bg-red-500/10 text-red-300 border-red-500/40",
+    failed: "bg-red-500/10 text-red-300 border-red-500/40",
+    pending: "bg-zinc-500/10 text-zinc-300 border-zinc-500/40",
   };
 
-  const cls =
-    map[s] ??
-    'bg-zinc-700/30 text-zinc-200 border-zinc-500/40';
+  const cls = map[s] ?? "bg-zinc-700/30 text-zinc-200 border-zinc-500/40";
 
   return (
     <span
@@ -88,39 +85,157 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 export default function OrderSuccessClient() {
   const search = useSearchParams();
-  const orderId = search.get('order_id');
+  const orderId = search.get("order_id");
+
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!orderId) {
-      setError('Nema ID narudžbe');
-      return;
-    }
-    fetch(`/api/orders/${orderId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Ne može doći do narudžbe');
-        return res.json();
-      })
-      .then((data) => setOrder(data))
-      .catch((e) => setError(e.message));
-  }, [orderId]);
+  // 👇 mapa product_id → B2B/B2C info (iz /api/products/[id])
+  const [priceMap, setPriceMap] = useState<Record<number, PriceInfo>>({});
 
   const toNumber = (v: string | number) => {
-    const n =
-      typeof v === 'string'
-        ? parseFloat(v.replace(',', '.'))
-        : v;
+    const n = typeof v === "string" ? parseFloat(v.replace(",", ".")) : v;
     return Number.isFinite(n) ? n : 0;
   };
 
+  // 1) Učitaj narudžbu
+  useEffect(() => {
+    if (!orderId) {
+      setError("Nema ID narudžbe");
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`, {
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          throw new Error("Ne može doći do narudžbe");
+        }
+
+        const data = await res.json();
+        setOrder(data);
+      } catch (e: any) {
+        setError(e?.message ?? "Greška pri dohvaćanju narudžbe");
+      }
+    })();
+  }, [orderId]);
+
+  // 2) Na osnovu narudžbe, povuci B2B / group cijene po product_id
+  useEffect(() => {
+    if (!order || !Array.isArray(order.line_items)) return;
+
+    const uniqueProductIds = Array.from(
+      new Set(
+        order.line_items
+          .map((li) => li.product_id)
+          .filter((id): id is number => typeof id === "number")
+      )
+    );
+
+    if (uniqueProductIds.length === 0) return;
+
+    (async () => {
+      try {
+        const results = await Promise.all(
+          uniqueProductIds.map(async (pid) => {
+            try {
+              const res = await fetch(`/api/products/${pid}`, {
+                cache: "no-store",
+              });
+              if (!res.ok) {
+                console.warn(
+                  "OrderSuccess: ne mogu dohvatiti proizvod",
+                  pid,
+                  await res.text()
+                );
+                return { pid, info: null as PriceInfo | null };
+              }
+
+              const p = await res.json();
+
+              // očekujemo da backend već može postaviti zvo_effective_price / zvo_regular_price
+              const basePrice = Number(p.price ?? p.regular_price ?? 0) || 0;
+              const baseRegular = Number(p.regular_price ?? p.price ?? 0) || 0;
+
+              const regular =
+                typeof p.zvo_regular_price === "number"
+                  ? p.zvo_regular_price
+                  : baseRegular || basePrice;
+
+              const effective =
+                typeof p.zvo_effective_price === "number"
+                  ? p.zvo_effective_price
+                  : basePrice || baseRegular;
+
+              let discountPercent =
+                typeof p.zvo_discount_percent === "number"
+                  ? p.zvo_discount_percent
+                  : 0;
+
+              if (!discountPercent && regular > 0 && effective < regular) {
+                discountPercent = Math.round(
+                  ((regular - effective) / regular) * 100
+                );
+              }
+
+              const info: PriceInfo = {
+                effective,
+                regular,
+                discountPercent,
+              };
+
+              return { pid, info };
+            } catch (err) {
+              console.error(
+                "OrderSuccess: greška pri dohvaćanju proizvoda",
+                pid,
+                err
+              );
+              return { pid, info: null as PriceInfo | null };
+            }
+          })
+        );
+
+        const map: Record<number, PriceInfo> = {};
+        for (const r of results) {
+          if (r.info) {
+            map[r.pid] = r.info;
+          }
+        }
+        setPriceMap(map);
+      } catch (err) {
+        console.error(
+          "OrderSuccess: neočekivana greška pri dohvaćanju B2B cijena",
+          err
+        );
+      }
+    })();
+  }, [order]);
+
+  // 3) Međuzbir na osnovu B2B cijena kad god je moguće
   const itemsSubtotal = useMemo(() => {
     if (!order) return 0;
-    return order.line_items.reduce(
-      (acc, li) => acc + toNumber(li.total),
-      0
-    );
-  }, [order]);
+
+    return order.line_items.reduce((acc, li) => {
+      const quantity = li.quantity || 1;
+      const pid = li.product_id;
+
+      const info = pid ? priceMap[pid] : undefined;
+
+      // Ako imamo B2B info -> effective * qty
+      if (info) {
+        return acc + info.effective * quantity;
+      }
+
+      // fallback: Woo total (može biti regular) – ali da barem ne pukne
+      return acc + toNumber(li.total);
+    }, 0);
+  }, [order, priceMap]);
+
+  // 4) UI
 
   if (error) {
     return (
@@ -171,8 +286,8 @@ export default function OrderSuccessClient() {
             <StatusBadge status={order.status} />
           </div>
           <p className="text-sm md:text-base text-zinc-400">
-            Potvrda o narudžbi je uspješno kreirana. Detalje
-            možete vidjeti ispod.
+            Potvrda o narudžbi je uspješno kreirana. Detalje možete vidjeti
+            ispod.
           </p>
 
           <div className="pt-1.5">
@@ -203,15 +318,37 @@ export default function OrderSuccessClient() {
               {order.line_items.map((li) => {
                 const imgSrc =
                   li.image &&
-                  (Array.isArray(li.image)
-                    ? li.image[0]?.src
-                    : li.image.src);
+                  (Array.isArray(li.image) ? li.image[0]?.src : li.image.src);
+
+                const quantity = li.quantity || 1;
+                const pid = li.product_id;
+
+                const info = pid ? priceMap[pid] : undefined;
+
+                const unitEffective =
+                  info?.effective ??
+                  (quantity > 0
+                    ? toNumber(li.total) / quantity
+                    : toNumber(li.total));
+
+                const unitRegular =
+                  info?.regular && info.regular > 0
+                    ? info.regular
+                    : unitEffective;
+
+                const discountPercent =
+                  info?.discountPercent ??
+                  (unitRegular > 0 && unitEffective < unitRegular
+                    ? Math.round(
+                        ((unitRegular - unitEffective) / unitRegular) * 100
+                      )
+                    : 0);
+
+                const lineTotal = unitEffective * quantity;
+                const lineRegularTotal = unitRegular * quantity;
 
                 return (
-                  <div
-                    key={li.id}
-                    className="py-4 flex items-center gap-4"
-                  >
+                  <div key={li.id} className="py-4 flex items-center gap-4">
                     {/* Product image */}
                     <div className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-xl overflow-hidden bg-zinc-950/90 border border-zinc-700/80">
                       {imgSrc ? (
@@ -243,7 +380,7 @@ export default function OrderSuccessClient() {
 
                       {li.sku && (
                         <p className="text-[11px] md:text-xs text-zinc-400">
-                          SKU:{' '}
+                          SKU:{" "}
                           <span className="font-medium text-zinc-200">
                             {li.sku}
                           </span>
@@ -251,18 +388,30 @@ export default function OrderSuccessClient() {
                       )}
 
                       <p className="text-xs md:text-sm text-zinc-400 mt-1">
-                        Količina:{' '}
+                        Količina:{" "}
                         <span className="font-medium text-zinc-100">
-                          {li.quantity}
+                          {quantity}
                         </span>
                       </p>
                     </div>
 
-                    {/* Line total */}
+                    {/* Line total (B2B aware) */}
                     <div className="text-right">
+                      {discountPercent > 0 && (
+                        <p className="text-[11px] line-through text-zinc-500">
+                          {formatMoney(lineRegularTotal, order.currency)}
+                        </p>
+                      )}
+
                       <p className="text-sm md:text-base font-semibold text-cyan-300">
-                        {formatMoney(li.total, order.currency)}
+                        {formatMoney(lineTotal, order.currency)}
                       </p>
+
+                      {discountPercent > 0 && (
+                        <p className="text-[10px] text-fuchsia-200 mt-0.5">
+                          -{discountPercent.toFixed(0)}% B2B cijena
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
@@ -285,14 +434,12 @@ export default function OrderSuccessClient() {
                       {order.billing.company}
                     </p>
                     <p className="text-sm text-zinc-300">
-                      {order.billing.first_name}{' '}
-                      {order.billing.last_name}
+                      {order.billing.first_name} {order.billing.last_name}
                     </p>
                   </>
                 ) : (
                   <p className="font-semibold text-zinc-100">
-                    {order.billing.first_name}{' '}
-                    {order.billing.last_name}
+                    {order.billing.first_name} {order.billing.last_name}
                   </p>
                 )}
               </div>
@@ -325,9 +472,7 @@ export default function OrderSuccessClient() {
                     {order.customer_note}
                   </p>
                 ) : (
-                  <p className="text-zinc-500 italic">
-                    Nema napomene.
-                  </p>
+                  <p className="text-zinc-500 italic">Nema napomene.</p>
                 )}
               </div>
             </div>
@@ -342,45 +487,42 @@ export default function OrderSuccessClient() {
                 Sažetak
               </h2>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-400">Međuzbir</span>
-                  <span className="font-semibold text-zinc-100">
-                    {formatMoney(
-                      itemsSubtotal,
-                      order.currency
-                    )}
-                  </span>
-                </div>
+              {(() => {
+                const shippingNumber = toNumber(order.shipping_total);
+                const computedTotal = itemsSubtotal + shippingNumber;
 
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-400">Dostava</span>
-                  <span className="font-semibold text-zinc-100">
-                    {formatMoney(
-                      order.shipping_total,
-                      order.currency
-                    )}
-                    {toNumber(order.shipping_total) === 0 &&
-                      ' (B2B besplatna dostava)'}
-                  </span>
-                </div>
+                return (
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400">Međuzbir</span>
+                      <span className="font-semibold text-zinc-100">
+                        {formatMoney(itemsSubtotal, order.currency)}
+                      </span>
+                    </div>
 
-                <div className="border-t border-zinc-800 pt-3 flex items-center justify-between">
-                  <span className="text-base font-semibold text-cyan-300">
-                    Ukupno
-                  </span>
-                  <span className="text-base font-extrabold text-cyan-400">
-                    {formatMoney(order.total, order.currency)}
-                  </span>
-                </div>
-              </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400">Dostava</span>
+                      <span className="font-semibold text-zinc-100">
+                        {formatMoney(order.shipping_total, order.currency)}
+                        {shippingNumber === 0 && " (B2B besplatna dostava)"}
+                      </span>
+                    </div>
+
+                    <div className="border-t border-zinc-800 pt-3 flex items-center justify-between">
+                      <span className="text-base font-semibold text-cyan-300">
+                        Ukupno
+                      </span>
+                      <span className="text-base font-extrabold text-cyan-400">
+                        {formatMoney(computedTotal, order.currency)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="mt-5 text-sm font-semibold text-zinc-100 tracking-tight">
-                Ako imate pitanja oko narudžbe, slobodno nas
-                kontaktirajte na{' '}
-                <span className="text-cyan-300">
-                  prodaja@zivic-elektro.com
-                </span>
+                Ako imate pitanja oko narudžbe, slobodno nas kontaktirajte na{" "}
+                <span className="text-cyan-300">prodaja@zivic-elektro.com</span>
               </div>
 
               <div className="mt-4">
@@ -402,10 +544,8 @@ export default function OrderSuccessClient() {
                 Status narudžbe
               </p>
               <p className="text-zinc-300">
-                Trenutni status:{' '}
-                <span className="font-semibold">
-                  {order.status}
-                </span>
+                Trenutni status:{" "}
+                <span className="font-semibold">{order.status}</span>
               </p>
             </div>
           </div>
