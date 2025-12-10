@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react'; // za @apollo/client 4.0.7
 import he from 'he';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ShineBorder } from '../ui/shine-border';
 import { FaSearchengin } from 'react-icons/fa';
@@ -214,23 +214,22 @@ export default function ProductListClient({
 
   // ——— State ———
   const [searchTerm, setSearchTerm] = useState(initialSearch ?? '');
+
+  // raw lista proizvoda – bez filtera / sorta
   const [products, setProducts] = useState<Product[]>(
-    sortProducts(
-      dedupeProducts(
-        (initialProducts ?? []).filter((p) => matchesBrand(p, brandParam)),
-      ),
-      sortParamRaw,
-    ),
+    dedupeProducts(initialProducts ?? []),
   );
+
   const [pageInfo, setPageInfo] = useState<PageInfo>(
     initialPageInfo ?? { endCursor: null, hasNextPage: false },
   );
+
   const [priceMap, setPriceMap] = useState<
     Record<number, { effective: number; regular: number; discountPercent: number }>
   >({});
 
   // ——— Query ———
-  const { data, loading, error, fetchMore, refetch, networkStatus } =
+  const { loading, error, fetchMore, refetch, networkStatus } =
     useQuery<ProductsData, Vars>(GET_PRODUCTS, {
       variables: {
         search: initialSearch || undefined,
@@ -241,16 +240,12 @@ export default function ProductListClient({
       notifyOnNetworkStatusChange: true,
     });
 
-  // ——— Sync incoming data + brand filter + sort ———
-  useEffect(() => {
-    if (data?.products) {
-      const base = dedupeProducts(data.products.nodes);
-      const filtered = base.filter((p) => matchesBrand(p, brandParam));
-      const sorted = sortProducts(filtered, sortParamRaw);
-      setProducts(sorted);
-      setPageInfo(data.products.pageInfo);
-    }
-  }, [data, brandParam, sortParamRaw]);
+  // ——— Derived: filtrirani + sortirani proizvodi ———
+  const visibleProducts = useMemo(() => {
+    const base = products ?? [];
+    const filtered = base.filter((p) => matchesBrand(p, brandParam));
+    return sortProducts(filtered, sortParamRaw);
+  }, [products, brandParam, sortParamRaw]);
 
   // ——— Pagination ———
   const loadMore = async () => {
@@ -266,10 +261,8 @@ export default function ProductListClient({
 
     const next = (res?.data as ProductsData | undefined)?.products;
     if (next) {
-      const merged = dedupeProducts([...products, ...next.nodes]);
-      const filtered = merged.filter((p) => matchesBrand(p, brandParam));
-      const sorted = sortProducts(filtered, sortParamRaw);
-      setProducts(sorted);
+      // merge raw lista; dedupe po databaseId/id
+      setProducts((prev) => dedupeProducts([...prev, ...next.nodes]));
       setPageInfo(next.pageInfo);
     }
   };
@@ -278,7 +271,7 @@ export default function ProductListClient({
   useEffect(() => {
     const ids = Array.from(
       new Set(
-        (products ?? [])
+        (visibleProducts ?? [])
           .map((p) => p.databaseId)
           .filter((id): id is number => typeof id === 'number'),
       ),
@@ -292,8 +285,7 @@ export default function ProductListClient({
         params.set('include', ids.join(','));
         params.set('per_page', String(ids.length));
 
-        // 👇 pripremi header sa JWT-om iz localStorage (wpUser)
-        let headers: Record<string, string> = {};
+        const headers: Record<string, string> = {};
 
         try {
           if (typeof window !== 'undefined') {
@@ -326,8 +318,7 @@ export default function ProductListClient({
               await res.text(),
             );
           }
-          // fallback: ne punimo priceMap → koristi GraphQL price
-          return;
+          return; // fallback: koristi GraphQL price
         }
 
         type RestProduct = {
@@ -376,10 +367,9 @@ export default function ProductListClient({
         if (process.env.NODE_ENV !== 'production') {
           console.warn('Greška pri dohvaćanju B2B cena:', err);
         }
-        // fallback: ostavi priceMap prazno → koristi GraphQL price
       }
     })();
-  }, [products]);
+  }, [visibleProducts]);
 
   // ——— Search submit ———
   const handleSearch = async (e: React.FormEvent) => {
@@ -393,9 +383,7 @@ export default function ProductListClient({
     const refreshed = (res.data as ProductsData | undefined)?.products;
     if (refreshed) {
       const base = dedupeProducts(refreshed.nodes);
-      const filtered = base.filter((p) => matchesBrand(p, brandParam));
-      const sorted = sortProducts(filtered, sortParamRaw);
-      setProducts(sorted);
+      setProducts(base); // raw lista
       setPageInfo(refreshed.pageInfo);
     } else {
       setProducts([]);
@@ -440,7 +428,7 @@ export default function ProductListClient({
 
           <button
             type="submit"
-            className="shrink-0 bg-gradient-custom text-zinc-200 px-4 py-2 rounded-full active:scale-95 transition"
+            className="shrink-0 bg-secondary-color text-zinc-200 px-4 py-2 rounded-full active:scale-95 transition"
             aria-label="Pretraži proizvode"
           >
             <FaSearchengin />
@@ -450,7 +438,7 @@ export default function ProductListClient({
 
       {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
-        {products.map((product) => {
+        {visibleProducts.map((product) => {
           const brandName = getBrandName(product);
 
           const priceInfo =
@@ -482,7 +470,7 @@ export default function ProductListClient({
         <div className="mt-6 text-center">
           <button
             onClick={loadMore}
-            className="bg-gradient-custom text-zinc-100 px-6 py-2 rounded-xl disabled:opacity-50 flex items-center justify-center gap-3"
+            className="bg-button-color text-blue-500 px-6 py-2 rounded-xl disabled:opacity-50 flex items-center justify-center gap-3"
             disabled={loading || networkStatus === 3 /* refetch */}
           >
             {loading ? 'Učitavanje…' : 'Učitaj više'}
@@ -493,7 +481,7 @@ export default function ProductListClient({
         </div>
       )}
 
-      {loading && !products.length && (
+      {loading && !visibleProducts.length && (
         <p className="mt-4 text-center">Učitavanje…</p>
       )}
       {error && (
@@ -501,7 +489,7 @@ export default function ProductListClient({
           Greška: {error.message}
         </p>
       )}
-      {!loading && !error && !products.length && (
+      {!loading && !error && !visibleProducts.length && (
         <p className="mt-4 text-center flex items-center justify-center text-gray-400">
           Nema rezultata
         </p>

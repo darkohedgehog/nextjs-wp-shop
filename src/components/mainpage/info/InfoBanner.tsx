@@ -1,4 +1,3 @@
-// components/info/InfoBanner.tsx
 import { ShineBorder } from "@/components/ui/shine-border";
 import { FiPhoneCall, FiTruck, FiShield } from "react-icons/fi";
 

@@ -148,6 +148,90 @@ function parsePrice(raw?: string | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+// --- ImageModal kao poseban komponent izvan rendera ---
+type ImageModalProps = {
+  isOpen: boolean;
+  hasImages: boolean;
+  allImages: GalleryImage[];
+  currentIndex: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  productName: string;
+};
+
+function ImageModal({
+  isOpen,
+  hasImages,
+  allImages,
+  currentIndex,
+  onClose,
+  onPrev,
+  onNext,
+  productName,
+}: ImageModalProps) {
+  if (!isOpen || !hasImages) return null;
+
+  const currentImage = allImages[currentIndex] ?? allImages[0];
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-9999"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-w-4xl max-h-[90vh] w-full px-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 bg-zinc-900/80 border border-zinc-700 text-zinc-200 rounded-full w-8 h-8 flex items-center justify-center shadow-lg shadow-black/40"
+          aria-label="Zatvori"
+        >
+          <PiEyeClosedLight />
+        </button>
+
+        {allImages.length > 1 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrev();
+            }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl shadow-lg shadow-black/50"
+            aria-label="Prethodna slika"
+          >
+            <HiArrowLeft />
+          </button>
+        )}
+
+        <div className="flex items-center justify-center">
+          <Image
+            src={currentImage.sourceUrl}
+            alt={currentImage.altText || productName}
+            width={1600}
+            height={1600}
+            priority
+            className="object-contain max-h-[80vh] rounded-2xl border border-zinc-800/80 bg-zinc-900/60"
+          />
+        </div>
+
+        {allImages.length > 1 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onNext();
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl shadow-lg shadow-black/50"
+            aria-label="Sledeća slika"
+          >
+            <HiArrowNarrowRight />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ProductDetailPage() {
   const params = useParams() as Record<string, string | string[] | undefined>;
   const slug = getSlugParam(params, 'slug');
@@ -162,18 +246,20 @@ export default function ProductDetailPage() {
   const product = data?.product ?? null;
   const galleryNodes = product?.galleryImages?.nodes ?? [];
 
-    // --- brand & kategorije ---
-    const brand = product?.pwbBrands?.nodes?.[0] ?? null;
-    const categories = product?.productCategories?.nodes ?? [];
-  
-    const primaryCategory = categories[0] ?? null;
-    const parentCategory = primaryCategory?.parent?.node ?? null;
-  
-    const mainCategory = parentCategory ?? primaryCategory;
-    const subCategory =
-      parentCategory && primaryCategory && parentCategory.databaseId !== primaryCategory.databaseId
-        ? primaryCategory
-        : null;
+  // --- brand & kategorije ---
+  const brand = product?.pwbBrands?.nodes?.[0] ?? null;
+  const categories = product?.productCategories?.nodes ?? [];
+
+  const primaryCategory = categories[0] ?? null;
+  const parentCategory = primaryCategory?.parent?.node ?? null;
+
+  const mainCategory = parentCategory ?? primaryCategory;
+  const subCategory =
+    parentCategory &&
+    primaryCategory &&
+    parentCategory.databaseId !== primaryCategory.databaseId
+      ? primaryCategory
+      : null;
 
   const isInStock = product?.stockStatus === 'IN_STOCK';
 
@@ -201,10 +287,7 @@ export default function ProductDetailPage() {
 
   const [quantity, setQuantity] = useState<number>(1);
 
-  // kad se promijeni proizvod, resetuj količinu
-  useEffect(() => {
-    setQuantity(1);
-  }, [product?.databaseId]);
+  // (uklonjen useEffect koji je radio setQuantity(1) na promenu productId)
 
   // REST poziv na /api/products/[id] koji vraća wc/v3 product + zvo_* polja
   useEffect(() => {
@@ -358,73 +441,18 @@ export default function ProductDetailPage() {
     );
   }
 
-  // --- modal komponenta ---
-  const ImageModal = () => {
-    if (!isOpen || !hasImages) return null;
-
-    const currentImage = allImages[currentIndex] ?? allImages[0];
-
-    return (
-      <div
-        className="fixed inset-0 bg-black/80 flex items-center justify-center z-9999"
-        onClick={() => setIsOpen(false)}
-      >
-        <div
-          className="relative max-w-4xl max-h-[90vh] w-full px-4"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => setIsOpen(false)}
-            className="absolute top-4 right-4 bg-zinc-900/80 border border-zinc-700 text-zinc-200 rounded-full w-8 h-8 flex items-center justify-center shadow-lg shadow-black/40"
-            aria-label="Zatvori"
-          >
-            <PiEyeClosedLight />
-          </button>
-
-          {allImages.length > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                showPrev();
-              }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl shadow-lg shadow-black/50"
-              aria-label="Prethodna slika"
-            >
-              <HiArrowLeft />
-            </button>
-          )}
-
-          <div className="flex items-center justify-center">
-            <Image
-              src={currentImage.sourceUrl}
-              alt={currentImage.altText || product.name}
-              width={1600}
-              height={1600}
-              priority
-              className="object-contain max-h-[80vh] rounded-2xl border border-zinc-800/80 bg-zinc-900/60"
-            />
-          </div>
-
-          {allImages.length > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                showNext();
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl shadow-lg shadow-black/50"
-              aria-label="Sledeća slika"
-            >
-              <HiArrowNarrowRight />
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
-      <ImageModal />
+      <ImageModal
+        isOpen={isOpen}
+        hasImages={hasImages}
+        allImages={allImages}
+        currentIndex={currentIndex}
+        onClose={() => setIsOpen(false)}
+        onPrev={showPrev}
+        onNext={showNext}
+        productName={product.name}
+      />
 
       <div className="max-w-5xl mx-auto px-4 pb-16 pt-8 space-y-8">
         {/* Top bar + back */}
@@ -632,67 +660,69 @@ export default function ProductDetailPage() {
 
           {/* Opis proizvoda – full width ispod grida */}
           {product.shortDescription && (
-  <div className="mt-8 rounded-2xl border border-zinc-600/80 bg-zinc-900/40 p-4 md:p-6">
-    <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-500 mb-3">
-      Opis i specifikacije
-    </h2>
-    <div
-      className="prose prose-invert max-w-none prose-p:text-sm prose-p:text-zinc-200 prose-li:text-sm prose-li:text-zinc-200 prose-headings:text-zinc-50 prose-headings:text-base prose-strong:text-zinc-50 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-table:text-sm prose-th:border-zinc-700 prose-td:border-zinc-800"
-      dangerouslySetInnerHTML={{ __html: product.shortDescription }}
-    />
+            <div className="mt-8 rounded-2xl border border-zinc-600/80 bg-zinc-900/40 p-4 md:p-6">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-500 mb-3">
+                Opis i specifikacije
+              </h2>
+              <div
+                className="prose prose-invert max-w-none prose-p:text-sm prose-p:text-zinc-200 prose-li:text-sm prose-li:text-zinc-200 prose-headings:text-zinc-50 prose-headings:text-base prose-strong:text-zinc-50 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-table:text-sm prose-th:border-zinc-700 prose-td:border-zinc-800"
+                dangerouslySetInnerHTML={{ __html: product.shortDescription }}
+              />
 
-    {(brand || mainCategory) && (
-      <div className="mt-5 border-t border-zinc-800/80 pt-4">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-500 mb-2">
-          Dodatne informacije
-        </h3>
-        <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
-          {/* brand link */}
-          {brand && (
-            <Link
-              href={`/products?brand=${encodeURIComponent(brand.slug)}`}
-              className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-cyan-400/70 hover:bg-zinc-900/90 hover:text-cyan-200 transition-colors"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-              Brand:{' '}
-              <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
-                {brand.name}
-              </span>
-            </Link>
-          )}
+              {(brand || mainCategory) && (
+                <div className="mt-5 border-t border-zinc-800/80 pt-4">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-500 mb-2">
+                    Dodatne informacije
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+                    {/* brand link */}
+                    {brand && (
+                      <Link
+                        href={`/products?brand=${encodeURIComponent(
+                          brand.slug
+                        )}`}
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-cyan-400/70 hover:bg-zinc-900/90 hover:text-cyan-200 transition-colors"
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                        Brand:{' '}
+                        <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
+                          {brand.name}
+                        </span>
+                      </Link>
+                    )}
 
-          {/* glavna kategorija */}
-          {mainCategory && (
-            <Link
-              href={`/categories/${mainCategory.slug}`}
-              className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-emerald-400/70 hover:bg-zinc-900/90 hover:text-emerald-200 transition-colors"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              Kategorija:{' '}
-              <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
-                {mainCategory.name}
-              </span>
-            </Link>
-          )}
+                    {/* glavna kategorija */}
+                    {mainCategory && (
+                      <Link
+                        href={`/categories/${mainCategory.slug}`}
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-emerald-400/70 hover:bg-zinc-900/90 hover:text-emerald-200 transition-colors"
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        Kategorija:{' '}
+                        <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
+                          {mainCategory.name}
+                        </span>
+                      </Link>
+                    )}
 
-          {/* podkategorija */}
-          {subCategory && (
-            <Link
-              href={`/categories/${subCategory.slug}`}
-              className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-fuchsia-400/70 hover:bg-zinc-900/90 hover:text-fuchsia-200 transition-colors"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400" />
-              Podkategorija:{' '}
-              <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
-                {subCategory.name}
-              </span>
-            </Link>
+                    {/* podkategorija */}
+                    {subCategory && (
+                      <Link
+                        href={`/categories/${subCategory.slug}`}
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-700/70 bg-zinc-900/70 px-2.5 py-1 text-zinc-300 hover:border-fuchsia-400/70 hover:bg-zinc-900/90 hover:text-fuchsia-200 transition-colors"
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400" />
+                        Podkategorija:{' '}
+                        <span className="text-zinc-100 underline decoration-dotted underline-offset-2">
+                          {subCategory.name}
+                        </span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
-        </div>
-      </div>
-    )}
-  </div>
-)}
         </div>
       </div>
     </>

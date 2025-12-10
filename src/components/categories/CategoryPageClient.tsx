@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 import { client } from '@/lib/apollo-client';
@@ -112,13 +112,11 @@ export function CategoryPageClient({
     notifyOnNetworkStatusChange: true,
   });
 
-  // ⚠️ ovde TS zna da je catData: CategoryData | undefined
-  // zato prvo izvučemo "categoryData"
   const categoryData = catData?.productCategory ?? null;
   const parentCat = categoryData;
 
   const childNodes: Category[] = (parentCat?.children?.nodes ?? []).filter(
-    (c): c is Category => Boolean(c),
+    (c: Category | null | undefined): c is Category => Boolean(c),
   );
 
   const currentCat: Category | null = parentCat
@@ -130,12 +128,8 @@ export function CategoryPageClient({
   const categoryId = currentCat?.databaseId ?? null;
 
   // 2) Proizvodi za aktivnu kategoriju
-  const [products, setProducts] = useState<Product[]>([]);
-  const [pageInfo, setPageInfo] = useState<PageInfo>({
-    endCursor: null,
-    hasNextPage: false,
-  });
 
+  // osnovni query
   const {
     data: prodData,
     loading: prodLoading,
@@ -149,39 +143,52 @@ export function CategoryPageClient({
     notifyOnNetworkStatusChange: true,
   });
 
-  useEffect(() => {
-    // 🔒 prvo izvučemo productsData da TS suzimo
-    const productsData = prodData?.products;
-    if (!productsData) return;
+  // bazni podaci iz GraphQL-a (bez dodatnih stranica)
+  const baseProductsData = prodData?.products;
 
-    const nodes = productsData.nodes ?? [];
-    const clean = nodes.filter((p): p is Product => Boolean(p));
+  const baseProducts = useMemo<Product[]>(() => {
+    if (!baseProductsData?.nodes) return [];
+    return baseProductsData.nodes.filter(
+      (p: Product | null | undefined): p is Product => Boolean(p),
+    );
+  }, [baseProductsData]);
 
-    setProducts(clean);
-    setPageInfo({
-      endCursor: productsData.pageInfo?.endCursor ?? null,
-      hasNextPage: productsData.pageInfo?.hasNextPage ?? false,
-    });
-  }, [prodData]);
+  const basePageInfo: PageInfo = baseProductsData?.pageInfo ?? {
+    endCursor: null,
+    hasNextPage: false,
+  };
+
+  // dodatno učitane stranice (paginacija)
+  const [extraProducts, setExtraProducts] = useState<Product[] | null>(null);
+  const [overridePageInfo, setOverridePageInfo] = useState<PageInfo | null>(
+    null,
+  );
+
+  const products = extraProducts ?? baseProducts;
+  const pageInfo = overridePageInfo ?? basePageInfo;
 
   const loadMore = async () => {
     if (!fetchMore || !pageInfo.hasNextPage || !pageInfo.endCursor) return;
 
     const res = await fetchMore({ variables: { after: pageInfo.endCursor } });
 
-    // opet lokalna varijabla da TS bude srećan
-    const productsData = res?.data?.products;
-    if (!productsData) return;
+    const productsData =
+      (res.data as ProductsData | undefined)?.products ?? undefined;
 
-    const nodes = productsData.nodes ?? [];
-    const clean = nodes.filter((p): p is Product => Boolean(p));
+    if (!productsData?.nodes) return;
 
-    setProducts((prev) => [...prev, ...clean]);
+    const newProducts = productsData.nodes.filter(
+      (p: Product | null | undefined): p is Product => Boolean(p),
+    );
 
-    setPageInfo({
-      endCursor: productsData.pageInfo?.endCursor ?? null,
-      hasNextPage: productsData.pageInfo?.hasNextPage ?? false,
+    setExtraProducts((prev) => {
+      const current = prev ?? baseProducts;
+      return [...current, ...newProducts];
     });
+
+    setOverridePageInfo(
+      productsData.pageInfo ?? { endCursor: null, hasNextPage: false },
+    );
   };
 
   // Rendering logic / guardovi
@@ -231,7 +238,9 @@ export function CategoryPageClient({
               key={sub.id}
               href={`/categories/${parentSlug}/${sub.slug}`}
               name={sub.name}
-              imageUrl={sub.image?.sourceUrl ?? parentCat.image?.sourceUrl ?? null}
+              imageUrl={
+                sub.image?.sourceUrl ?? parentCat.image?.sourceUrl ?? null
+              }
               imageAlt={sub.image?.altText || sub.name}
               price={undefined}
               brandName={undefined}
@@ -249,7 +258,9 @@ export function CategoryPageClient({
                 name={product.name}
                 imageUrl={product.image?.sourceUrl ?? null}
                 imageAlt={product.image?.altText || product.name}
-                price={product.price ? cleanPrice(product.price) : undefined}
+                price={
+                  product.price ? cleanPrice(product.price) : undefined
+                }
                 brandName={undefined}
               />
             ))}
@@ -271,7 +282,9 @@ export function CategoryPageClient({
             <p className="mt-4 text-center">Učitavanje...</p>
           )}
           {prodError && (
-            <p className="mt-4 text-red-600">Greška: {prodError.message}</p>
+            <p className="mt-4 text-red-600">
+              Greška: {prodError.message}
+            </p>
           )}
         </>
       )}

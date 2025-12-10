@@ -31,7 +31,7 @@ const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL;
 // generic fetch helper
 async function fetchGraphQL<T>(
   query: string,
-  variables?: Record<string, any>,
+  variables?: Record<string, unknown>,
   revalidateSeconds = 60
 ): Promise<T> {
   if (!WP_GRAPHQL_URL) {

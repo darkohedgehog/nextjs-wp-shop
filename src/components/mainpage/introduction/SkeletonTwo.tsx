@@ -2,7 +2,6 @@
 
 import { motion } from "motion/react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 
 const images = [
   "/assets/16.61.001.png",
@@ -13,14 +12,16 @@ const images = [
   "/assets/05.61.81.png",
 ];
 
+// Deterministička pseudo-random funkcija zasnovana na indexu
+function rotationForIndex(index: number): number {
+  // malo "šuma" preko sinusa da izgleda random
+  const x = Math.sin(index * 9753.123) * 10000;
+  const fraction = x - Math.floor(x); // 0–1
+  // mapiramo u opseg -10 do +10 stepeni
+  return fraction * 20 - 10;
+}
+
 export const SkeletonTwo = () => {
-  const [rotations, setRotations] = useState<number[]>([]);
-
-  useEffect(() => {
-    const generated = images.map(() => Math.random() * 20 - 10);
-    setRotations(generated);
-  }, []);
-
   const imageVariants = {
     whileHover: {
       scale: 1.1,
@@ -39,12 +40,12 @@ export const SkeletonTwo = () => {
       <div className="grid grid-cols-2 gap-5 mx-auto">
         {images.map((image, idx) => (
           <motion.div
-            key={"images-first" + idx}
+            key={`images-first-${idx}`}
             variants={imageVariants}
             whileHover="whileHover"
             whileTap="whileTap"
-            style={{ rotate: rotations[idx] || 0 }}
-            className="rounded-xl -mr-4 mt-4 p-1 bg-gradient-custom border-[#A07CFE] border shrink-0 overflow-hidden"
+            style={{ rotate: rotationForIndex(idx) }}
+            className="rounded-xl -mr-4 mt-4 p-1 bg-secondary-color border-[#A07CFE] border shrink-0 overflow-hidden"
           >
             <Image
               src={image}

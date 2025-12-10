@@ -8,12 +8,44 @@ if (!WC_BASE_URL)        console.warn('[customer] WC_BASE_URL nije definisan');
 if (!WC_CONSUMER_KEY)    console.warn('[customer] WC_CONSUMER_KEY nije definisan');
 if (!WC_CONSUMER_SECRET) console.warn('[customer] WC_CONSUMER_SECRET nije definisan');
 
-function basicAuthHeader() {
+function basicAuthHeader(): string {
   const token = Buffer.from(
     `${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`
   ).toString('base64');
   return `Basic ${token}`;
 }
+
+type WooCustomerUpdatePayload = {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  billing: {
+    first_name?: string;
+    last_name?: string;
+    company?: string;
+    address_1?: string;
+    address_2?: string;
+    city?: string;
+    postcode?: string;
+    country?: string;
+    phone?: string;
+    email?: string;
+  };
+  shipping: {
+    first_name?: string;
+    last_name?: string;
+    company?: string;
+    address_1?: string;
+    address_2?: string;
+    city?: string;
+    postcode?: string;
+    country?: string;
+    phone?: string;
+  };
+  meta_data?: { key: string; value: string }[];
+  // ako Woo doda još nešto, da ne puca:
+  [key: string]: unknown;
+};
 
 // GET /api/customer/[id]
 export async function GET(
@@ -113,35 +145,34 @@ export async function PUT(
       // meta.push({ key: 'b2bking_vat_number', value: String(company_vat) });
     }
 
-    const wooPayload: any = {
-      first_name,
-      last_name,
-      email,
-      billing: {
-        first_name,
-        last_name,
-        company,
-        address_1,
-        address_2,
-        city,
-        postcode,
-        country,
-        phone,
-        email,
-      },
-      shipping: {
-        first_name,
-        last_name,
-        company,
-        address_1,
-        address_2,
-        city,
-        postcode,
-        country,
-        phone,
-      },
-    };
-
+    const wooPayload: WooCustomerUpdatePayload = {
+  first_name,
+  last_name,
+  email,
+  billing: {
+    first_name,
+    last_name,
+    company,
+    address_1,
+    address_2,
+    city,
+    postcode,
+    country,
+    phone,
+    email,
+  },
+  shipping: {
+    first_name,
+    last_name,
+    company,
+    address_1,
+    address_2,
+    city,
+    postcode,
+    country,
+    phone,
+  },
+};
     if (meta.length > 0) {
       wooPayload.meta_data = meta;
     }

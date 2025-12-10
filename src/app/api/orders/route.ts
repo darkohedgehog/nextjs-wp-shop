@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!WC_BASE_URL || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
     return NextResponse.json(
       { error: 'Woo env vars missing (WC_BASE_URL / CK / CS)' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   if (!customerId) {
     return NextResponse.json(
       { error: 'Missing customer query param ?customer=' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     url.searchParams.set('customer', customerId);
     url.searchParams.set('orderby', 'date');
     url.searchParams.set('order', 'desc');
-    url.searchParams.set('per_page', '20'); // ili više ako želiš
+    url.searchParams.set('per_page', '20');
 
     const authHeader =
       'Basic ' +
@@ -58,14 +58,15 @@ export async function GET(req: NextRequest) {
           wooStatus: wpRes.status,
           wooBody: text,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    let orders: any;
+    let orders: unknown;
     try {
       orders = JSON.parse(text);
     } catch {
+      // ako nije validan JSON, vrati raw string (npr. ako Woo vrati nešto neočekivano)
       orders = text;
     }
 
@@ -73,8 +74,11 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error('[orders] Unexpected error:', err);
     return NextResponse.json(
-      { error: 'Unexpected error calling Woo list orders', details: String(err) },
-      { status: 500 }
+      {
+        error: 'Unexpected error calling Woo list orders',
+        details: String(err),
+      },
+      { status: 500 },
     );
   }
 }

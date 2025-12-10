@@ -1,5 +1,3 @@
-// src/components/product/ProductListPage.tsx
-
 import { gql } from '@apollo/client';
 import { client } from '@/lib/apollo-client';
 import ProductListClient from '@/components/product/ProductListClient';

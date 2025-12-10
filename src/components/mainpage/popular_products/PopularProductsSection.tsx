@@ -17,7 +17,7 @@ const GET_CATEGORY_BY_SLUG = gql`
   }
 `;
 
-// 2) Query za 4 proizvoda iz konkretne kategorije
+// 2) Query za proizvode iz konkretne kategorije
 const GET_POPULAR_PRODUCTS = gql`
   query PopularProductsByCategory($categoryId: Int!) {
     products(
@@ -52,18 +52,20 @@ type CategoryBySlugData = {
   } | null;
 };
 
+type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  price?: string | null;
+  image?: {
+    sourceUrl: string;
+    altText?: string | null;
+  } | null;
+};
+
 type PopularProductsData = {
   products?: {
-    nodes: {
-      id: string;
-      name: string;
-      slug: string;
-      price?: string | null;
-      image?: {
-        sourceUrl: string;
-        altText?: string | null;
-      } | null;
-    }[];
+    nodes: Product[];
   } | null;
 };
 
@@ -89,7 +91,7 @@ export default async function PopularProductsSection() {
     return null;
   }
 
-  // 2) Uzmi 4 proizvoda iz te kategorije
+  // 2) Uzmi proizvode iz te kategorije
   const { data: prodData } = await client.query<PopularProductsData>({
     query: GET_POPULAR_PRODUCTS,
     variables: { categoryId: category.databaseId },
@@ -116,15 +118,16 @@ export default async function PopularProductsSection() {
             <h2 className="text-3xl lg:text-5xl lg:leading-tight max-w-5xl mx-auto text-center tracking-tight font-medium secondary-color">
               Najpopularniji proizvodi
             </h2>
-            <div className="flex items-center justify-center text-lg lg:text-xl  max-w-2xl  my-4 mx-auto text-center font-normal paragraph-color gap-2">
-            <span className="flex items-center justify-center gap-2"><RiUserStarLine /> 
-             Naši kupci najčešće naručuju
-             </span> 
-        </div>
+            <div className="flex items-center justify-center text-lg lg:text-xl max-w-2xl my-4 mx-auto text-center font-normal paragraph-color gap-2">
+              <span className="flex items-center justify-center gap-2">
+                <RiUserStarLine />
+                Naši kupci najčešće naručuju
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Grid: 2 na mobilnom, 4 na desktopu */}
+        {/* Grid */}
         <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-3">
           {products.map((product) => (
             <ProductCard
@@ -133,7 +136,7 @@ export default async function PopularProductsSection() {
               name={product.name}
               imageUrl={product.image?.sourceUrl ?? null}
               imageAlt={product.image?.altText ?? product.name}
-              price={product.price ?? null}
+              price={product.price ?? undefined}
               brandName={null}
               brandLabel="Brend"
             />
@@ -147,8 +150,8 @@ export default async function PopularProductsSection() {
             className="mt-8 bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center px-4 py-2 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff]"
           >
             Pogledaj sve
-            <span className='uppercase text-sm font-bold flex items-center justify-center gap-2'>
-          <GiBinoculars className='w-5 h-5' />
+            <span className="uppercase text-sm font-bold flex items-center justify-center gap-2">
+              <GiBinoculars className="w-5 h-5" />
             </span>
           </Link>
         </div>

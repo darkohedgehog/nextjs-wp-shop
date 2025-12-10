@@ -1,9 +1,14 @@
 // app/api/lost-password/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
+// ⭐ Dodaj tip OVDE — izvan funkcija, na vrhu fajla
+type LostPasswordBody = {
+  email?: string;
+};
+
 // Osnovni WP URL (bez /wp-json na kraju)
 const WP_BASE_URL =
-  process.env.WC_BASE_URL ??          // npr. https://wp.zivic-elektro.shop
+  process.env.WC_BASE_URL ??
   process.env.NEXT_PUBLIC_WP_BASE_URL ??
   process.env.WP_REST_ROOT?.replace('/wp-json', '') ??
   '';
@@ -33,10 +38,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 1) Učitaj body
-  let body: any;
+  // 🔹 1) Učitaj i tipiziraj body bez any
+  let body: LostPasswordBody | null = null;
+
   try {
-    body = await req.json();
+    body = (await req.json()) as LostPasswordBody;
   } catch (err) {
     console.error('[lost-password] Cannot parse JSON body:', err);
     return NextResponse.json(
@@ -45,7 +51,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const email = String(body?.email || '').trim();
+  const email = typeof body?.email === 'string' ? body.email.trim() : '';
+
   if (!email) {
     return NextResponse.json(
       { error: 'Email je obavezan.' },
@@ -55,16 +62,10 @@ export async function POST(req: NextRequest) {
 
   console.log('[lost-password] Received email:', email);
 
-  // 2) Klasičan WP endpoint za reset lozinke
-  // npr. https://wp.zivic-elektro.shop/wp-login.php?action=lostpassword
   const url = `${WP_BASE_URL.replace(/\/$/, '')}/wp-login.php?action=lostpassword`;
 
   console.log('[lost-password] Calling WP lostpassword form:', url);
 
-  // WordPress očekuje form-encoded body:
-  //  - user_login = email
-  //  - redirect_to (može prazno)
-  //  - wp-submit (labela dugmeta, nije preterano bitno ali stavimo)
   const formBody = new URLSearchParams();
   formBody.set('user_login', email);
   formBody.set('redirect_to', '');
@@ -73,35 +74,27 @@ export async function POST(req: NextRequest) {
   try {
     const wpRes = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formBody.toString(),
-      // ne keširamo
       cache: 'no-store',
     });
 
     const text = await wpRes.text();
 
-    // WP obično vraća 200 sa HTML-om (ili sa greškom ili sa porukom "If that email exists...")
     if (!wpRes.ok) {
       console.error(
         '[lost-password] WP lostpassword HTTP error:',
         wpRes.status,
-        text.slice(0, 500), // da ne spamujemo ceo HTML
+        text.slice(0, 500),
       );
       return NextResponse.json(
-        {
-          error: 'WP lostpassword failed',
-          wpStatus: wpRes.status,
-        },
+        { error: 'WP lostpassword failed', wpStatus: wpRes.status },
         { status: 500 },
       );
     }
 
-    console.log('[lost-password] WP lostpassword OK (HTML response length):', text.length);
+    console.log('[lost-password] WP lostpassword OK:', text.length);
 
-    // Ne curimo korisniku detalje – standardna "ako postoji user" poruka
     return NextResponse.json(
       {
         ok: true,

@@ -102,11 +102,12 @@ export const ImagesGrid = () => {
             )}
             key={image.src}
           >
-            <img
+            <Image
               src={image.src}
               alt={image.src}
               width="500"
               height="500"
+              priority
               className="h-full min-w-60 shrink-0 rounded-lg object-cover object-top"
             />
           </div>
@@ -160,7 +161,7 @@ export const FeaturedImages = ({
         )}
       >
         <div className="mb-4 flex flex-row items-center sm:mb-0">
-          {images.map((image, idx) => (
+          {images.map((image) => (
             <div className="group relative -mr-4" key={image.name}>
               <div>
                 <motion.div

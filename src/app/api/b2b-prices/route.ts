@@ -9,12 +9,23 @@ if (!WC_BASE_URL)        console.warn('[b2b-prices] WC_BASE_URL nije definisan')
 if (!WC_CONSUMER_KEY)    console.warn('[b2b-prices] WC_CONSUMER_KEY nije definisan');
 if (!WC_CONSUMER_SECRET) console.warn('[b2b-prices] WC_CONSUMER_SECRET nije definisan');
 
-function basicAuthHeader() {
+function basicAuthHeader(): string {
   const token = Buffer.from(
     `${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`
   ).toString('base64');
   return `Basic ${token}`;
 }
+
+// Tipovi za Woo response
+type WooMetaData = {
+  key: string;
+  value: string | number | boolean | null;
+};
+
+type WooProduct = {
+  id: number;
+  meta_data?: WooMetaData[];
+};
 
 export async function GET(req: NextRequest) {
   try {
@@ -70,9 +81,9 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    let products: any[] = [];
+    let products: WooProduct[] = [];
     try {
-      products = JSON.parse(text);
+      products = JSON.parse(text) as WooProduct[];
     } catch (e) {
       console.error('[b2b-prices] JSON parse error:', e);
       return NextResponse.json(
@@ -93,13 +104,13 @@ export async function GET(req: NextRequest) {
       const pid = p.id;
       const meta = Array.isArray(p.meta_data) ? p.meta_data : [];
 
-      const regMeta  = meta.find((m: any) => m.key === regularKey);
-      const saleMeta = meta.find((m: any) => m.key === saleKey);
+      const regMeta  = meta.find((m) => m.key === regularKey);
+      const saleMeta = meta.find((m) => m.key === saleKey);
 
       if (regMeta || saleMeta) {
         result[pid] = {
-          regular: regMeta?.value ?? undefined,
-          sale:    saleMeta?.value ?? undefined,
+          regular: regMeta?.value != null ? String(regMeta.value) : undefined,
+          sale:    saleMeta?.value != null ? String(saleMeta.value) : undefined,
         };
       }
     }

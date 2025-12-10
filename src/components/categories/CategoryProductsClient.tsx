@@ -97,13 +97,19 @@ export function CategoryProductsClient({
       const next = res.data?.products;
       if (next) {
         const nextNodes =
-          next.nodes.filter((p): p is Product => Boolean(p)) ?? [];
+          next.nodes.filter(
+            (p: Product | null | undefined): p is Product => Boolean(p),
+          ) ?? [];
         setProducts((prev) => [...prev, ...nextNodes]);
         setPageInfo(next.pageInfo);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      setError(e?.message ?? 'Greška pri učitavanju proizvoda.');
+      if (e instanceof Error) {
+        setError(e.message ?? 'Greška pri učitavanju proizvoda.');
+      } else {
+        setError('Greška pri učitavanju proizvoda.');
+      }
     } finally {
       setLoadingMore(false);
     }
@@ -132,10 +138,10 @@ export function CategoryProductsClient({
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="bg-gradient-custom text-zinc-100 px-6 py-2 rounded-xl disabled:opacity-60 flex items-center gap-3"
+            className="bg-button-color text-blue-500 px-6 py-2 rounded-xl disabled:opacity-60 flex items-center gap-3"
           >
             {loadingMore ? 'Učitavanje…' : 'Učitaj više'}
-            {loadingMore && <FaSpinner className="animate-spin" />}
+            {loadingMore && <FaSpinner className="animate-spin text-blue-500" />}
           </button>
         </div>
       )}

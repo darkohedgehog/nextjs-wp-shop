@@ -15,6 +15,93 @@ type BlogGalleryProps = {
   title: string;
 };
 
+// --- Modal kao zaseban komponent (van rendera) ---
+
+type ImageModalProps = {
+  isOpen: boolean;
+  hasImages: boolean;
+  images: BlogGalleryImage[];
+  currentIndex: number;
+  title: string;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+};
+
+function ImageModal({
+  isOpen,
+  hasImages,
+  images,
+  currentIndex,
+  title,
+  onClose,
+  onPrev,
+  onNext,
+}: ImageModalProps) {
+  if (!isOpen || !hasImages) return null;
+
+  const currentImage = images[currentIndex] ?? images[0];
+
+  return (
+    <div
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl max-h-[90vh] px-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-slate-100 shadow-lg"
+          aria-label="Zatvori"
+        >
+          <PiEyeClosedLight />
+        </button>
+
+        {images.length > 1 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrev();
+            }}
+            className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white text-2xl"
+            aria-label="Prethodna slika"
+          >
+            <HiArrowLeft />
+          </button>
+        )}
+
+        <div className="flex items-center justify-center">
+          <Image
+            src={currentImage.sourceUrl}
+            alt={currentImage.altText || title}
+            width={1600}
+            height={1600}
+            priority
+            className="max-h-[80vh] rounded-lg object-contain"
+          />
+        </div>
+
+        {images.length > 1 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onNext();
+            }}
+            className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white text-2xl"
+            aria-label="Sledeća slika"
+          >
+            <HiArrowNarrowRight />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Glavna komponenta ---
+
 export default function BlogGallery({ images, title }: BlogGalleryProps) {
   const hasImages = images.length > 0;
   const [isOpen, setIsOpen] = useState(false);
@@ -57,70 +144,6 @@ export default function BlogGallery({ images, title }: BlogGalleryProps) {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  // modal
-  const ImageModal = () => {
-    if (!isOpen || !hasImages) return null;
-
-    const currentImage = images[currentIndex] ?? images[0];
-
-    return (
-      <div
-        className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80"
-        onClick={() => setIsOpen(false)}
-      >
-        <div
-          className="relative w-full max-w-4xl max-h-[90vh] px-4"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => setIsOpen(false)}
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-slate-100 shadow-lg"
-            aria-label="Zatvori"
-          >
-            <PiEyeClosedLight />
-          </button>
-
-          {images.length > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                showPrev();
-              }}
-              className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white text-2xl"
-              aria-label="Prethodna slika"
-            >
-              <HiArrowLeft />
-            </button>
-          )}
-
-          <div className="flex items-center justify-center">
-            <Image
-              src={currentImage.sourceUrl}
-              alt={currentImage.altText || title}
-              width={1600}
-              height={1600}
-              priority
-              className="max-h-[80vh] rounded-lg object-contain"
-            />
-          </div>
-
-          {images.length > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                showNext();
-              }}
-              className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white text-2xl"
-              aria-label="Sledeća slika"
-            >
-              <HiArrowNarrowRight />
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   if (!hasImages) return null;
 
   const mainImage = images[0];
@@ -128,7 +151,16 @@ export default function BlogGallery({ images, title }: BlogGalleryProps) {
 
   return (
     <>
-      <ImageModal />
+      <ImageModal
+        isOpen={isOpen}
+        hasImages={hasImages}
+        images={images}
+        currentIndex={currentIndex}
+        title={title}
+        onClose={() => setIsOpen(false)}
+        onPrev={showPrev}
+        onNext={showNext}
+      />
 
       <div className="mb-8">
         {/* glavna slika */}

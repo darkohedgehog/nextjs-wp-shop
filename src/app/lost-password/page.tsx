@@ -1,4 +1,3 @@
-// src/app/my-account/lost-password/page.tsx  (ili gde već držiš ovu rutu)
 'use client';
 
 import { useState } from 'react';

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import BlogGallery, {
   BlogGalleryImage,
 } from "@/components/blog/BlogGallery";
+
 const BackButton = dynamic(() => import('@/components/ui/BackButton'));
 
 type Category = {
@@ -33,10 +34,13 @@ type Post = {
 
 const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL;
 
+// malo striktniji tip za variables
+type GraphQLVariables = Record<string, string | number | boolean | null | undefined>;
+
 // generic fetch helper
 async function fetchGraphQL<T>(
   query: string,
-  variables?: Record<string, any>,
+  variables?: GraphQLVariables,
   revalidateSeconds = 300
 ): Promise<T> {
   if (!WP_GRAPHQL_URL) {
@@ -59,14 +63,17 @@ async function fetchGraphQL<T>(
     throw new Error(`GraphQL HTTP error: ${res.status}`);
   }
 
-  const json = await res.json();
+  const json = (await res.json()) as {
+    data: T;
+    errors?: unknown;
+  };
 
   if (json.errors) {
     console.error("GraphQL errors:", json.errors);
     throw new Error("GraphQL response sadrži errors");
   }
 
-  return json.data as T;
+  return json.data;
 }
 
 const GET_POST_BY_SLUG = `
@@ -122,7 +129,8 @@ function extractImagesFromHtml(
   const results: BlogGalleryImage[] = [];
   const seen = new Set<string>();
 
-  let match;
+  let match: RegExpExecArray | null;
+   
   while ((match = imgRegex.exec(html)) !== null) {
     const src = match[1];
     if (!src || seen.has(src)) continue;
@@ -151,8 +159,12 @@ function stripImagesFromHtml(html: string): string {
   return cleaned;
 }
 
+type PageParams = {
+  slug: string;
+};
+
 type PageProps = {
-  params: Promise<{ slug: string }>;
+  params: Promise<PageParams>;
 };
 
 export async function generateMetadata(
@@ -324,7 +336,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             />
           </div>
           <div className="flex items-center justify-center">
-          <BackButton />
+            <BackButton />
           </div>
         </article>
       </div>

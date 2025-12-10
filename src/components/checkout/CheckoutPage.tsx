@@ -13,31 +13,58 @@ import { LuPackageCheck } from 'react-icons/lu';
 // Tip za billing i shipping
 type BillingShipping = {
   first_name: string;
-  last_name:  string;
-  company:    string;
-  address_1:  string;
-  address_2:  string;
-  city:       string;
-  state:      string;
-  postcode:   string;
-  country:    string;
-  email:      string;
-  phone:      string;
+  last_name: string;
+  company: string;
+  address_1: string;
+  address_2: string;
+  city: string;
+  state: string;
+  postcode: string;
+  country: string;
+  email: string;
+  phone: string;
+};
+
+// minimalni tipovi za Woo kupca
+type CustomerMeta = {
+  key?: string;
+  value?: unknown;
+};
+
+type CustomerBilling = {
+  first_name?: string;
+  last_name?: string;
+  company?: string;
+  address_1?: string;
+  address_2?: string;
+  city?: string;
+  state?: string;
+  postcode?: string;
+  country?: string;
+  email?: string;
+  phone?: string;
+};
+
+type Customer = {
+  id?: number;
+  email?: string;
+  billing?: CustomerBilling;
+  meta_data?: CustomerMeta[];
 };
 
 // fiksna dostava za B2C
 const BASE_SHIPPING = 5.5;
 
 export default function CheckoutPage() {
-  const image     = '/assets/Add-to-Cart-amico.svg';
-  const items     = useCart((s) => s.items);
+  const image = '/assets/Add-to-Cart-amico.svg';
+  const items = useCart((s) => s.items);
   const clearCart = useCart((s) => s.clear);
-  const router    = useRouter();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string|null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<'cod'|'bacs'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bacs'>('cod');
   const paymentTitleMap = {
     cod: 'Cash on Delivery',
     bacs: 'Direct Bank Transfer',
@@ -51,13 +78,31 @@ export default function CheckoutPage() {
 
   // Inicijalno prazni billing i shipping
   const [billing, setBilling] = useState<BillingShipping>({
-    first_name: '', last_name: '',company: '', address_1: '', address_2: '',
-    city: '', state: '', postcode: '', country: '', email: '', phone: '',
+    first_name: '',
+    last_name: '',
+    company: '',
+    address_1: '',
+    address_2: '',
+    city: '',
+    state: '',
+    postcode: '',
+    country: '',
+    email: '',
+    phone: '',
   });
 
   const [shipping, setShipping] = useState<BillingShipping>({
-    first_name: '', last_name: '',company: '', address_1: '', address_2: '',
-    city: '', state: '', postcode: '', country: '', email: '', phone: '',
+    first_name: '',
+    last_name: '',
+    company: '',
+    address_1: '',
+    address_2: '',
+    city: '',
+    state: '',
+    postcode: '',
+    country: '',
+    email: '',
+    phone: '',
   });
 
   const [sameAsBilling, setSameAsBilling] = useState(true);
@@ -70,56 +115,60 @@ export default function CheckoutPage() {
   // ❗ Prefill billing + shipping iz Woo kupca + setCustomerId + B2B flag
   useEffect(() => {
     if (typeof window === 'undefined') return;
-  
+
     const raw = localStorage.getItem('wpUser');
     if (!raw) return;
-  
+
     try {
-      const user = JSON.parse(raw);
-      const userId = user?.id || user?.data?.id;
+      const user = JSON.parse(raw) as {
+        id?: number;
+        data?: { id?: number };
+        email?: string;
+      };
+
+      const userId = user?.id ?? user?.data?.id;
       if (!userId) return;
-  
+
       // zapamtimo ID korisnika za order
       setCustomerId(Number(userId));
-  
+
       (async () => {
         try {
           const res = await fetch(`/api/customer/${userId}`);
           if (!res.ok) return;
-  
-          const customer: any = await res.json();
-          const b = customer.billing || {};
-  
+
+          const customer = (await res.json()) as Customer;
+          const b = customer.billing ?? {};
+
           const filledBilling: BillingShipping = {
-            first_name: b.first_name || '',
-            last_name:  b.last_name  || '',
-            company:    b.company    || '',
-            address_1:  b.address_1  || '',
-            address_2:  b.address_2  || '',
-            city:       b.city       || '',
-            state:      b.state      || '',
-            postcode:   b.postcode   || '',
-            country:    b.country    || '',
-            email:      b.email      || user.email || '',
-            phone:      b.phone      || '',
+            first_name: b.first_name ?? '',
+            last_name: b.last_name ?? '',
+            company: b.company ?? '',
+            address_1: b.address_1 ?? '',
+            address_2: b.address_2 ?? '',
+            city: b.city ?? '',
+            state: b.state ?? '',
+            postcode: b.postcode ?? '',
+            country: b.country ?? '',
+            email: b.email ?? user.email ?? '',
+            phone: b.phone ?? '',
           };
-  
+
           setBilling(filledBilling);
-  
+
           if (sameAsBilling) {
             setShipping(filledBilling);
           }
-  
+
           let userIsB2B = false;
           if (Array.isArray(customer.meta_data)) {
             const flagMeta = customer.meta_data.find(
-              (m: any) => m.key === 'b2bking_b2buser'
+              (m: CustomerMeta) => m.key === 'b2bking_b2buser',
             );
+
             const flag = String(flagMeta?.value ?? '').toLowerCase();
             userIsB2B =
-              flag === 'yes' ||
-              flag === '1'   ||
-              flag === 'true';
+              flag === 'yes' || flag === '1' || flag === 'true';
           }
 
           setIsB2B(userIsB2B);
@@ -127,10 +176,15 @@ export default function CheckoutPage() {
             setPaymentMethod('bacs');
           }
 
-          const defaultNote = customer.meta_data?.find(
-            (m: any) => m.key === 'default_note'
-          )?.value;
-  
+          const defaultNoteMeta = customer.meta_data?.find(
+            (m: CustomerMeta) => m.key === 'default_note',
+          );
+
+          const defaultNote =
+            typeof defaultNoteMeta?.value === 'string'
+              ? defaultNoteMeta.value
+              : undefined;
+
           if (defaultNote && !note) {
             setNote(defaultNote);
           }
@@ -139,7 +193,7 @@ export default function CheckoutPage() {
         }
       })();
     } catch (e) {
-      console.error('Nevažeći wpUser u localStorage-u');
+      console.error('Nevažeći wpUser u localStorage-u', e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -152,8 +206,17 @@ export default function CheckoutPage() {
       setShipping({ ...billing });
     } else {
       setShipping({
-        first_name: '', last_name: '',company: '', address_1: '', address_2: '',
-        city: '', state: '', postcode: '', country: '', email: '', phone: '',
+        first_name: '',
+        last_name: '',
+        company: '',
+        address_1: '',
+        address_2: '',
+        city: '',
+        state: '',
+        postcode: '',
+        country: '',
+        email: '',
+        phone: '',
       });
     }
   };
@@ -161,7 +224,7 @@ export default function CheckoutPage() {
   const handleBillingChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setBilling((b) => {
-      const updated = { ...b, [name]: value };
+      const updated: BillingShipping = { ...b, [name]: value };
       if (sameAsBilling) {
         setShipping((s) => ({ ...s, [name]: value }));
       }
@@ -179,47 +242,47 @@ export default function CheckoutPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-  
+
     const line_items = items.map((i) => ({
       product_id: i.product_id,
-      quantity:   i.quantity,
+      quantity: i.quantity,
     }));
-  
+
     const payload = {
       customer_id: customerId ?? undefined,
-      payment_method:        paymentMethod,
-      payment_method_title:  paymentTitleMap[paymentMethod],
+      payment_method: paymentMethod,
+      payment_method_title: paymentTitleMap[paymentMethod],
       billing,
       shipping,
       line_items,
       customer_note: note,
       shipping_lines: [
         {
-          method_id:    'flat_rate',
+          method_id: 'flat_rate',
           method_title: 'Flat Rate',
-          total:        shippingCost.toFixed(2), // 👈 B2B = 0.00, B2C = 4.50
+          total: shippingCost.toFixed(2), // 👈 B2B = 0.00, B2C = 5.50
         },
       ],
     };
-  
-    const res  = await fetch('/api/create-order', {
-      method:  'POST',
+
+    const res = await fetch('/api/create-order', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
+      body: JSON.stringify(payload),
     });
-  
+
     const data = await res.json();
     setLoading(false);
-  
+
     if (!res.ok) {
       setError(
         typeof data.error === 'string'
           ? data.error
-          : JSON.stringify(data.error)
+          : JSON.stringify(data.error),
       );
       return;
     }
-  
+
     clearCart();
     const orderId = data.id;
     router.push(`/order-success?order_id=${orderId}`);
@@ -251,12 +314,7 @@ export default function CheckoutPage() {
     <>
       <form
         onSubmit={handleCheckout}
-        className="
-          p-4
-          max-w-lg lg:max-w-5xl
-          mx-2 lg:mx-auto
-          my-20
-        "
+        className="p-4 max-w-lg lg:max-w-5xl mx-2 lg:mx-auto my-20"
       >
         <div className="lg:grid lg:grid-cols-3 lg:gap-6">
           {/* LEFT COLUMN — FORMA */}
@@ -523,12 +581,7 @@ export default function CheckoutPage() {
           <div className="mt-6 lg:mt-0 lg:col-span-1">
             <div className="lg:sticky lg:top-24 space-y-4">
               {/* Summary */}
-              <div className="border
-              border-[#adb5bd]/70
-              bg-linear-to-br from-zinc-900/50 via-zinc-900/30 to-zinc-800/50
-              rounded-2xl
-              shadow-[0_20px_60px_rgba(0,0,0,0.45)]
-              backdrop-blur-md p-4 text-blue-600 space-y-3">
+              <div className="border border-[#adb5bd]/70 bg-linear-to-br from-zinc-900/50 via-zinc-900/30 to-zinc-800/50 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md p-4 text-blue-600 space-y-3">
                 <div className="text-center text-lg font-semibold text-slate-300 gap-2 flex items-center justify-center">
                   Pregled narudžbe
                   <span className="text-cyan-400">

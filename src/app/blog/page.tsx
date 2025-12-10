@@ -1,4 +1,3 @@
-// app/blog/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -28,9 +27,15 @@ type Post = {
 
 const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL;
 
+// 👇 malo striktniji tip za variables
+type GraphQLVariables = Record<
+  string,
+  string | number | boolean | null | undefined
+>;
+
 async function fetchGraphQL<T>(
   query: string,
-  variables?: Record<string, any>,
+  variables?: GraphQLVariables,
   revalidateSeconds = 60
 ): Promise<T> {
   if (!WP_GRAPHQL_URL) {
@@ -53,14 +58,17 @@ async function fetchGraphQL<T>(
     throw new Error(`GraphQL HTTP error: ${res.status}`);
   }
 
-  const json = await res.json();
+  const json = (await res.json()) as {
+    data: T;
+    errors?: unknown;
+  };
 
   if (json.errors) {
     console.error("GraphQL errors:", json.errors);
     throw new Error("GraphQL response sadrži errors");
   }
 
-  return json.data as T;
+  return json.data;
 }
 
 const GET_ALL_POSTS = `

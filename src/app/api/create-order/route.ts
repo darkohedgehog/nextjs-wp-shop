@@ -8,15 +8,46 @@ if (!WC_BASE_URL)        console.warn('[create-order] WC_BASE_URL nije definisan
 if (!WC_CONSUMER_KEY)    console.warn('[create-order] WC_CONSUMER_KEY nije definisan u .env');
 if (!WC_CONSUMER_SECRET) console.warn('[create-order] WC_CONSUMER_SECRET nije definisan u .env');
 
-function basicAuthHeader() {
+function basicAuthHeader(): string {
   const token = Buffer.from(
     `${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`
   ).toString('base64');
   return `Basic ${token}`;
 }
 
+// ---- Tipovi za Woo strukture ----
+type WooMetaData = {
+  key: string;
+  value: unknown;
+};
+
+type WooCustomer = {
+  meta_data?: WooMetaData[];
+};
+
+type WooProduct = {
+  id: number;
+  regular_price?: string | number | null;
+  sale_price?: string | number | null;
+  price?: string | number | null;
+  meta_data?: WooMetaData[];
+};
+
+type IncomingLineItem = {
+  product_id?: number;
+  variation_id?: number;
+  quantity?: number | string;
+  [key: string]: unknown;
+};
+
+type CreateOrderPayload = {
+  customer_id?: number | string;
+  payment_method?: string;
+  line_items?: IncomingLineItem[];
+  [key: string]: unknown;
+};
+
 export async function GET() {
-  //console.log('🟢 [/api/create-order] GET handler');
   return NextResponse.json({
     ok: true,
     route: '/api/create-order',
@@ -61,7 +92,7 @@ async function fetchCustomerGroup(customerId: number): Promise<{
     return { groupId: null, isB2B: false };
   }
 
-  const json: any = await res.json();
+  const json = (await res.json()) as WooCustomer;
 
   let groupId: string | null = null;
   let isB2B = false;
@@ -114,7 +145,7 @@ async function fetchProductGroupPricing(
     return { regular: 0, effective: 0, ok: false };
   }
 
-  const json: any = await res.json();
+  const json = (await res.json()) as WooProduct;
 
   // Osnovne Woo cijene
   let regular = toNum(json.regular_price ?? json.price ?? 0);
@@ -146,11 +177,10 @@ async function fetchProductGroupPricing(
     }
   }
 
-  const ok = (regular > 0 || effective > 0) && Number.isFinite(regular) && Number.isFinite(effective);
-
-  //console.log(
-  //  `[create-order] Product ${productId} pricing -> regular=${regular}, effective=${effective}, ok=${ok}`
-  //);
+  const ok =
+    (regular > 0 || effective > 0) &&
+    Number.isFinite(regular) &&
+    Number.isFinite(effective);
 
   if (!ok) {
     console.warn(
@@ -162,8 +192,6 @@ async function fetchProductGroupPricing(
 }
 
 export async function POST(req: NextRequest) {
-  //console.log('🔥 [/api/create-order] POST handler START');
-
   if (!WC_BASE_URL || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
     console.error('[create-order] Missing env vars');
     return NextResponse.json(
@@ -173,9 +201,9 @@ export async function POST(req: NextRequest) {
   }
 
   // 1) Učitaj body sa fronta
-  let body: any;
+  let body: CreateOrderPayload;
   try {
-    body = await req.json();
+    body = (await req.json()) as CreateOrderPayload;
   } catch (err) {
     console.error('[create-order] Cannot parse JSON body:', err);
     return NextResponse.json(
@@ -184,12 +212,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  //console.log(
-    //'[create-order] Received payload (raw from frontend):',
-   // JSON.stringify(body, null, 2)
-//  );
-
-  const customerId = body.customer_id ? Number(body.customer_id) : 0;
+  const customerId =
+    body.customer_id !== undefined ? Number(body.customer_id) : 0;
 
   let groupId: string | null = null;
   let isB2B = false;
@@ -202,14 +226,14 @@ export async function POST(req: NextRequest) {
   }
 
   // 3) Pripremi line_items (override cijena SAMO ako znamo B2B grupu i validne cijene)
-  const originalLineItems: any[] = Array.isArray(body.line_items)
+  const originalLineItems: IncomingLineItem[] = Array.isArray(body.line_items)
     ? body.line_items
     : [];
 
-  const adjustedLineItems: any[] = [];
+  const adjustedLineItems: IncomingLineItem[] = [];
 
   for (const li of originalLineItems) {
-    const productId = li.product_id ?? li.variation_id;
+    const productId = (li.product_id ?? li.variation_id) as number | undefined;
     const qty = toNum(li.quantity ?? 1) || 1;
 
     if (!productId) {
@@ -240,7 +264,7 @@ export async function POST(req: NextRequest) {
       const unitPrice = effective || regular;
       const lineTotal = unitPrice * qty;
 
-      const newItem = {
+      const newItem: IncomingLineItem = {
         ...li,
         product_id: productId,
         quantity: qty,
@@ -248,10 +272,6 @@ export async function POST(req: NextRequest) {
         subtotal: lineTotal.toFixed(2),
         total: lineTotal.toFixed(2),
       };
-
-    //  console.log(
-      //  `[create-order] Line item product ${productId} qty=${qty} -> unit=${unitPrice}, total=${lineTotal}`
-    //  );
 
       adjustedLineItems.push(newItem);
     } catch (e) {
@@ -268,7 +288,7 @@ export async function POST(req: NextRequest) {
   const authHeader = basicAuthHeader();
 
   // 5) Odredi status i set_paid prema metodi plaćanja
-  const paymentMethod: string = body.payment_method;
+  const paymentMethod: string = String(body.payment_method ?? '');
 
   const isCOD  = paymentMethod === 'cod';   // plaćanje pouzećem
   const isBacs = paymentMethod === 'bacs';  // b2b virman
@@ -291,12 +311,6 @@ export async function POST(req: NextRequest) {
     set_paid,
     line_items: adjustedLineItems,
   };
-
- // console.log('[create-order] Sending to Woo:', url.toString());
-  //console.log(
-   // '[create-order] Woo payload (sanitized):',
-   // JSON.stringify(wooPayload, null, 2)
-  //);
 
   try {
     const wpRes = await fetch(url.toString(), {
@@ -327,14 +341,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let order: any;
-    try {
-      order = JSON.parse(text);
-    } catch {
-      order = text;
-    }
+    const order = JSON.parse(text) as unknown;
 
-    console.log('[create-order] Woo order created OK, id =', order?.id);
+    console.log(
+      '[create-order] Woo order created OK, id =',
+      (order as { id?: number }).id
+    );
 
     return NextResponse.json(order, { status: 201 });
   } catch (err) {

@@ -33,13 +33,55 @@ type ProfileForm = {
   company_vat: string;
 };
 
+// --- Tipovi za Woo customer / meta / orders ---
+
+type CustomerMeta = {
+  key?: string;
+  value?: unknown;
+};
+
+type CustomerBilling = {
+  first_name?: string;
+  last_name?: string;
+  company?: string;
+  address_1?: string;
+  address_2?: string;
+  city?: string;
+  postcode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+};
+
+type Customer = {
+  id?: number;
+  email?: string;
+  billing?: CustomerBilling;
+  meta_data?: CustomerMeta[];
+};
+
+type RawOrder = {
+  id: number;
+  number: string;
+  status: string;
+  date_created: string;
+  total: string;
+  currency: string;
+};
+
+type StoredUser = {
+  id?: number;
+  data?: { id?: number };
+  email?: string;
+};
+
 export default function MyAccountPage() {
   const router = useRouter();
   const { showToast, ToastComponent } = useLocalToast();
 
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [isB2B, setIsB2B] = useState<boolean>(false);
@@ -60,7 +102,7 @@ export default function MyAccountPage() {
 
       showToast(
         'Niste prijavljeni. Prijavite se da biste vidjeli svoje narudžbe.',
-        'error'
+        'error',
       );
 
       router.push('/my-account/login');
@@ -68,8 +110,8 @@ export default function MyAccountPage() {
     }
 
     try {
-      const user = JSON.parse(raw);
-      const id = user?.id || user?.data?.id;
+      const user = JSON.parse(raw) as StoredUser;
+      const id = user?.id ?? user?.data?.id;
 
       if (!id) {
         setLoading(false);
@@ -77,7 +119,7 @@ export default function MyAccountPage() {
 
         showToast(
           'Ne mogu pronaći ID korisnika. Pokušajte ponovo s prijavom.',
-          'error'
+          'error',
         );
 
         router.push('/my-account/login');
@@ -106,7 +148,7 @@ export default function MyAccountPage() {
           // --- Customer / B2B / profil ---
           if (customerRes.ok) {
             try {
-              const customer: any = await customerRes.json();
+              const customer = (await customerRes.json()) as Customer;
 
               // B2B meta + ACF polja
               let company_oib = '';
@@ -114,31 +156,37 @@ export default function MyAccountPage() {
 
               if (Array.isArray(customer.meta_data)) {
                 for (const m of customer.meta_data) {
-                  if (m.key === 'b2bking_b2buser' &&
-                      String(m.value).toLowerCase() === 'yes') {
+                  if (!m) continue;
+
+                  if (
+                    m.key === 'b2bking_b2buser' &&
+                    String(m.value ?? '').toLowerCase() === 'yes'
+                  ) {
                     setIsB2B(true);
                   }
+
                   if (m.key === 'company_oib' && m.value) {
                     company_oib = String(m.value);
                   }
+
                   if (m.key === 'company_vat' && m.value) {
                     company_vat = String(m.value);
                   }
                 }
               }
 
-              const b = customer.billing || {};
+              const b = customer.billing ?? {};
               const p: ProfileForm = {
-                first_name: b.first_name || '',
-                last_name:  b.last_name  || '',
-                company:    b.company    || '',
-                address_1:  b.address_1  || '',
-                address_2:  b.address_2  || '',
-                city:       b.city       || '',
-                postcode:   b.postcode   || '',
-                country:    b.country    || '',
-                phone:      b.phone      || '',
-                email:      b.email      || customer.email || '',
+                first_name: b.first_name ?? '',
+                last_name: b.last_name ?? '',
+                company: b.company ?? '',
+                address_1: b.address_1 ?? '',
+                address_2: b.address_2 ?? '',
+                city: b.city ?? '',
+                postcode: b.postcode ?? '',
+                country: b.country ?? '',
+                phone: b.phone ?? '',
+                email: b.email ?? user.email ?? '',
                 company_oib,
                 company_vat,
               };
@@ -149,7 +197,7 @@ export default function MyAccountPage() {
           } else {
             console.warn(
               'MyAccount: customer fetch nije OK, status =',
-              customerRes.status
+              customerRes.status,
             );
           }
 
@@ -160,25 +208,27 @@ export default function MyAccountPage() {
             setError('Greška pri dohvaćanju narudžbi.');
             showToast(
               'Došlo je do greške pri dohvaćanju narudžbi.',
-              'error'
+              'error',
             );
             setLoading(false);
             setProfileLoading(false);
             return;
           }
 
-          const data: any[] = await ordersRes.json();
+          const data = (await ordersRes.json()) as unknown;
 
-          const mapped: OrderItem[] = (Array.isArray(data) ? data : []).map(
-            (o) => ({
-              id: o.id,
-              number: o.number,
-              status: o.status,
-              date_created: o.date_created,
-              total: o.total,
-              currency: o.currency,
-            })
-          );
+          const rawOrders: RawOrder[] = Array.isArray(data)
+            ? (data as RawOrder[])
+            : [];
+
+          const mapped: OrderItem[] = rawOrders.map((o) => ({
+            id: o.id,
+            number: o.number,
+            status: o.status,
+            date_created: o.date_created,
+            total: o.total,
+            currency: o.currency,
+          }));
 
           setOrders(mapped);
           setLoading(false);
@@ -189,7 +239,7 @@ export default function MyAccountPage() {
 
           showToast(
             'Došlo je do greške pri dohvaćanju narudžbi.',
-            'error'
+            'error',
           );
 
           setLoading(false);
@@ -202,7 +252,7 @@ export default function MyAccountPage() {
 
       showToast(
         'Došlo je do greške pri učitavanju korisničkih podataka. Pokušaj ponovo s prijavom.',
-        'error'
+        'error',
       );
 
       router.push('/my-account/login');
@@ -228,14 +278,10 @@ export default function MyAccountPage() {
     router.push('/');
   };
 
-  const handleProfileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!profile) return;
     const { name, value } = e.target;
-    setProfile((prev) =>
-      prev ? { ...prev, [name]: value } : prev
-    );
+    setProfile((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -262,14 +308,14 @@ export default function MyAccountPage() {
         body: JSON.stringify(profile),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({} as { error?: string }));
 
       if (!res.ok) {
         console.error('Greška pri ažuriranju profila:', data);
         showToast(
           data?.error ||
             'Došlo je do greške pri spremanju podataka. Pokušaj ponovo.',
-          'error'
+          'error',
         );
       } else {
         showToast('Podaci su uspješno spremljeni.', 'success');
@@ -278,7 +324,7 @@ export default function MyAccountPage() {
       console.error('Profile update error:', err);
       showToast(
         'Došlo je do greške pri spremanju podataka. Pokušaj ponovo.',
-        'error'
+        'error',
       );
     } finally {
       setSavingProfile(false);
@@ -333,7 +379,8 @@ export default function MyAccountPage() {
             <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
               {customerId && (
                 <span className="text-zinc-500">
-                  ID korisnika: <span className="font-medium">{customerId}</span>
+                  ID korisnika:{' '}
+                  <span className="font-medium">{customerId}</span>
                 </span>
               )}
               <span
@@ -803,9 +850,13 @@ export default function MyAccountPage() {
                       key={order.id}
                       className="border-t border-white/10 hover:bg-white/5 transition-colors"
                     >
-                      <td className="px-4 py-3 font-semibold">#{order.number}</td>
+                      <td className="px-4 py-3 font-semibold">
+                        #{order.number}
+                      </td>
                       <td className="px-4 py-3">{formatted}</td>
-                      <td className="px-4 py-3 capitalize">{statusLabel}</td>
+                      <td className="px-4 py-3 capitalize">
+                        {statusLabel}
+                      </td>
                       <td className="px-4 py-3">
                         {order.total} {order.currency}
                       </td>
@@ -824,7 +875,8 @@ export default function MyAccountPage() {
             </table>
 
             <p className="mt-3 text-[11px] md:text-xs text-zinc-500">
-              * Status i iznos narudžbi preuzeti su direktno iz WooCommerce sustava.
+              * Status i iznos narudžbi preuzeti su direktno iz WooCommerce
+              sustava.
             </p>
           </div>
         )}

@@ -12,6 +12,16 @@ import { useEffect, useState } from 'react';
 
 const SHIPPING_FALLBACK = 5.5;
 
+// Tipovi za customer response iz Woo
+type CustomerMeta = {
+  key?: string;
+  value?: unknown;
+};
+
+type CustomerResponse = {
+  meta_data?: CustomerMeta[];
+};
+
 export default function CartPage() {
   const items = useCart((s) => s.items);
   const image = '/assets/Add-to-Cart-amico.svg';
@@ -23,18 +33,18 @@ export default function CartPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const raw = localStorage.getItem('wpUser');
-    if (!raw) {
-      setIsB2B(false);
-      return;
-    }
-
     try {
+      const raw = localStorage.getItem('wpUser');
+      if (!raw) {
+        // već je false po defaultu, nema potrebe da ga setujemo
+        return;
+      }
+
       const user = JSON.parse(raw);
-      const userId = user?.id || user?.data?.id;
+      const userId = user?.id ?? user?.data?.id;
 
       if (!userId) {
-        setIsB2B(false);
+        // opet: default je false
         return;
       }
 
@@ -42,16 +52,16 @@ export default function CartPage() {
         try {
           const res = await fetch(`/api/customer/${userId}`);
           if (!res.ok) {
-            setIsB2B(false);
+            // neuspeh → ostaje false
             return;
           }
 
-          const customer: any = await res.json();
+          const customer: CustomerResponse = await res.json();
 
           let userIsB2B = false;
           if (Array.isArray(customer.meta_data)) {
             const flagMeta = customer.meta_data.find(
-              (m: any) => m.key === 'b2bking_b2buser'
+              (m) => m.key === 'b2bking_b2buser'
             );
 
             const flag = String(flagMeta?.value ?? '').toLowerCase();
@@ -62,15 +72,20 @@ export default function CartPage() {
               flag === 'true';
           }
 
-          setIsB2B(userIsB2B);
+          if (userIsB2B) {
+            setIsB2B(true);
+          } else {
+            // ako hoćeš baš eksplicitno reset, može i ovde:
+            setIsB2B(false);
+          }
         } catch (err) {
           console.error('Greška pri dohvaćanju kupca za CartPage:', err);
-          setIsB2B(false);
+          // greška → ostavi false
         }
       })();
     } catch (err) {
-      console.error('Nevažeći wpUser u localStorage-u (CartPage)');
-      setIsB2B(false);
+      console.error('Nevažeći wpUser u localStorage-u (CartPage)', err);
+      // parsing fail → ostavi false
     }
   }, []);
 

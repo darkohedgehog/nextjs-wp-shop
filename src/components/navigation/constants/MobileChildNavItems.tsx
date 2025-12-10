@@ -47,7 +47,7 @@ const MobileChildNavItems = ({ navItem }: { navItem: NavItem }) => {
                 <Link
                   key={`child-${childIdx}`}
                   href={child.link}
-                  className="relative text-neutral-600 dark:text-neutral-300"
+                  className="relative text-neutral-300"
                 >
                   <motion.span className="block">{child.name}</motion.span>
                 </Link>

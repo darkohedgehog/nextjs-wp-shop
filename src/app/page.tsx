@@ -14,12 +14,11 @@ const IntroductionSection = dynamic(
     ),
 );
 
-type PopularProductsSectionProps = {};
-const PopularProductsSection = dynamic<PopularProductsSectionProps>(
-  () =>
-    import(
-      "@/components/mainpage/popular_products/PopularProductsSection"
-    ),
+const PopularProductsSection = dynamic(
+  () => import("@/components/mainpage/popular_products/PopularProductsSection"),
+  {
+    ssr: true,
+  }
 );
 
 type FeaturedProductsProps = {
