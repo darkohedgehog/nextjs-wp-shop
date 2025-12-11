@@ -29,7 +29,7 @@ interface ProductsData {
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
     products(
-      first: 6
+      first: 24
       after: $after
       where: { search: $search, categoryIn: $category }
     ) {
