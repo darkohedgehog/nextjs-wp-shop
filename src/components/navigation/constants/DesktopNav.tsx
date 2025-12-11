@@ -8,6 +8,7 @@ import { Menu } from "./Menu";
 import { HoveredLink } from "./HoveredLink";
 import { ProductItem } from "./ProductItem";
 import CartButton from "@/components/cart/CartButton";
+import DyslexiaToggle from "@/components/hooks/DyslexiaToggle";
 
 type NavChild = {
   name: string;
@@ -78,9 +79,15 @@ const DesktopNav = ({ navItems }: DesktopNavProps) => {
           ))}
         </Menu>
       </div>
-      {/* CART BUTTON */}
+      <div className="space-x-5 flex items-center justify-center">
+        {/* CART BUTTON */}
       <div className="hidden md:block">
         <CartButton />
+      </div>
+      {/* DyslexiaToggle BUTTON */}
+      <div className="hidden md:block">
+        <DyslexiaToggle />
+      </div>
       </div>
     </motion.div>
   );

@@ -1,12 +1,12 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { HttpLink } from '@apollo/client/link/http'; // ✅ umesto createHttpLink
-import { setContext } from '@apollo/client/link/context';
+import { SetContextLink } from '@apollo/client/link/context';
 
 const httpLink = new HttpLink({
   uri: 'https://wp.zivic-elektro.shop/graphql',
 });
 
-const authLink = setContext((_, { headers }) => {
+const authLink = new SetContextLink((prevContext) => {
   let token: string | null = null;
 
   // JWT token sa klijenta
@@ -16,7 +16,7 @@ const authLink = setContext((_, { headers }) => {
 
   return {
     headers: {
-      ...headers,
+      ...(prevContext.headers || {}),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
   };

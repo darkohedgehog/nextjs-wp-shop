@@ -5,7 +5,7 @@ import "./globals.css";
 import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
 import { Providers } from "./providers";
 import { NavbarWithChildren } from "@/components/navigation/Nav";
-
+const CookiesToast = dynamic(() => import('@/components/cookies/CookiesToast'));
 const Footer = dynamic(() => import('@/components/footer/Footer'));
 
 const geistSans = Geist({
@@ -48,7 +48,8 @@ export default function RootLayout({
               {children}
             </main>
           </Providers>
-
+           {/* CookieToast */}
+           <CookiesToast />
           {/* Footer u istom stacking contextu */}
           <Footer />
         </div>

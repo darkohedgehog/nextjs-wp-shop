@@ -2,6 +2,21 @@
 @plugin "@tailwindcss/typography";
 
 /* =========================================================
+ *  Dyslexia friendly font
+ * =======================================================*/
+@font-face {
+  font-family: "DyslexiaFont";
+  src: url("/fonts/OpenDyslexic-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+body.dyslexia,
+body.dyslexia * {
+  font-family: "DyslexiaFont", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+}
+
+/* =========================================================
  * 1) Tailwind @theme inline – animacije & custom varijable
  *    (koriste se kroz Tailwind i custom komponente)
  * =======================================================*/

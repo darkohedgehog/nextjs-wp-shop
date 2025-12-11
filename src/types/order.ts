@@ -1,5 +1,3 @@
-// src/types/order.ts
-
 export type Address = {
     first_name: string;
     last_name: string;

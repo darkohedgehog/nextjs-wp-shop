@@ -132,13 +132,13 @@ export default function FeaturedProductsCarousel({
           <div className="flex gap-4 pt-10 md:pt-0">
             <button
               onClick={handlePrev}
-              className="group/button flex h-7 w-7 items-center justify-center rounded-full bg-gradient-custom"
+              className="group/button flex h-7 w-7 items-center justify-center rounded-full bg-secondary-color"
             >
               <IconArrowLeft className="h-5 w-5 transition-transform duration-300 group-hover/button:rotate-12" />
             </button>
             <button
               onClick={handleNext}
-              className="group/button flex h-7 w-7 items-center justify-center rounded-full bg-gradient-custom"
+              className="group/button flex h-7 w-7 items-center justify-center rounded-full bg-secondary-color"
             >
               <IconArrowRight className="h-5 w-5 transition-transform duration-300 group-hover/button:-rotate-12" />
             </button>

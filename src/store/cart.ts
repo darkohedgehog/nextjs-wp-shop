@@ -5,7 +5,7 @@ export type CartItem = {
   product_id: number;
   name: string;
 
-  // efektivna cena koju ćeš prikazivati i sabirati (B2B ili B2C)
+  // efektivna cena koja se prikazuje i sabira (B2B ili B2C)
   price: number;
 
   // opciono: regularna cena (bez rabata) – za prikaz precrtane cene u košarici/checkoutu

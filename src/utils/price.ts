@@ -1,4 +1,3 @@
-// src/utils/price.ts
 import { WcProduct } from "@/types/product";
 
 export function getEffectivePrice(product: WcProduct): number {

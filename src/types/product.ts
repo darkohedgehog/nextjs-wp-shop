@@ -1,5 +1,3 @@
-// src/types/product.ts
-
 export type WcProduct = {
     id: number;
     name: string;
@@ -9,7 +7,7 @@ export type WcProduct = {
     regular_price?: string;
     price?: string;
   
-    // Naša polja iz WP plugin-a
+    // Polja iz WP plugin-a
     zvo_regular_price?: number;
     zvo_effective_price?: number;
     zvo_discount_amount?: number;
@@ -20,6 +18,4 @@ export type WcProduct = {
       src: string;
       alt?: string;
     }[];
-  
-    // Ako koristiš varijable ili custom fields, možeš dodati još
   };

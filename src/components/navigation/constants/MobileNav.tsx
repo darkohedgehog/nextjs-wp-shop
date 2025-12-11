@@ -6,6 +6,7 @@ import { useState } from "react";
 import Logo from "@/components/logo/Logo";
 import MobileChildNavItems from "./MobileChildNavItems";
 import CartButton from "@/components/cart/CartButton";
+import DyslexiaToggle from "@/components/hooks/DyslexiaToggle";
 
 type NavChild = {
   name: string;
@@ -87,6 +88,9 @@ const MobileNav = ({ navItems }: MobileNavProps) => {
                   )}
                 </div>
               ))}
+              <div className="flex items-center justify-center my-2">
+                <DyslexiaToggle />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

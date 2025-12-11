@@ -29,10 +29,10 @@ const MobileChildNavItems = ({ navItem }: { navItem: NavItem }) => {
     <motion.div className="overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="relative flex w-full justify-between text-neutral-600 dark:text-neutral-300"
+        className="relative flex w-full justify-between text-neutral-300"
       >
         <motion.span className="block">{navItem.name}</motion.span>
-        <IconChevronDown className="text-neutral-700 dark:text-neutral-300" />
+        <IconChevronDown className="text-neutral-300" />
       </button>
       <AnimatePresence>
         {open && (
