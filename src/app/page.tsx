@@ -1,3 +1,4 @@
+import FaqSectionServer from "@/components/mainpage/faqsection/FaqSectionServer";
 import dynamic from "next/dynamic";
 
 const HeroSectionTwo = dynamic(
@@ -45,12 +46,6 @@ const InfoBanner = dynamic(
   }
 );
 
-const FaqSection = dynamic<FeaturedProductsProps>(
-  () => import("@/components/mainpage/faqsection/FaqSection"),
-  {
-    ssr: true,
-  }
-);
 
 export default function Home() {
   return (
@@ -61,7 +56,7 @@ export default function Home() {
       <PopularProductsSection />
       <BlogIntroSection />
       <InfoBanner />
-      <FaqSection />
+      <FaqSectionServer  />
     </>
   );
 }
