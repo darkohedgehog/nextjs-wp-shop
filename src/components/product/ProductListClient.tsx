@@ -1,7 +1,7 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react'; // za @apollo/client 4.0.7
+import { useQuery } from '@apollo/client/react'; // Apollo 4.0.7
 import he from 'he';
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -10,43 +10,30 @@ import { FaSearchengin } from 'react-icons/fa';
 import { ProductCard } from './ProductCard';
 import { FaSpinner } from 'react-icons/fa6';
 
-// ——— Types ———
-type Brand = { name?: string | null; slug?: string | null };
+import type { Product, PageInfo } from '@/types/product';
 
-interface Product {
-  databaseId?: number;
-  id: string | number;
-  name: string;
-  slug: string;
-  description?: string | null;
-  date?: string | null;
-  price?: string | null;
-  image?: { sourceUrl: string; altText?: string | null } | null;
-  terms?: { nodes?: Brand[] } | null;
+// ——— GQL ———
+type ProductsData = {
+  products: { pageInfo: PageInfo; nodes: Array<Product | null> };
+};
 
-  effectivePrice?: number;
-  regularPrice?: number;
-  discountPercent?: number;
-}
-
-interface PageInfo {
-  endCursor: string | null;
-  hasNextPage: boolean;
-}
-interface ProductsData {
-  products: { pageInfo: PageInfo; nodes: Product[] };
-}
-interface Vars {
+type Vars = {
   search?: string;
   category?: string[];
   after?: string | null;
-}
+};
 
-// ——— GQL ———
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
-    products(first: 12, after: $after, where: { search: $search, categoryIn: $category }) {
-      pageInfo { endCursor hasNextPage }
+    products(
+      first: 12
+      after: $after
+      where: { search: $search, categoryIn: $category }
+    ) {
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
       nodes {
         databaseId
         id
@@ -60,27 +47,70 @@ const GET_PRODUCTS = gql`
 
         ... on SimpleProduct {
           price
-          image { sourceUrl altText }
+          image {
+            sourceUrl
+            altText
+          }
         }
 
         ... on SimpleProduct {
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
-            nodes { __typename ... on PwbBrand { name slug } ... on TermNode { name slug } }
+            nodes {
+              __typename
+              ... on PwbBrand {
+                name
+                slug
+              }
+              ... on TermNode {
+                name
+                slug
+              }
+            }
           }
         }
         ... on VariableProduct {
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
-            nodes { __typename ... on PwbBrand { name slug } ... on TermNode { name slug } }
+            nodes {
+              __typename
+              ... on PwbBrand {
+                name
+                slug
+              }
+              ... on TermNode {
+                name
+                slug
+              }
+            }
           }
         }
         ... on ExternalProduct {
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
-            nodes { __typename ... on PwbBrand { name slug } ... on TermNode { name slug } }
+            nodes {
+              __typename
+              ... on PwbBrand {
+                name
+                slug
+              }
+              ... on TermNode {
+                name
+                slug
+              }
+            }
           }
         }
         ... on GroupProduct {
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
-            nodes { __typename ... on PwbBrand { name slug } ... on TermNode { name slug } }
+            nodes {
+              __typename
+              ... on PwbBrand {
+                name
+                slug
+              }
+              ... on TermNode {
+                name
+                slug
+              }
+            }
           }
         }
       }
@@ -90,9 +120,9 @@ const GET_PRODUCTS = gql`
 
 // ——— Helpers ———
 function dedupeProducts(list: Product[]): Product[] {
-  const map = new Map<string | number, Product>();
+  const map = new Map<string, Product>();
   for (const p of list) {
-    const key = p.databaseId ?? `${p.id}:${p.slug}`;
+    const key = String(p.databaseId ?? `${p.id}:${p.slug}`);
     if (!map.has(key)) map.set(key, p);
   }
   return Array.from(map.values());
@@ -103,14 +133,18 @@ function productKey(p: Product): string {
 }
 
 function getBrandSlugList(p: Product): string[] {
-  return (p?.terms?.nodes ?? [])
+  const nodes = p.terms?.nodes ?? [];
+  return nodes
     .map((t) => (t?.slug ?? '').trim().toLowerCase())
     .filter(Boolean);
 }
+
 function getBrandName(p: Product): string | null {
-  const found = (p?.terms?.nodes ?? []).find((t) => (t?.name ?? '').trim().length > 0);
+  const nodes = p.terms?.nodes ?? [];
+  const found = nodes.find((t) => (t?.name ?? '').trim().length > 0);
   return found?.name ?? null;
 }
+
 function matchesBrand(p: Product, desiredSlug: string | null): boolean {
   if (!desiredSlug) return true;
   const want = desiredSlug.trim().toLowerCase();
@@ -123,6 +157,7 @@ function parsePriceToNumber(price?: string | null): number | null {
   const decoded = he.decode(price);
   const match = decoded.replace(/\s/g, '').match(/[\d.,]+/);
   if (!match) return null;
+
   let n = match[0];
 
   if (n.includes('.') && n.includes(',')) {
@@ -130,11 +165,11 @@ function parsePriceToNumber(price?: string | null): number | null {
   } else if (n.includes(',')) {
     n = n.replace(',', '.');
   }
+
   const num = Number(n);
   return Number.isFinite(num) ? num : null;
 }
 
-// display helper za cenu
 function cleanPrice(raw?: string | null): string | null {
   if (!raw) return null;
   return he.decode(raw).replace(/&nbsp;|\u00A0/g, '').trim();
@@ -179,15 +214,11 @@ function sortProducts(list: Product[], sort: SortKey): Product[] {
       );
     case 'name_asc':
       return arr.sort((a, b) =>
-        (a.name || '').localeCompare(b.name || '', 'sr', {
-          sensitivity: 'base',
-        }),
+        (a.name || '').localeCompare(b.name || '', 'sr', { sensitivity: 'base' }),
       );
     case 'name_desc':
       return arr.sort((a, b) =>
-        (b.name || '').localeCompare(a.name || '', 'sr', {
-          sensitivity: 'base',
-        }),
+        (b.name || '').localeCompare(a.name || '', 'sr', { sensitivity: 'base' }),
       );
     default:
       return arr;
@@ -259,10 +290,10 @@ export default function ProductListClient({
       },
     });
 
-    const next = (res?.data as ProductsData | undefined)?.products;
+    const next = res.data?.products;
     if (next) {
-      // merge raw lista; dedupe po databaseId/id
-      setProducts((prev) => dedupeProducts([...prev, ...next.nodes]));
+      const nextNodes = (next.nodes ?? []).filter((p): p is Product => Boolean(p));
+      setProducts((prev) => dedupeProducts([...prev, ...nextNodes]));
       setPageInfo(next.pageInfo);
     }
   };
@@ -271,7 +302,7 @@ export default function ProductListClient({
   useEffect(() => {
     const ids = Array.from(
       new Set(
-        (visibleProducts ?? [])
+        visibleProducts
           .map((p) => p.databaseId)
           .filter((id): id is number => typeof id === 'number'),
       ),
@@ -288,17 +319,19 @@ export default function ProductListClient({
         const headers: Record<string, string> = {};
 
         try {
-          if (typeof window !== 'undefined') {
-            const raw = localStorage.getItem('wpUser');
-            if (raw) {
-              const user = JSON.parse(raw);
-              const token: string | undefined =
-                user?.token ?? user?.data?.token ?? user?.jwt;
+          const raw = localStorage.getItem('wpUser');
+          if (raw) {
+            const user: unknown = JSON.parse(raw);
+            const token =
+              typeof (user as { token?: unknown })?.token === 'string'
+                ? (user as { token: string }).token
+                : typeof (user as { data?: { token?: unknown } })?.data?.token === 'string'
+                ? (user as { data: { token: string } }).data.token
+                : typeof (user as { jwt?: unknown })?.jwt === 'string'
+                ? (user as { jwt: string }).jwt
+                : undefined;
 
-              if (token && typeof token === 'string') {
-                headers.Authorization = `Bearer ${token}`;
-              }
-            }
+            if (token) headers.Authorization = `Bearer ${token}`;
           }
         } catch (e) {
           if (process.env.NODE_ENV !== 'production') {
@@ -306,17 +339,11 @@ export default function ProductListClient({
           }
         }
 
-        const res = await fetch(`/api/products?${params.toString()}`, {
-          headers,
-        });
+        const res = await fetch(`/api/products?${params.toString()}`, { headers });
 
         if (!res.ok) {
           if (process.env.NODE_ENV !== 'production') {
-            console.warn(
-              'Ne mogu da dohvatim B2B cene:',
-              res.status,
-              await res.text(),
-            );
+            console.warn('Ne mogu da dohvatim B2B cene:', res.status, await res.text());
           }
           return; // fallback: koristi GraphQL price
         }
@@ -332,10 +359,7 @@ export default function ProductListClient({
 
         const restProducts: RestProduct[] = await res.json();
 
-        const map: Record<
-          number,
-          { effective: number; regular: number; discountPercent: number }
-        > = {};
+        const map: Record<number, { effective: number; regular: number; discountPercent: number }> = {};
 
         for (const p of restProducts) {
           const regular =
@@ -349,14 +373,10 @@ export default function ProductListClient({
               : Number(p.price ?? p.regular_price ?? 0);
 
           let discountPercent =
-            typeof p.zvo_discount_percent === 'number'
-              ? p.zvo_discount_percent
-              : 0;
+            typeof p.zvo_discount_percent === 'number' ? p.zvo_discount_percent : 0;
 
           if (!discountPercent && regular > 0 && effective < regular) {
-            discountPercent = Math.round(
-              ((regular - effective) / regular) * 100,
-            );
+            discountPercent = Math.round(((regular - effective) / regular) * 100);
           }
 
           map[p.id] = { effective, regular, discountPercent };
@@ -380,10 +400,12 @@ export default function ProductListClient({
       after: null,
     });
 
-    const refreshed = (res.data as ProductsData | undefined)?.products;
+    const refreshed = res.data?.products;
     if (refreshed) {
-      const base = dedupeProducts(refreshed.nodes);
-      setProducts(base); // raw lista
+      const base = dedupeProducts(
+        (refreshed.nodes ?? []).filter((p): p is Product => Boolean(p)),
+      );
+      setProducts(base);
       setPageInfo(refreshed.pageInfo);
     } else {
       setProducts([]);
@@ -395,11 +417,7 @@ export default function ProductListClient({
   return (
     <div className="p-4 mx-auto w-full flex flex-col items-center justify-center">
       <div className="flex items-center justify-center gap-4">
-        {/* Search */}
-        <form
-          onSubmit={handleSearch}
-          className="my-4 flex gap-2 w-full max-w-xl mx-auto"
-        >
+        <form onSubmit={handleSearch} className="my-4 flex gap-2 w-full max-w-xl mx-auto">
           <div className="relative flex-1">
             <div className="relative z-20">
               <input
@@ -436,15 +454,12 @@ export default function ProductListClient({
         </form>
       </div>
 
-      {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 mt-6 gap-5 max-w-5xl mx-auto">
         {visibleProducts.map((product) => {
           const brandName = getBrandName(product);
 
           const priceInfo =
-            typeof product.databaseId === 'number'
-              ? priceMap[product.databaseId]
-              : undefined;
+            typeof product.databaseId === 'number' ? priceMap[product.databaseId] : undefined;
 
           const displayPrice = priceInfo
             ? `${priceInfo.effective.toFixed(2)} €`
@@ -465,13 +480,12 @@ export default function ProductListClient({
         })}
       </div>
 
-      {/* Pagination / status */}
       {pageInfo.hasNextPage && (
         <div className="mt-6 text-center">
           <button
             onClick={loadMore}
             className="bg-button-color text-blue-500 px-6 py-2 rounded-xl disabled:opacity-50 flex items-center justify-center gap-3"
-            disabled={loading || networkStatus === 3 /* refetch */}
+            disabled={loading || networkStatus === 3}
           >
             {loading ? 'Učitavanje…' : 'Učitaj više'}
             <span>
@@ -481,9 +495,7 @@ export default function ProductListClient({
         </div>
       )}
 
-      {loading && !visibleProducts.length && (
-        <p className="mt-4 text-center">Učitavanje…</p>
-      )}
+      {loading && !visibleProducts.length && <p className="mt-4 text-center">Učitavanje…</p>}
       {error && (
         <p className="flex items-center justify-center mt-4 text-red-600">
           Greška: {error.message}

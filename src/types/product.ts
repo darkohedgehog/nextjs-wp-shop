@@ -19,3 +19,30 @@ export type WcProduct = {
       alt?: string;
     }[];
   };
+  // src/types/products.ts
+
+export type Brand = { name?: string | null; slug?: string | null };
+
+export type Media = { sourceUrl: string; altText?: string | null };
+
+export type Product = {
+  databaseId?: number; // ✅ bez null (normalizujemo na serveru)
+  id: string | number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  date?: string | null;
+  price?: string | null;
+  image?: Media | null;
+  terms?: { nodes?: Array<Brand | null> | null } | null;
+
+  // client-only (B2B map), ostaje optional
+  effectivePrice?: number;
+  regularPrice?: number;
+  discountPercent?: number;
+};
+
+export type PageInfo = {
+  endCursor: string | null;
+  hasNextPage: boolean;
+};

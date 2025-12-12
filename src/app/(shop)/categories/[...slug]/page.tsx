@@ -1,21 +1,33 @@
 // src/app/(shop)/categories/[...slug]/page.tsx
 
-import { client } from '@/lib/apollo-client';
-import { gql } from '@apollo/client';
-import he from 'he';
-import { ProductCard } from '@/components/product/ProductCard';
-import { CategoryProductsClient } from '@/components/categories/CategoryProductsClient';
-import BackButton from '@/components/ui/BackButton';
-import ShopShell from '@/components/shop/ShopShell';
+import type { Metadata } from "next";
+import { client } from "@/lib/apollo-client";
+import { gql } from "@apollo/client";
 
-// --- Tipovi podataka
+import { ProductCard } from "@/components/product/ProductCard";
+import { CategoryProductsClient } from "@/components/categories/CategoryProductsClient";
+import BackButton from "@/components/ui/BackButton";
+import ShopShell from "@/components/shop/ShopShell";
+
+import { buildMetadata } from "@/utils/seo";
+import { siteMetaData } from "@/utils/siteMetaData";
+
+// --------------------
+// "Strict" tipovi koje koristi UI (100% definisani gde treba)
+// --------------------
+type Media = {
+  sourceUrl: string;
+  altText?: string | null;
+};
+
 type Category = {
   id: string;
   databaseId: number;
   name: string;
   slug: string;
-  image?: { sourceUrl: string; altText?: string | null } | null;
-  children: { nodes: Array<Category | null | undefined> };
+  description?: string | null;
+  image?: Media | null;
+  children: { nodes: Category[] };
 };
 
 type Product = {
@@ -23,21 +35,7 @@ type Product = {
   name: string;
   slug: string;
   price?: string | null;
-  image?: { sourceUrl: string; altText?: string | null } | null;
-};
-
-type ProductsData = {
-  products?: {
-    pageInfo: {
-      endCursor: string | null;
-      hasNextPage: boolean;
-    };
-    nodes: Array<Product | null | undefined>;
-  } | null;
-};
-
-type CategoryData = {
-  productCategory?: Category | null;
+  image?: Media | null;
 };
 
 type PageInfo = {
@@ -45,7 +43,42 @@ type PageInfo = {
   hasNextPage: boolean;
 };
 
-// GraphQL queries
+type ProductsData = {
+  products?: {
+    pageInfo: PageInfo;
+    nodes: Array<Product | null | undefined>;
+  } | null;
+};
+
+type SearchParams = Record<string, string | string[] | undefined>;
+
+// --------------------
+// "Raw" tipovi za GraphQL (svuda optional) — da ne puca TS zbog DeepPartial
+// --------------------
+type MediaRaw = {
+  sourceUrl?: string | null;
+  altText?: string | null;
+} | null;
+
+type CategoryRaw = {
+  id?: string | null;
+  databaseId?: number | null;
+  name?: string | null;
+  slug?: string | null;
+  description?: string | null;
+  image?: MediaRaw;
+  children?: {
+    nodes?: Array<CategoryRaw | null | undefined> | null;
+  } | null;
+} | null;
+
+type CategoryDataRaw = {
+  productCategory?: CategoryRaw;
+};
+
+// --------------------
+// GraphQL
+// --------------------
 const GET_CATEGORY_TREE = gql`
   query CategoryTree($slug: ID!) {
     productCategory(id: $slug, idType: SLUG) {
@@ -53,14 +86,22 @@ const GET_CATEGORY_TREE = gql`
       databaseId
       name
       slug
-      image { sourceUrl altText }
+      description
+      image {
+        sourceUrl
+        altText
+      }
       children {
         nodes {
           id
           databaseId
           name
           slug
-          image { sourceUrl altText }
+          description
+          image {
+            sourceUrl
+            altText
+          }
         }
       }
     }
@@ -90,34 +131,180 @@ const GET_PRODUCTS_BY_CATEGORY = gql`
   }
 `;
 
-// util: pročisti cenu
-function cleanPrice(raw?: string | null) {
-  if (!raw) return '';
-  return he.decode(raw).replace(/&nbsp;|\u00A0/g, '').trim();
+// --------------------
+// SEO helpers
+// --------------------
+function stripHtml(input: string): string {
+  return input.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-type SearchParams = Record<string, string | string[] | undefined>;
+function truncate(input: string, max = 160): string {
+  const s = input.trim();
+  if (!s) return "";
+  if (s.length <= max) return s;
+  return s.slice(0, max - 1).trimEnd() + "…";
+}
 
+// --------------------
+// Normalizacija (Raw -> Strict)
+// --------------------
+function normalizeMedia(raw: MediaRaw): Media | null {
+  const url = raw?.sourceUrl ?? null;
+  if (!url) return null;
+  return { sourceUrl: url, altText: raw?.altText ?? null };
+}
+
+function normalizeCategory(raw: CategoryRaw): Category | null {
+  const id = raw?.id ?? null;
+  const databaseId = raw?.databaseId ?? null;
+  const name = raw?.name ?? null;
+  const slug = raw?.slug ?? null;
+
+  if (!id || !databaseId || !name || !slug) return null;
+
+  const childrenNodesRaw = raw?.children?.nodes ?? [];
+  const childrenNodes = (childrenNodesRaw ?? [])
+    .map((c) => normalizeCategory(c ?? null))
+    .filter((c): c is Category => Boolean(c));
+
+  return {
+    id,
+    databaseId,
+    name,
+    slug,
+    description: raw?.description ?? null,
+    image: normalizeMedia(raw?.image ?? null),
+    children: { nodes: childrenNodes },
+  };
+}
+
+function normalizeCategoryData(raw: CategoryDataRaw): { productCategory: Category | null } {
+  const normalized = normalizeCategory(raw.productCategory ?? null);
+  return { productCategory: normalized };
+}
+
+// --------------------
+// Small cache (metadata + page render)
+// Cache-ujemo RAW data, pa normalizujemo na izlazu.
+// --------------------
+const categoryTreeCache = new Map<string, Promise<CategoryDataRaw>>();
+
+function getCategoryTreeCached(parentSlug: string): Promise<CategoryDataRaw> {
+  const existing = categoryTreeCache.get(parentSlug);
+  if (existing) return existing;
+
+  const p = client
+    .query<CategoryDataRaw>({
+      query: GET_CATEGORY_TREE,
+      variables: { slug: parentSlug },
+      context: {
+        fetchOptions: {
+          next: { revalidate: 300 },
+          cache: "force-cache",
+        },
+      },
+    })
+    .then((res) => res.data ?? {});
+
+  categoryTreeCache.set(parentSlug, p);
+  return p;
+}
+
+// --------------------
+// generateMetadata
+// --------------------
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug?: string[] }>;
+}): Promise<Metadata> {
+  const resolvedParams = await params;
+
+  const slugArr = resolvedParams.slug ?? [];
+  const parentSlug = slugArr[0] ?? null;
+  const childSlug = slugArr[1] ?? null;
+
+  // /categories fallback
+  if (!parentSlug) {
+    return buildMetadata({
+      title: siteMetaData.pages.categories.title,
+      description: siteMetaData.pages.categories.description,
+      path: siteMetaData.pages.categories.path,
+      ogImage: siteMetaData.pages.categories.banner,
+    });
+  }
+
+  const raw = await getCategoryTreeCached(parentSlug);
+  const { productCategory: parentCat } = normalizeCategoryData(raw);
+
+  if (!parentCat) {
+    return buildMetadata({
+      title: "Kategorija nije pronađena",
+      description: siteMetaData.pages.categories.description,
+      path: `/categories/${parentSlug}`,
+      ogImage: siteMetaData.pages.categories.banner,
+      noIndex: true,
+    });
+  }
+
+  const childNodes = parentCat.children.nodes;
+  const currentCat: Category | null = childSlug
+    ? childNodes.find((c) => c.slug === childSlug) ?? null
+    : parentCat;
+
+  if (!currentCat) {
+    const badPath = `/categories/${parentSlug}/${childSlug ?? ""}`.replace(/\/$/, "");
+    return buildMetadata({
+      title: "Podkategorija nije pronađena",
+      description: siteMetaData.pages.categories.description,
+      path: badPath,
+      ogImage: siteMetaData.pages.categories.banner,
+      noIndex: true,
+    });
+  }
+
+  const path = childSlug
+    ? `/categories/${parentSlug}/${childSlug}`
+    : `/categories/${parentSlug}`;
+
+  const title = childSlug
+    ? `${currentCat.name} | ${parentCat.name}`
+    : `${currentCat.name} | ${siteMetaData.brand}`;
+
+  const rawDesc =
+    currentCat.description?.trim() ||
+    parentCat.description?.trim() ||
+    siteMetaData.pages.categories.description;
+
+  const description = truncate(stripHtml(rawDesc), 160);
+
+  const ogImage =
+    currentCat.image?.sourceUrl ||
+    parentCat.image?.sourceUrl ||
+    siteMetaData.banners.categories;
+
+  return buildMetadata({
+    title,
+    description,
+    path,
+    ogImage,
+  });
+}
+
+// --------------------
+// Page
+// --------------------
 export default async function CategorySlugPage({
   params,
   searchParams,
 }: {
-  // u Next 15 / React 19 params je Promise
-  params: Promise<{ slug?: string | string[] }>;
+  params: Promise<{ slug?: string[] }>;
   searchParams: Promise<SearchParams>;
 }) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
 
-  const slugInput = resolvedParams.slug;
-
-  // slug može biti string ili string[] – normalizuj u niz
-  const slugArr = Array.isArray(slugInput)
-    ? slugInput
-    : slugInput
-    ? [slugInput]
-    : [];
-
+  const slugArr = resolvedParams.slug ?? [];
   const parentSlug = slugArr[0] ?? null;
   const childSlug = slugArr[1] ?? null;
 
@@ -131,19 +318,8 @@ export default async function CategorySlugPage({
     );
   }
 
-  // 1) Učitaj stablo kategorije po parent slugu
-  const catRes = await client.query<CategoryData>({
-    query: GET_CATEGORY_TREE,
-    variables: { slug: parentSlug },
-    context: {
-      fetchOptions: {
-        next: { revalidate: 300 },
-        cache: 'force-cache',
-      },
-    },
-  });
-
-  const parentCat = catRes.data?.productCategory ?? null;
+  const raw = await getCategoryTreeCached(parentSlug);
+  const { productCategory: parentCat } = normalizeCategoryData(raw);
 
   if (!parentCat) {
     return (
@@ -155,12 +331,10 @@ export default async function CategorySlugPage({
     );
   }
 
-  const childNodes: Category[] = (parentCat.children?.nodes ?? []).filter(
-    (c): c is Category => Boolean(c),
-  );
+  const childNodes = parentCat.children.nodes;
 
   const currentCat: Category | null = childSlug
-    ? childNodes.find((c) => c.slug === childSlug) || null
+    ? childNodes.find((c) => c.slug === childSlug) ?? null
     : parentCat;
 
   if (!currentCat) {
@@ -175,26 +349,25 @@ export default async function CategorySlugPage({
 
   const showSubcategories = !childSlug && childNodes.length > 0;
 
-  // 2) Ako je leaf → fetch proizvode
+  // leaf -> products
   let products: Product[] = [];
   let initialPageInfo: PageInfo = { endCursor: null, hasNextPage: false };
 
   if (!showSubcategories) {
-    const categoryId = currentCat.databaseId;
-
     const prodRes = await client.query<ProductsData>({
       query: GET_PRODUCTS_BY_CATEGORY,
-      variables: { categoryId, after: null },
+      variables: { categoryId: currentCat.databaseId, after: null },
       context: {
         fetchOptions: {
           next: { revalidate: 300 },
-          cache: 'force-cache',
+          cache: "force-cache",
         },
       },
     });
 
-    const productsData = prodRes.data?.products;
+    const productsData = prodRes.data?.products ?? null;
     const nodes = productsData?.nodes ?? [];
+
     products = nodes.filter((p): p is Product => Boolean(p));
     initialPageInfo =
       productsData?.pageInfo ?? { endCursor: null, hasNextPage: false };

@@ -5,54 +5,109 @@ import "./globals.css";
 import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
 import { Providers } from "./providers";
 import { NavbarWithChildren } from "@/components/navigation/Nav";
-const CookiesToast = dynamic(() => import('@/components/cookies/CookiesToast'));
-const Footer = dynamic(() => import('@/components/footer/Footer'));
+import { siteMetaData } from "@/utils/siteMetaData";
+
+const CookiesToast = dynamic(() => import("@/components/cookies/CookiesToast"),);
+const Footer = dynamic(() => import("@/components/footer/Footer"));
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
+const ogImageAbs = new URL(siteMetaData.defaultOg, siteMetaData.siteUrl).toString();
+
 export const metadata: Metadata = {
-  title: "Živić elektro materijal",
-  description: "Prodaja elektro materijala i opreme",
+  metadataBase: new URL(siteMetaData.siteUrl),
+
+  title: {
+    default: siteMetaData.title,
+    template: `%s | ${siteMetaData.brand}`,
+  },
+  description: siteMetaData.description,
+
+  alternates: {
+    canonical: siteMetaData.siteUrl, // global fallback (per-page buildMetadata override-uje canonical)
+  },
+
+  openGraph: {
+    type: "website",
+    locale: siteMetaData.locale,
+    url: siteMetaData.siteUrl,
+    siteName: siteMetaData.brand,
+    title: siteMetaData.title,
+    description: siteMetaData.description,
+    images: [
+      {
+        url: ogImageAbs,
+        width: 1200,
+        height: 630,
+        alt: siteMetaData.title,
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: siteMetaData.title,
+    description: siteMetaData.description,
+    images: [ogImageAbs],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  applicationName: siteMetaData.brand,
+  authors: [{ name: siteMetaData.brand }],
+
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="hr">
+    <html lang="hr" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
-        {/* Pozadinska animacija */}
-        <div className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none">
+        {/* Background */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
           <BackgroundGradientAnimation />
         </div>
 
-        {/* Glavni sadržaj iznad pozadine */}
-        <div className="relative z-10 min-h-screen flex flex-col">
-          <NavbarWithChildren />
+        {/* App */}
+        <Providers>
+          <div className="relative z-10 min-h-screen flex flex-col">
+            <NavbarWithChildren />
 
-          <Providers>
-            {/* Glavni deo stranice */}
-            <main className="flex-1">
-              {children}
-            </main>
-          </Providers>
-           {/* CookieToast */}
-           <CookiesToast />
-          {/* Footer u istom stacking contextu */}
-          <Footer />
-        </div>
+            <main className="flex-1">{children}</main>
+
+            {/* client-only */}
+            <CookiesToast />
+
+            <Footer />
+          </div>
+        </Providers>
       </body>
     </html>
   );

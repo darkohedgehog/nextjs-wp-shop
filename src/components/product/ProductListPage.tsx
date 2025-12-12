@@ -1,30 +1,17 @@
-import { gql } from '@apollo/client';
-import { client } from '@/lib/apollo-client';
-import ProductListClient from '@/components/product/ProductListClient';
+// src/components/product/ProductListPage.tsx (ili gde ti već stoji)
 
-// isti Brand / Product tip kao u ProductListClient
-type Brand = { name?: string | null; slug?: string | null };
+import { gql } from "@apollo/client";
+import { client } from "@/lib/apollo-client";
+import ProductListClient from "@/components/product/ProductListClient";
 
-interface Product {
-  databaseId?: number;
-  id: string | number;
-  name: string;
-  slug: string;
-  description?: string | null;
-  date?: string | null;
-  price?: string | null;
-  image?: { sourceUrl: string; altText?: string | null } | null;
-  terms?: { nodes?: Brand[] } | null;
-}
+import type { Product, PageInfo } from "@/types/product";
 
-interface PageInfo {
-  endCursor: string | null;
-  hasNextPage: boolean;
-}
-
-interface ProductsData {
-  products: { pageInfo: PageInfo; nodes: Product[] };
-}
+type ProductsData = {
+  products: {
+    pageInfo: PageInfo;
+    nodes: Array<(Product & { databaseId?: number | null }) | null>;
+  };
+};
 
 const GET_PRODUCTS = gql`
   query GetProducts($search: String, $category: [String], $after: String) {
@@ -44,12 +31,10 @@ const GET_PRODUCTS = gql`
         slug
         description
 
-        # datum preko interfejsa Product
         ... on Product {
           date
         }
 
-        # price / image na SimpleProduct
         ... on SimpleProduct {
           price
           image {
@@ -58,19 +43,12 @@ const GET_PRODUCTS = gql`
           }
         }
 
-        # PWB brend termini — za sve tipove
         ... on SimpleProduct {
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
             nodes {
               __typename
-              ... on PwbBrand {
-                name
-                slug
-              }
-              ... on TermNode {
-                name
-                slug
-              }
+              ... on PwbBrand { name slug }
+              ... on TermNode { name slug }
             }
           }
         }
@@ -78,14 +56,8 @@ const GET_PRODUCTS = gql`
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
             nodes {
               __typename
-              ... on PwbBrand {
-                name
-                slug
-              }
-              ... on TermNode {
-                name
-                slug
-              }
+              ... on PwbBrand { name slug }
+              ... on TermNode { name slug }
             }
           }
         }
@@ -93,14 +65,8 @@ const GET_PRODUCTS = gql`
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
             nodes {
               __typename
-              ... on PwbBrand {
-                name
-                slug
-              }
-              ... on TermNode {
-                name
-                slug
-              }
+              ... on PwbBrand { name slug }
+              ... on TermNode { name slug }
             }
           }
         }
@@ -108,14 +74,8 @@ const GET_PRODUCTS = gql`
           terms(first: 10, where: { taxonomies: [PWBBRAND] }) {
             nodes {
               __typename
-              ... on PwbBrand {
-                name
-                slug
-              }
-              ... on TermNode {
-                name
-                slug
-              }
+              ... on PwbBrand { name slug }
+              ... on TermNode { name slug }
             }
           }
         }
@@ -124,28 +84,52 @@ const GET_PRODUCTS = gql`
   }
 `;
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 export type ProductListPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: SearchParams;
 };
 
+function getSearchTerm(sp?: SearchParams): string | undefined {
+  const raw = sp?.q;
+  const value =
+    typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
+
+  const trimmed = (value ?? "").trim();
+  return trimmed.length ? trimmed : undefined;
+}
+
 export default async function ProductListPage({ searchParams }: ProductListPageProps) {
-  const search =
-    typeof searchParams?.q === 'string' ? searchParams.q : undefined;
+  const search = getSearchTerm(searchParams);
 
   const { data } = await client.query<ProductsData>({
     query: GET_PRODUCTS,
-    variables: { search, category: undefined, after: null },
+    variables: {
+      search,
+      category: null,
+      after: null,
+    },
   });
 
-  const initialProducts = data?.products?.nodes ?? [];
-  const initialPageInfo =
-    data?.products?.pageInfo ?? { endCursor: null, hasNextPage: false };
+  // ✅ 1) izbaci null node-ove
+  // ✅ 2) normalizuj databaseId: null -> undefined
+  const initialProducts: Product[] = (data?.products?.nodes ?? [])
+    .filter((p): p is NonNullable<(Product & { databaseId?: number | null })> => Boolean(p))
+    .map((p) => ({
+      ...p,
+      databaseId: p.databaseId ?? undefined,
+    }));
+
+  const initialPageInfo: PageInfo = data?.products?.pageInfo ?? {
+    endCursor: null,
+    hasNextPage: false,
+  };
 
   return (
     <ProductListClient
       initialProducts={initialProducts}
       initialPageInfo={initialPageInfo}
-      initialSearch={search ?? ''}
+      initialSearch={search ?? ""}
     />
   );
 }
