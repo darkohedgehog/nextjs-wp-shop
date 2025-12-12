@@ -1,0 +1,19 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /account/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /lost-password
+Disallow: /reset-password
+Disallow: /login
+Disallow: /register
+
+# Host
+Host: https://zivic-elektro.shop
+
+# Sitemaps
+Sitemap: https://zivic-elektro.shop/sitemap.xml
