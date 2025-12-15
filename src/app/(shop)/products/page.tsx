@@ -1,4 +1,3 @@
-// src/app/(shop)/products/page.tsx
 import type { Metadata } from "next";
 import ShopShell from "@/components/shop/ShopShell";
 import ProductListPage from "@/components/product/ProductListPage";

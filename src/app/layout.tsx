@@ -77,8 +77,8 @@ export const metadata: Metadata = {
   authors: [{ name: siteMetaData.brand }],
 
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: "/icons/favicon.ico",
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 

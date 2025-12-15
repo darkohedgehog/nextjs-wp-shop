@@ -47,6 +47,25 @@ type PriceInfo = {
   discountPercent: number; // popust u %
 };
 
+// Minimalan tip odgovora za /api/products/[id] (samo polja koja koristiš)
+type ProductApiResponse = {
+  price?: string | number | null;
+  regular_price?: string | number | null;
+  zvo_regular_price?: number | null;
+  zvo_effective_price?: number | null;
+  zvo_discount_percent?: number | null;
+};
+
+const getErrorMessage = (e: unknown) => {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  try {
+    return JSON.stringify(e);
+  } catch {
+    return "Nepoznata greška";
+  }
+};
+
 const formatMoney = (value: string | number, currency: string) => {
   const num =
     typeof value === "string" ? parseFloat(value.replace(",", ".")) : value;
@@ -115,10 +134,10 @@ export default function OrderSuccessClient() {
           throw new Error("Ne može doći do narudžbe");
         }
 
-        const data = await res.json();
+        const data = (await res.json()) as Order;
         setOrder(data);
-      } catch (e: any) {
-        setError(e?.message ?? "Greška pri dohvaćanju narudžbe");
+      } catch (e: unknown) {
+        setError(getErrorMessage(e) || "Greška pri dohvaćanju narudžbe");
       }
     })();
   }, [orderId]);
@@ -145,6 +164,7 @@ export default function OrderSuccessClient() {
               const res = await fetch(`/api/products/${pid}`, {
                 cache: "no-store",
               });
+
               if (!res.ok) {
                 console.warn(
                   "OrderSuccess: ne mogu dohvatiti proizvod",
@@ -154,7 +174,7 @@ export default function OrderSuccessClient() {
                 return { pid, info: null as PriceInfo | null };
               }
 
-              const p = await res.json();
+              const p = (await res.json()) as ProductApiResponse;
 
               // očekujemo da backend već može postaviti zvo_effective_price / zvo_regular_price
               const basePrice = Number(p.price ?? p.regular_price ?? 0) || 0;
@@ -188,7 +208,7 @@ export default function OrderSuccessClient() {
               };
 
               return { pid, info };
-            } catch (err) {
+            } catch (err: unknown) {
               console.error(
                 "OrderSuccess: greška pri dohvaćanju proizvoda",
                 pid,
@@ -206,7 +226,7 @@ export default function OrderSuccessClient() {
           }
         }
         setPriceMap(map);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(
           "OrderSuccess: neočekivana greška pri dohvaćanju B2B cijena",
           err
@@ -236,7 +256,6 @@ export default function OrderSuccessClient() {
   }, [order, priceMap]);
 
   // 4) UI
-
   if (error) {
     return (
       <p className="p-4 text-red-500 flex items-center justify-center">

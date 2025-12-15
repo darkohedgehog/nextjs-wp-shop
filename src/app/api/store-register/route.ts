@@ -1,4 +1,3 @@
-// app/api/store-register/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 

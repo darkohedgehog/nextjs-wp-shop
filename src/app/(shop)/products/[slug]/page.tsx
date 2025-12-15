@@ -1,5 +1,3 @@
-// src/app/(shop)/products/[slug]/page.tsx
-
 import type { Metadata } from "next";
 import ProductDetailPage from "@/components/product/ProductDetailPage";
 import { buildMetadata } from "@/utils/seo";
@@ -220,7 +218,7 @@ export default async function ProductDetail({
         />
       )}
 
-      {/* Client UI (tvoj postojeći) */}
+      {/* Client UI component */}
       <ProductDetailPage />
     </>
   );

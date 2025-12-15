@@ -1,5 +1,3 @@
-// src/app/(shop)/categories/[...slug]/page.tsx
-
 import type { Metadata } from "next";
 import { client } from "@/lib/apollo-client";
 import { gql } from "@apollo/client";
@@ -53,7 +51,7 @@ type ProductsData = {
 type SearchParams = Record<string, string | string[] | undefined>;
 
 // --------------------
-// "Raw" tipovi za GraphQL (svuda optional) — da ne puca TS zbog DeepPartial
+// "Raw" tipovi za GraphQL (svuda optional)
 // --------------------
 type MediaRaw = {
   sourceUrl?: string | null;

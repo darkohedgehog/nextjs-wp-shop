@@ -1,4 +1,3 @@
-// app/api/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 const WC_BASE_URL = process.env.WC_BASE_URL;

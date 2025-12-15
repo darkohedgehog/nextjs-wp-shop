@@ -1,4 +1,3 @@
-// app/api/products/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 const WP_REST_ROOT       = process.env.WP_REST_ROOT;        // npr. https://wp.zivic-elektro.shop/wp-json

@@ -1,4 +1,3 @@
-// components/blog/BlogIntroSection.tsx
 import Link from "next/link";
 import Image from "next/image";
 import { ShineBorder } from "@/components/ui/shine-border";

@@ -1,4 +1,3 @@
-// app/my-account/b2b-register/page.tsx
 'use client';
 
 import { useState } from 'react';

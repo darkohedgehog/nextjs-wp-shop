@@ -1,4 +1,3 @@
-// app/api/lost-password/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 // ⭐ Dodaj tip OVDE — izvan funkcija, na vrhu fajla
