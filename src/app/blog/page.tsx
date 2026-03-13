@@ -149,8 +149,8 @@ export default async function BlogPage() {
                 </span>
               </h1>
               <p className="max-w-2xl text-sm text-slate-300 sm:text-base">
-                Beležimo izazove prilikom ugradnje, izbora proizvoda, sheme
-                proizvoda i sve ono što bi i vama moglo da uštedi sate živaca.
+                Bilježimo izazove prilikom ugradnje, izbora proizvoda, sheme
+                proizvoda i sve ono što bi i vama moglo da uštedjeti sate živaca.
               </p>
             </div>
           </div>

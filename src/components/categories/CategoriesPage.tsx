@@ -22,7 +22,7 @@ type CategoriesData = {
 
 const GET_TOP_CATEGORIES = gql`
   query GetTopCategories {
-    productCategories(where: { parent: 0 }) {
+    productCategories(first: 100, where: { parent: 0 }) {
       nodes {
         id
         name
