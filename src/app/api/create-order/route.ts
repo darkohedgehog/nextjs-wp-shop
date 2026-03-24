@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const WC_BASE_URL        = process.env.WC_BASE_URL;
-const WC_CONSUMER_KEY    = process.env.WC_CONSUMER_KEY;
+const WC_BASE_URL = process.env.WC_BASE_URL;
+const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
 
-if (!WC_BASE_URL)        console.warn('[create-order] WC_BASE_URL nije definisan u .env');
-if (!WC_CONSUMER_KEY)    console.warn('[create-order] WC_CONSUMER_KEY nije definisan u .env');
+if (!WC_BASE_URL) console.warn('[create-order] WC_BASE_URL nije definisan u .env');
+if (!WC_CONSUMER_KEY) console.warn('[create-order] WC_CONSUMER_KEY nije definisan u .env');
 if (!WC_CONSUMER_SECRET) console.warn('[create-order] WC_CONSUMER_SECRET nije definisan u .env');
 
 function basicAuthHeader(): string {
@@ -43,7 +43,13 @@ type IncomingLineItem = {
 type CreateOrderPayload = {
   customer_id?: number | string;
   payment_method?: string;
+  payment_method_title?: string;
+  billing?: unknown;
+  shipping?: unknown;
   line_items?: IncomingLineItem[];
+  customer_note?: string;
+  shipping_lines?: unknown[];
+  accepted_terms?: boolean;
   [key: string]: unknown;
 };
 
@@ -63,6 +69,11 @@ function toNum(v: unknown): number {
     return Number.isFinite(n) ? n : 0;
   }
   return 0;
+}
+
+// helper: strict boolean check
+function isAcceptedTerms(value: unknown): boolean {
+  return value === true;
 }
 
 // 👇 1) Dohvati B2BKing group za customer-a
@@ -147,14 +158,12 @@ async function fetchProductGroupPricing(
 
   const json = (await res.json()) as WooProduct;
 
-  // Osnovne Woo cijene
   let regular = toNum(json.regular_price ?? json.price ?? 0);
   let effective = toNum(json.price ?? json.sale_price ?? regular);
 
-  // Ako imamo groupId, pokušaj B2BKing price meta
   if (groupId && Array.isArray(json.meta_data)) {
     const keyRegular = `b2bking_regular_product_price_group_${groupId}`;
-    const keySale    = `b2bking_sale_product_price_group_${groupId}`;
+    const keySale = `b2bking_sale_product_price_group_${groupId}`;
 
     let groupRegular: number | null = null;
     let groupSale: number | null = null;
@@ -168,7 +177,6 @@ async function fetchProductGroupPricing(
       }
     }
 
-    // Ako postoje grupne cijene, koristi njih
     if (groupRegular && groupRegular > 0) {
       regular = groupRegular;
     }
@@ -200,14 +208,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 1) Učitaj body sa fronta
   let body: CreateOrderPayload;
   try {
     body = (await req.json()) as CreateOrderPayload;
   } catch (err) {
     console.error('[create-order] Cannot parse JSON body:', err);
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  // ✅ Obavezna backend provjera uvjeta korištenja
+  if (!isAcceptedTerms(body.accepted_terms)) {
     return NextResponse.json(
-      { error: 'Invalid JSON body' },
+      {
+        error: 'Morate prihvatiti uvjete korištenja kako biste završili narudžbu.',
+      },
       { status: 400 },
     );
   }
@@ -218,14 +232,12 @@ export async function POST(req: NextRequest) {
   let groupId: string | null = null;
   let isB2B = false;
 
-  // 2) Ako imamo customer_id, pokušaj izvući B2B group
   if (customerId > 0) {
     const customerInfo = await fetchCustomerGroup(customerId);
     groupId = customerInfo.groupId;
     isB2B = customerInfo.isB2B;
   }
 
-  // 3) Pripremi line_items (override cijena SAMO ako znamo B2B grupu i validne cijene)
   const originalLineItems: IncomingLineItem[] = Array.isArray(body.line_items)
     ? body.line_items
     : [];
@@ -241,7 +253,6 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    // Ako nije B2B user ili nema groupId → ne diramo
     if (!isB2B || !groupId) {
       adjustedLineItems.push(li);
       continue;
@@ -283,33 +294,43 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 4) Pripremi URL → /wp-json/wc/v3/orders
   const url = new URL('/wp-json/wc/v3/orders', WC_BASE_URL);
   const authHeader = basicAuthHeader();
 
-  // 5) Odredi status i set_paid prema metodi plaćanja
   const paymentMethod: string = String(body.payment_method ?? '');
 
-  const isCOD  = paymentMethod === 'cod';   // plaćanje pouzećem
-  const isBacs = paymentMethod === 'bacs';  // b2b virman
+  const isCOD = paymentMethod === 'cod';
+  const isBacs = paymentMethod === 'bacs';
 
   let status: 'pending' | 'processing' | 'on-hold' = 'pending';
   let set_paid = false;
 
   if (isCOD) {
-    status   = 'processing';
+    status = 'processing';
     set_paid = true;
   } else if (isBacs) {
-    status   = 'processing';
+    status = 'processing';
     set_paid = false;
   }
 
-  // 6) Složi finalni payload za Woo
+  // ✅ Nemoj slepo prosleđivati baš sve iz body-ja
   const wooPayload = {
-    ...body,
+    customer_id: body.customer_id,
+    payment_method: body.payment_method,
+    payment_method_title: body.payment_method_title,
+    billing: body.billing,
+    shipping: body.shipping,
+    customer_note: body.customer_note,
+    shipping_lines: body.shipping_lines,
     status,
     set_paid,
     line_items: adjustedLineItems,
+    meta_data: [
+      {
+        key: '_accepted_terms',
+        value: 'yes',
+      },
+    ],
   };
 
   try {

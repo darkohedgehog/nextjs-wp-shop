@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useCart } from "@/store/cart";
 import LottieAnimation from "./LottieAnimation";
 import { MdOutlineShoppingCart } from "react-icons/md";
 import { HiCheckCircle } from "react-icons/hi";
@@ -26,6 +27,7 @@ type Order = {
   id: number | string;
   status: string;
   currency: string;
+  payment_method?: string;
   line_items: OrderLineItem[];
   customer_note?: string | null;
   shipping_total: string | number;
@@ -105,9 +107,12 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function OrderSuccessClient() {
   const search = useSearchParams();
   const orderId = search.get("order_id");
+  const orderKey = search.get("key");
+  const clearCart = useCart((s) => s.clear);
 
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasClearedCart, setHasClearedCart] = useState(false);
 
   // 👇 mapa product_id → B2B/B2C info (iz /api/products/[id])
   const [priceMap, setPriceMap] = useState<Record<number, PriceInfo>>({});
@@ -126,9 +131,18 @@ export default function OrderSuccessClient() {
 
     (async () => {
       try {
-        const res = await fetch(`/api/orders/${orderId}`, {
-          cache: "no-store",
-        });
+        const params = new URLSearchParams();
+        if (orderKey) {
+          params.set("key", orderKey);
+        }
+        const queryString = params.toString();
+
+        const res = await fetch(
+          `/api/orders/${orderId}${queryString ? `?${queryString}` : ""}`,
+          {
+            cache: "no-store",
+          }
+        );
 
         if (!res.ok) {
           throw new Error("Ne može doći do narudžbe");
@@ -140,7 +154,24 @@ export default function OrderSuccessClient() {
         setError(getErrorMessage(e) || "Greška pri dohvaćanju narudžbe");
       }
     })();
-  }, [orderId]);
+  }, [orderId, orderKey]);
+
+  useEffect(() => {
+    if (!order || hasClearedCart) return;
+
+    const paymentMethod = order.payment_method?.toLowerCase();
+    const status = order.status?.toLowerCase();
+    const shouldClearCart =
+      paymentMethod === "stripe" &&
+      (status === "processing" ||
+        status === "completed" ||
+        status === "on-hold");
+
+    if (!shouldClearCart) return;
+
+    clearCart();
+    setHasClearedCart(true);
+  }, [clearCart, hasClearedCart, order]);
 
   // 2) Na osnovu narudžbe, povuci B2B / group cijene po product_id
   useEffect(() => {

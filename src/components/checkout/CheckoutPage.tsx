@@ -9,8 +9,8 @@ import { TbEyeCheck, TbMoodSad, TbTruckDelivery } from 'react-icons/tb';
 import { IoMdInformationCircleOutline } from 'react-icons/io';
 import { GiNotebook, GiPayMoney } from 'react-icons/gi';
 import { LuPackageCheck } from 'react-icons/lu';
+import Link from 'next/link';
 
-// Tip za billing i shipping
 type BillingShipping = {
   first_name: string;
   last_name: string;
@@ -25,7 +25,6 @@ type BillingShipping = {
   phone: string;
 };
 
-// minimalni tipovi za Woo kupca
 type CustomerMeta = {
   key?: string;
   value?: unknown;
@@ -52,8 +51,93 @@ type Customer = {
   meta_data?: CustomerMeta[];
 };
 
-// fiksna dostava za B2C
+type PaymentMethod = 'cod' | 'bacs' | 'stripe';
+
+type CreateOrderResponse = {
+  id?: number | string;
+  error?: unknown;
+};
+
 const BASE_SHIPPING = 5.5;
+const WC_BASE_URL = process.env.NEXT_PUBLIC_WC_BASE_URL;
+
+const CROATIA_COUNTRIES = [{ value: 'HR', label: 'Hrvatska' }];
+
+const CROATIA_COUNTIES = [
+  { value: 'HR-01', label: 'Zagrebačka županija' },
+  { value: 'HR-02', label: 'Krapinsko-zagorska županija' },
+  { value: 'HR-03', label: 'Sisačko-moslavačka županija' },
+  { value: 'HR-04', label: 'Karlovačka županija' },
+  { value: 'HR-05', label: 'Varaždinska županija' },
+  { value: 'HR-06', label: 'Koprivničko-križevačka županija' },
+  { value: 'HR-07', label: 'Bjelovarsko-bilogorska županija' },
+  { value: 'HR-08', label: 'Primorsko-goranska županija' },
+  { value: 'HR-09', label: 'Ličko-senjska županija' },
+  { value: 'HR-10', label: 'Virovitičko-podravska županija' },
+  { value: 'HR-11', label: 'Požeško-slavonska županija' },
+  { value: 'HR-12', label: 'Brodsko-posavska županija' },
+  { value: 'HR-13', label: 'Zadarska županija' },
+  { value: 'HR-14', label: 'Osječko-baranjska županija' },
+  { value: 'HR-15', label: 'Šibensko-kninska županija' },
+  { value: 'HR-16', label: 'Vukovarsko-srijemska županija' },
+  { value: 'HR-17', label: 'Splitsko-dalmatinska županija' },
+  { value: 'HR-18', label: 'Istarska županija' },
+  { value: 'HR-19', label: 'Dubrovačko-neretvanska županija' },
+  { value: 'HR-20', label: 'Međimurska županija' },
+  { value: 'HR-21', label: 'Grad Zagreb' },
+] as const;
+
+const COUNTY_LABEL_TO_CODE = CROATIA_COUNTIES.reduce<Record<string, string>>(
+  (acc, county) => {
+    acc[county.label.toLowerCase()] = county.value;
+    return acc;
+  },
+  {},
+);
+
+function normalizeCountry(value?: string | null): string {
+  const raw = String(value ?? '').trim().toUpperCase();
+
+  if (!raw) return 'HR';
+  if (raw === 'HR') return 'HR';
+  if (raw === 'HRVATSKA' || raw === 'CROATIA') return 'HR';
+
+  return 'HR';
+}
+
+function normalizeState(value?: string | null): string {
+  const raw = String(value ?? '').trim();
+
+  if (!raw) return '';
+
+  const upper = raw.toUpperCase();
+  if (CROATIA_COUNTIES.some((county) => county.value === upper)) {
+    return upper;
+  }
+
+  const mapped = COUNTY_LABEL_TO_CODE[raw.toLowerCase()];
+  if (mapped) {
+    return mapped;
+  }
+
+  return '';
+}
+
+function createEmptyAddress(): BillingShipping {
+  return {
+    first_name: '',
+    last_name: '',
+    company: '',
+    address_1: '',
+    address_2: '',
+    city: '',
+    state: '',
+    postcode: '',
+    country: 'HR',
+    email: '',
+    phone: '',
+  };
+}
 
 export default function CheckoutPage() {
   const image = '/assets/Add-to-Cart-amico.svg';
@@ -64,55 +148,27 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bacs'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const paymentTitleMap = {
     cod: 'Cash on Delivery',
     bacs: 'Direct Bank Transfer',
-  };
+    stripe: 'Plaćanje karticom',
+  } as const;
 
   const [note, setNote] = useState('');
   const [isB2B, setIsB2B] = useState(false);
-
-  // ⭐ customerId – da vežemo order za usera u Woo
   const [customerId, setCustomerId] = useState<number | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  // Inicijalno prazni billing i shipping
-  const [billing, setBilling] = useState<BillingShipping>({
-    first_name: '',
-    last_name: '',
-    company: '',
-    address_1: '',
-    address_2: '',
-    city: '',
-    state: '',
-    postcode: '',
-    country: '',
-    email: '',
-    phone: '',
-  });
-
-  const [shipping, setShipping] = useState<BillingShipping>({
-    first_name: '',
-    last_name: '',
-    company: '',
-    address_1: '',
-    address_2: '',
-    city: '',
-    state: '',
-    postcode: '',
-    country: '',
-    email: '',
-    phone: '',
-  });
+  const [billing, setBilling] = useState<BillingShipping>(createEmptyAddress());
+  const [shipping, setShipping] = useState<BillingShipping>(createEmptyAddress());
 
   const [sameAsBilling, setSameAsBilling] = useState(true);
 
-  // 🔢 LOKALNI TOTALI – iz cart store-a
   const itemsTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const shippingCost = isB2B ? 0 : BASE_SHIPPING;
   const grandTotal = itemsTotal + shippingCost;
 
-  // ❗ Prefill billing + shipping iz Woo kupca + setCustomerId + B2B flag
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -129,7 +185,6 @@ export default function CheckoutPage() {
       const userId = user?.id ?? user?.data?.id;
       if (!userId) return;
 
-      // zapamtimo ID korisnika za order
       setCustomerId(Number(userId));
 
       (async () => {
@@ -147,9 +202,9 @@ export default function CheckoutPage() {
             address_1: b.address_1 ?? '',
             address_2: b.address_2 ?? '',
             city: b.city ?? '',
-            state: b.state ?? '',
+            state: normalizeState(b.state),
             postcode: b.postcode ?? '',
-            country: b.country ?? '',
+            country: normalizeCountry(b.country),
             email: b.email ?? user.email ?? '',
             phone: b.phone ?? '',
           };
@@ -167,8 +222,7 @@ export default function CheckoutPage() {
             );
 
             const flag = String(flagMeta?.value ?? '').toLowerCase();
-            userIsB2B =
-              flag === 'yes' || flag === '1' || flag === 'true';
+            userIsB2B = flag === 'yes' || flag === '1' || flag === 'true';
           }
 
           setIsB2B(userIsB2B);
@@ -198,50 +252,89 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Handleri
   const handleSame = (e: ChangeEvent<HTMLInputElement>) => {
     const chk = e.target.checked;
     setSameAsBilling(chk);
+
     if (chk) {
       setShipping({ ...billing });
     } else {
-      setShipping({
-        first_name: '',
-        last_name: '',
-        company: '',
-        address_1: '',
-        address_2: '',
-        city: '',
-        state: '',
-        postcode: '',
-        country: '',
-        email: '',
-        phone: '',
-      });
+      setShipping(createEmptyAddress());
     }
   };
 
-  const handleBillingChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleBillingChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
+
     setBilling((b) => {
       const updated: BillingShipping = { ...b, [name]: value };
+
       if (sameAsBilling) {
         setShipping((s) => ({ ...s, [name]: value }));
       }
+
       return updated;
     });
   };
 
-  const handleShippingChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleShippingChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
     setShipping((s) => ({ ...s, [name]: value }));
   };
 
-  // Checkout submit
+  const submitStripeToWordPress = () => {
+    if (!WC_BASE_URL) {
+      setLoading(false);
+      setError('Nedostaje NEXT_PUBLIC_WC_BASE_URL.');
+      return;
+    }
+
+    const payload = {
+      customer_id: customerId ?? undefined,
+      billing,
+      shipping,
+      items: items.map((i) => ({
+        product_id: i.product_id,
+        quantity: i.quantity,
+      })),
+      customer_note: note,
+      accepted_terms: acceptedTerms,
+    };
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${WC_BASE_URL.replace(/\/$/, '')}/wp-admin/admin-post.php?action=wc_next_prepare_checkout`;
+    form.style.display = 'none';
+
+    const payloadInput = document.createElement('input');
+    payloadInput.type = 'hidden';
+    payloadInput.name = 'checkout_payload';
+    payloadInput.value = JSON.stringify(payload);
+    form.appendChild(payloadInput);
+
+    document.body.appendChild(form);
+    form.submit();
+  };
+
   const handleCheckout = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (!acceptedTerms) {
+      setError('Morate prihvatiti uvjete korištenja kako biste završili narudžbu.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
+    if (paymentMethod === 'stripe') {
+      submitStripeToWordPress();
+      return;
+    }
 
     const line_items = items.map((i) => ({
       product_id: i.product_id,
@@ -256,36 +349,42 @@ export default function CheckoutPage() {
       shipping,
       line_items,
       customer_note: note,
+      accepted_terms: acceptedTerms,
       shipping_lines: [
         {
           method_id: 'flat_rate',
           method_title: 'Flat Rate',
-          total: shippingCost.toFixed(2), // 👈 B2B = 0.00, B2C = 5.50
+          total: shippingCost.toFixed(2),
         },
       ],
     };
 
-    const res = await fetch('/api/create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
-    setLoading(false);
+      const data = (await res.json()) as CreateOrderResponse;
+      setLoading(false);
 
-    if (!res.ok) {
-      setError(
-        typeof data.error === 'string'
-          ? data.error
-          : JSON.stringify(data.error),
-      );
-      return;
+      if (!res.ok) {
+        setError(
+          typeof data.error === 'string'
+            ? data.error
+            : JSON.stringify(data.error),
+        );
+        return;
+      }
+
+      clearCart();
+      router.push(`/order-success?order_id=${data.id}`);
+    } catch (err) {
+      setLoading(false);
+      setError('Došlo je do greške prilikom slanja narudžbe.');
+      console.error(err);
     }
-
-    clearCart();
-    const orderId = data.id;
-    router.push(`/order-success?order_id=${orderId}`);
   };
 
   if (!items.length) {
@@ -317,7 +416,6 @@ export default function CheckoutPage() {
         className="p-4 max-w-lg lg:max-w-5xl mx-2 lg:mx-auto my-20"
       >
         <div className="lg:grid lg:grid-cols-3 lg:gap-6">
-          {/* LEFT COLUMN — FORMA */}
           <div
             className="
               space-y-6
@@ -402,14 +500,22 @@ export default function CheckoutPage() {
                 placeholder="Grad"
                 className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
               />
-              <input
+
+              <select
                 name="state"
                 value={billing.state}
                 onChange={handleBillingChange}
                 required
-                placeholder="Županija/Država"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
-              />
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] bg-zinc-900 text-cyan-200"
+              >
+                <option value="">Odaberite županiju</option>
+                {CROATIA_COUNTIES.map((county) => (
+                  <option key={county.value} value={county.value}>
+                    {county.label}
+                  </option>
+                ))}
+              </select>
+
               <input
                 name="postcode"
                 value={billing.postcode}
@@ -418,14 +524,20 @@ export default function CheckoutPage() {
                 placeholder="Poštanski broj"
                 className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
               />
-              <input
+
+              <select
                 name="country"
                 value={billing.country}
                 onChange={handleBillingChange}
                 required
-                placeholder="Država (npr. HR)"
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
-              />
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] bg-zinc-900 text-cyan-200"
+              >
+                {CROATIA_COUNTRIES.map((country) => (
+                  <option key={country.value} value={country.value}>
+                    {country.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex items-center space-x-2 text-zinc-200">
@@ -495,14 +607,22 @@ export default function CheckoutPage() {
                     placeholder="Grad (dostava)"
                     className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
                   />
-                  <input
+
+                  <select
                     name="state"
                     value={shipping.state}
                     onChange={handleShippingChange}
                     required
-                    placeholder="Županija/Država (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
-                  />
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] bg-zinc-900 text-cyan-200"
+                  >
+                    <option value="">Odaberite županiju</option>
+                    {CROATIA_COUNTIES.map((county) => (
+                      <option key={county.value} value={county.value}>
+                        {county.label}
+                      </option>
+                    ))}
+                  </select>
+
                   <input
                     name="postcode"
                     value={shipping.postcode}
@@ -511,14 +631,20 @@ export default function CheckoutPage() {
                     placeholder="Poštanski broj (dostava)"
                     className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
                   />
-                  <input
+
+                  <select
                     name="country"
                     value={shipping.country}
                     onChange={handleShippingChange}
                     required
-                    placeholder="Država (dostava)"
-                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400"
-                  />
+                    className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] bg-zinc-900 text-cyan-200"
+                  >
+                    {CROATIA_COUNTRIES.map((country) => (
+                      <option key={country.value} value={country.value}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </>
             )}
@@ -537,7 +663,7 @@ export default function CheckoutPage() {
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Npr. nazvati prije dostave, ostaviti paket kod susjeda, poslati R1 račun…"
                 rows={4}
-                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 resize-none"
+                className="border p-2 rounded-lg w-full border-[#adb5bd] shadow-sm shadow-[#adb5bd] placeholder:text-zinc-400 resize-none text-cyan-200"
               />
             </div>
 
@@ -561,6 +687,20 @@ export default function CheckoutPage() {
                 Plaćanje pouzećem
               </label>
 
+              {!isB2B && (
+                <label className="inline-flex items-center text-zinc-200">
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value="stripe"
+                    checked={paymentMethod === 'stripe'}
+                    onChange={() => setPaymentMethod('stripe')}
+                    className="mr-2"
+                  />
+                  Plaćanje karticom
+                </label>
+              )}
+
               {isB2B && (
                 <label className="inline-flex items-center text-zinc-200">
                   <input
@@ -577,10 +717,8 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN — STICKY SUMMARY + BUTTON */}
           <div className="mt-6 lg:mt-0 lg:col-span-1">
             <div className="lg:sticky lg:top-24 space-y-4">
-              {/* Summary */}
               <div className="border border-[#adb5bd]/70 bg-linear-to-br from-zinc-900/50 via-zinc-900/30 to-zinc-800/50 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md p-4 text-blue-600 space-y-3">
                 <div className="text-center text-lg font-semibold text-slate-300 gap-2 flex items-center justify-center">
                   Pregled narudžbe
@@ -621,6 +759,7 @@ export default function CheckoutPage() {
                             Barcode: {item.ean}
                           </p>
                         )}
+
                         <div className="flex items-center justify-between mt-1 text-sm text-slate-100">
                           <span>
                             {item.quantity} × {item.price.toFixed(2)} €
@@ -658,21 +797,50 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               </div>
+
+              <div className="border border-[#adb5bd]/70 bg-linear-to-br from-zinc-900/50 via-zinc-900/30 to-zinc-800/50 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md p-4">
+                <div className="flex items-start gap-3 text-zinc-200">
+                  <input
+                    id="terms"
+                    type="checkbox"
+                    name="terms"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    required
+                    className="mt-1 h-4 w-4 shrink-0"
+                  />
+                  <label htmlFor="terms" className="text-sm leading-6">
+                    Slažem se s{' '}
+                    <Link
+                      href="/terms"
+                      className="underline text-sky-200 hover:text-cyan-400 transition-colors"
+                    >
+                      uvjetima korištenja
+                    </Link>
+                    .
+                  </label>
+                </div>
+              </div>
+
               <div className="mt-6">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center justify-center px-4 py-3 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff] w-full disabled:opacity-50 font-semibold"
+                  disabled={loading || !acceptedTerms}
+                  className="bg-[#f8f9fa] hover:bg-[#dee2e6] cursor-pointer flex items-center justify-center px-4 py-3 rounded-3xl transition border-2 border-[#adb5bd] shadow-lg shadow-[#adb5bd] gap-2 text-[#007bff] w-full disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
                 >
                   <span>
                     <LuPackageCheck />
                   </span>
-                  {loading ? 'Obrađujem...' : 'Završi narudžbu'}
+                  {loading
+                    ? 'Obrađujem...'
+                    : paymentMethod === 'stripe'
+                      ? 'Plati karticom'
+                      : 'Završi narudžbu'}
                 </button>
               </div>
 
               {error && (
-                <p className="text-red-600 flex items-center justify-center text-sm">
+                <p className="text-red-600 flex items-center justify-center text-sm text-center">
                   Greška: {error}
                 </p>
               )}
@@ -680,6 +848,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </form>
+
       <div className="mb-10">
         <BackButton />
       </div>
