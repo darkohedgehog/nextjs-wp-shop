@@ -56,5 +56,11 @@ export const siteMetaData = {
       banner: "/og/products.jpeg",
       path: "/products",
     },
+    withdrawal: {
+      title: "Odustanak od ugovora | Živić Elektro",
+      description: "Podnesite zahtjev za odustanak od ugovora za online kupnju u web shopu Živić Elektro.",
+      banner: "/og/contact.jpeg",
+      path: "/withdrawal",
+    },
   },
 } as const;

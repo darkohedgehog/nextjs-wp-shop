@@ -55,6 +55,7 @@ type PaymentMethod = 'cod' | 'bacs' | 'stripe';
 
 type CreateOrderResponse = {
   id?: number | string;
+  order_key?: string;
   error?: unknown;
 };
 
@@ -379,7 +380,16 @@ export default function CheckoutPage() {
       }
 
       clearCart();
-      router.push(`/order-success?order_id=${data.id}`);
+      const params = new URLSearchParams({ order_id: String(data.id) });
+      const orderKey =
+        typeof data.order_key === 'string' ? data.order_key.trim() : '';
+
+      // Woo REST can include order_key; preserve it for secure withdrawal links.
+      if (orderKey) {
+        params.set('key', orderKey);
+      }
+
+      router.push(`/order-success?${params.toString()}`);
     } catch (err) {
       setLoading(false);
       setError('Došlo je do greške prilikom slanja narudžbe.');

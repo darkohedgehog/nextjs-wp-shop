@@ -8,6 +8,8 @@ import { useCart } from "@/store/cart";
 import LottieAnimation from "./LottieAnimation";
 import { MdOutlineShoppingCart } from "react-icons/md";
 import { HiCheckCircle } from "react-icons/hi";
+import { TbTruckReturn } from "react-icons/tb";
+import type { LinkWithdrawalResponse } from "@/types/contract-withdrawal";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -58,6 +60,8 @@ type ProductApiResponse = {
   zvo_discount_percent?: number | null;
 };
 
+type LinkWithdrawalSuccess = Extract<LinkWithdrawalResponse, { ok: true }>;
+
 const getErrorMessage = (e: unknown) => {
   if (e instanceof Error) return e.message;
   if (typeof e === "string") return e;
@@ -80,6 +84,11 @@ const formatMoney = (value: string | number, currency: string) => {
     maximumFractionDigits: 2,
   }).format(num);
 };
+
+const isLinkWithdrawalSuccess = (
+  value: LinkWithdrawalResponse | null,
+): value is LinkWithdrawalSuccess =>
+  value?.ok === true && typeof value.withdrawal_url === "string";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const s = status?.toLowerCase();
@@ -113,6 +122,8 @@ export default function OrderSuccessClient() {
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasClearedCart, setHasClearedCart] = useState(false);
+  const [withdrawalUrl, setWithdrawalUrl] = useState("/withdrawal");
+  const [withdrawalLinkLoading, setWithdrawalLinkLoading] = useState(false);
 
   // 👇 mapa product_id → B2B/B2C info (iz /api/products/[id])
   const [priceMap, setPriceMap] = useState<Record<number, PriceInfo>>({});
@@ -172,6 +183,49 @@ export default function OrderSuccessClient() {
     clearCart();
     setHasClearedCart(true);
   }, [clearCart, hasClearedCart, order]);
+
+  useEffect(() => {
+    setWithdrawalUrl("/withdrawal");
+
+    if (!orderId || !orderKey) return;
+
+    const numericOrderId = Number(orderId);
+    if (!Number.isFinite(numericOrderId) || numericOrderId <= 0) return;
+
+    let cancelled = false;
+
+    (async () => {
+      setWithdrawalLinkLoading(true);
+
+      try {
+        const res = await fetch("/api/contract-withdrawal/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_id: numericOrderId,
+            order_key: orderKey,
+          }),
+        });
+        const data = (await res.json().catch(() => null)) as
+          | LinkWithdrawalResponse
+          | null;
+
+        if (!cancelled && res.ok && isLinkWithdrawalSuccess(data)) {
+          setWithdrawalUrl(data.withdrawal_url);
+        }
+      } catch (err) {
+        console.warn("OrderSuccess: ne mogu pripremiti link za odustanak", err);
+      } finally {
+        if (!cancelled) {
+          setWithdrawalLinkLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId, orderKey]);
 
   // 2) Na osnovu narudžbe, povuci B2B / group cijene po product_id
   useEffect(() => {
@@ -584,6 +638,33 @@ export default function OrderSuccessClient() {
                   <span>
                     <MdOutlineShoppingCart />
                   </span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-emerald-400/40 bg-emerald-500/10 p-4 md:p-5 text-sm shadow-[0_0_30px_rgba(16,185,129,0.16)]">
+              <div className="flex items-start gap-3">
+                <TbTruckReturn className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
+                <div>
+                  <p className="font-semibold text-emerald-100">
+                    Pravo na odustanak od ugovora
+                  </p>
+                  <p className="mt-2 leading-6 text-zinc-300">
+                    Ako se predomislite, možete podnijeti zahtjev za odustanak
+                    od ugovora u zakonskom roku, ako se na kupljeni proizvod
+                    ili uslugu primjenjuje pravo na odustanak.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <Link
+                  href={withdrawalUrl}
+                  className="inline-flex w-full items-center justify-center rounded-full border border-emerald-300 bg-emerald-400/90 px-4 py-2 text-sm font-semibold text-emerald-950 shadow-[0_0_24px_rgba(52,211,153,0.35)] transition-colors hover:bg-emerald-300"
+                >
+                  {withdrawalLinkLoading
+                    ? "Pripremam sigurni link..."
+                    : "Odustani od ugovora ovdje"}
                 </Link>
               </div>
             </div>
