@@ -62,6 +62,29 @@ type ProductApiResponse = {
 
 type LinkWithdrawalSuccess = Extract<LinkWithdrawalResponse, { ok: true }>;
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = [];
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await mapper(items[currentIndex]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker())
+  );
+
+  return results;
+}
+
 const getErrorMessage = (e: unknown) => {
   if (e instanceof Error) return e.message;
   if (typeof e === "string") return e;
@@ -243,8 +266,11 @@ export default function OrderSuccessClient() {
 
     (async () => {
       try {
-        const results = await Promise.all(
-          uniqueProductIds.map(async (pid) => {
+        // Limit product detail lookups to avoid small client-side bursts against WooCommerce.
+        const results = await mapWithConcurrency(
+          uniqueProductIds,
+          2,
+          async (pid) => {
             try {
               const res = await fetch(`/api/products/${pid}`, {
                 cache: "no-store",
@@ -301,7 +327,7 @@ export default function OrderSuccessClient() {
               );
               return { pid, info: null as PriceInfo | null };
             }
-          })
+          }
         );
 
         const map: Record<number, PriceInfo> = {};

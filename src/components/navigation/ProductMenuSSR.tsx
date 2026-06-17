@@ -1,49 +1,7 @@
 import Link from "next/link";
-import { gql } from "@apollo/client";
-import { client } from "@/lib/apollo-client";
-import { GET_PWB_BRANDS } from "@/queries/brands";
-
-export const revalidate = 600; // 10 min
+import type { ShopMenuBrand, ShopMenuCategory } from "@/lib/shop-menu-data";
 
 type SearchParams = Record<string, string | string[] | undefined>;
-
-// Kategorije + children (1 nivo)
-const GET_CATEGORIES_TREE = gql`
-  query GetCategoriesTree {
-    productCategories(where: { parent: 0 }, first: 100) {
-      nodes {
-        id
-        name
-        slug
-        children(first: 100) {
-          nodes {
-            id
-            name
-            slug
-          }
-        }
-      }
-    }
-  }
-`;
-
-type CatChild = { id: string; name: string; slug: string };
-
-type Cat = {
-  id: string;
-  name: string;
-  slug: string;
-  children?: { nodes: CatChild[] } | null;
-};
-
-type PwbBrandNode = {
-  id: string;
-  name?: string | null;
-  slug: string;
-  count?: number | null;
-};
-
-type BrandNormalized = { id: string; name: string; slug: string; count: number };
 
 function isPromise<T>(v: unknown): v is Promise<T> {
   return typeof v === "object" && v !== null && "then" in v;
@@ -84,8 +42,12 @@ function mergedQuery(base: Record<string, string>, add: Record<string, string | 
 
 export default async function ProductMenuSSR({
   searchParams,
+  categories,
+  brands,
 }: {
   searchParams?: SearchParams | Promise<SearchParams>;
+  categories: ShopMenuCategory[];
+  brands: ShopMenuBrand[];
 }) {
   const resolvedParams = await resolveSearchParams(searchParams);
 
@@ -93,54 +55,6 @@ export default async function ProductMenuSSR({
   const currentQ = toQ(resolvedParams);
   const activeSort = currentQ.sort || "";
   const activeBrand = currentQ.brand || "";
-
-  // 1) Kategorije (SSR + keš)
-  const { data: catData } = await client.query<{
-    productCategories: { nodes: Cat[] };
-  }>({
-    query: GET_CATEGORIES_TREE,
-    context: {
-      fetchOptions: {
-        next: { revalidate, cache: "force-cache" },
-      },
-    },
-  });
-
-  // 2) Brendovi iz PWB (SSR + keš)
-  const { data: brandData } = await client.query<{
-    pwbBrands: { nodes: PwbBrandNode[] };
-  }>({
-    query: GET_PWB_BRANDS,
-    context: {
-      fetchOptions: {
-        next: { revalidate, cache: "force-cache" },
-      },
-    },
-  });
-
-  const categories = catData?.productCategories?.nodes ?? [];
-
-  // Normalizacija + dedupe + sort
-  const brandMap = (brandData?.pwbBrands?.nodes ?? [])
-    .filter((b) => Boolean(b?.slug))
-    .map<BrandNormalized>((b) => ({
-      id: b.id || b.slug,
-      name: ((b.name ?? "").trim() || b.slug).trim(),
-      slug: b.slug,
-      count: b.count ?? 0,
-    }))
-    .filter((b) => b.name.length > 0)
-    .reduce<Record<string, BrandNormalized>>((acc, b) => {
-      const existing = acc[b.slug];
-      if (!existing || (b.count || 0) > (existing.count || 0)) {
-        acc[b.slug] = b;
-      }
-      return acc;
-    }, {});
-
-  const brandList = Object.values(brandMap).sort((a, b) =>
-    a.name.localeCompare(b.name, "hr", { sensitivity: "base" })
-  );
 
   const sortLinks = [
     { label: "Cijena ↑", value: "price_asc" },
@@ -223,9 +137,9 @@ export default async function ProductMenuSSR({
       {/* BRENDOVI */}
       <section>
         <h3 className="text-lg font-semibold mb-3 text-blue-400">Proizvođač</h3>
-        {brandList.length ? (
+        {brands.length ? (
           <nav className="max-h-[40vh] overflow-auto pr-1 space-y-2">
-            {brandList.map((b) => {
+            {brands.map((b) => {
               const href = {
                 pathname: "/products",
                 query: mergedQuery(currentQ, { brand: b.slug }),

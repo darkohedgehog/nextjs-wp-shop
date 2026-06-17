@@ -4,87 +4,15 @@ import { useState } from 'react';
 import { FiMenu, FiX } from 'react-icons/fi';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
-import { client } from '@/lib/apollo-client';
-import { GET_PWB_BRANDS } from '@/queries/brands';
+import type { ShopMenuBrand, ShopMenuCategory } from '@/lib/shop-menu-data';
 
-// ——— GQL ———
-// Kategorije sa jednim nivoom children da bismo otvorili podkategorije u draweru
-const GET_CATEGORIES_TREE = gql`
-  query GetCategoriesTree {
-    productCategories(where: { parent: 0 }, first: 100) {
-      nodes {
-        id
-        name
-        slug
-        children(first: 100) {
-          nodes { id name slug }
-        }
-      }
-    }
-  }
-`;
-
-// ——— Types ———
-type Cat = {
-  id: string;
-  name: string;
-  slug: string;
-  children?: { nodes: { id: string; name: string; slug: string }[] } | null;
+type ProductMenuDrawerProps = {
+  categories: ShopMenuCategory[];
+  brands: ShopMenuBrand[];
 };
 
-type PwbBrandNode = {
-  id: string;
-  name?: string | null;
-  slug: string;
-  count?: number | null;
-};
-
-export default function ProductMenuDrawer() {
+export default function ProductMenuDrawer({ categories, brands }: ProductMenuDrawerProps) {
   const [open, setOpen] = useState(false);
-
-  // Kategorije (root + children)
-  const { data: catData, loading: catLoading, error: catError } = useQuery<{
-    productCategories: { nodes: Cat[] }
-  }>(GET_CATEGORIES_TREE, {
-    client,
-    fetchPolicy: 'cache-first',
-    notifyOnNetworkStatusChange: true,
-  });
-
-  // Brendovi (PWB)
-  const { data: brandData, loading: brandLoading, error: brandError } = useQuery<{
-    pwbBrands: { nodes: PwbBrandNode[] }
-  }>(GET_PWB_BRANDS, {
-    client,
-    fetchPolicy: 'cache-first',
-    notifyOnNetworkStatusChange: true,
-  });
-
-  const categories = catData?.productCategories?.nodes ?? [];
-
-  // Normalizuj brendove (fallback ime na slug, dedupe po slugu, sort A-Z)
-  const brands = Object
-    .values(
-      (brandData?.pwbBrands?.nodes ?? [])
-        .filter((b) => b && b.slug)
-        .map((b) => ({
-          id: b.id || b.slug,
-          name: (b.name?.trim() || b.slug).trim(),
-          slug: b.slug,
-          count: b.count ?? 0,
-        }))
-        .reduce<Record<string, { id: string; name: string; slug: string; count: number }>>(
-          (acc, b) => {
-            const exist = acc[b.slug];
-            if (!exist || (b.count || 0) > (exist.count || 0)) acc[b.slug] = b;
-            return acc;
-          },
-          {},
-        )
-    )
-    .sort((a, b) => a.name.localeCompare(b.name, 'sr'));
 
   // helper da zatvori meni posle navigacije
   const handleLinkClick = () => setOpen(false);
@@ -167,14 +95,6 @@ export default function ProductMenuDrawer() {
                 {/* KATEGORIJE */}
                 <section>
                   <h3 className="text-xl font-semibold mb-3 text-blue-400">Kategorije</h3>
-                  {catLoading && (
-                    <p className="text-neutral-400 text-sm flex items-center justify-center">Učitavanje…</p>
-                  )}
-                  {catError && (
-                    <p className="text-red-400 text-sm flex items-center justify-center">
-                      Greška pri učitavanju kategorija.
-                    </p>
-                  )}
 
                   <nav className="space-y-3 secondary-color">
                     {categories.map((cat) => (
@@ -204,7 +124,7 @@ export default function ProductMenuDrawer() {
                       </div>
                     ))}
 
-                    {!catLoading && !catError && categories.length === 0 && (
+                    {categories.length === 0 && (
                       <p className="text-neutral-400 text-sm flex items-center justify-center">
                         Nema kategorija...
                         </p>
@@ -215,16 +135,6 @@ export default function ProductMenuDrawer() {
                 {/* BRENDOVI (PWB) */}
                 <section>
                   <h3 className="text-xl font-semibold mb-3 text-blue-400">Proizvođač</h3>
-                  {brandLoading && (
-                    <p className="text-neutral-400 text-sm flex items-center justify-center">
-                      Učitavanje…
-                    </p>
-                  )}
-                  {brandError && (
-                    <p className="text-neutral-400 text-sm flex items-center justify-center">
-                      Nije moguće učitati proizvođače...
-                    </p>
-                  )}
 
                   <nav className="space-y-3 secondary-color">
                     {brands.map((b) => (
@@ -240,7 +150,7 @@ export default function ProductMenuDrawer() {
                         ) : null}
                       </Link>
                     ))}
-                    {!brandLoading && !brandError && brands.length === 0 && (
+                    {brands.length === 0 && (
                       <p className="text-neutral-400 text-sm">Nema proizvođača...</p>
                     )}
                   </nav>

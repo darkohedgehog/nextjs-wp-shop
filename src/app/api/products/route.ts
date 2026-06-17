@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerWordPressBaseUrl } from '@/lib/wordpress-endpoints';
 
-const WP_REST_ROOT = process.env.WP_REST_ROOT;
 const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
+const PRODUCT_READ_REVALIDATE_SECONDS = 60;
+const PRODUCT_READ_TIMEOUT_MS = 8000;
 
 export async function GET(req: NextRequest) {
-  if (!WP_REST_ROOT || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+  if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
     console.error('WooCommerce credencijali nisu podešeni u .env');
     return NextResponse.json(
       { error: 'WooCommerce credentials missing' },
@@ -13,39 +15,68 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const search  = req.nextUrl.searchParams;
-  const include = search.get('include') ?? '';
-  const perPage = search.get('per_page') ?? '10';
+  try {
+    const search  = req.nextUrl.searchParams;
+    const include = search.get('include') ?? '';
+    const perPage = search.get('per_page') ?? '10';
 
-  const url = new URL(`${WP_REST_ROOT}/wc/v3/products`);
+    const url = new URL('/wp-json/wc/v3/products', getServerWordPressBaseUrl());
 
-  if (include) url.searchParams.set('include', include);
-  url.searchParams.set('per_page', perPage);
+    if (include) url.searchParams.set('include', include);
+    url.searchParams.set('per_page', perPage);
 
-  // Basic auth sa ck/cs — isto kao u [id] ruti
-  const authHeader =
-    'Basic ' +
-    Buffer.from(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`).toString('base64');
+    // Basic auth sa ck/cs — isto kao u [id] ruti
+    const authHeader =
+      'Basic ' +
+      Buffer.from(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`).toString('base64');
 
-  const res = await fetch(url.toString(), {
-    headers: {
-      Authorization: authHeader,
-    },
-    cache: 'no-store',
-  });
+    const isUserSpecific = Boolean(
+      req.headers.get('authorization') ||
+        req.cookies.get('wpToken') ||
+        req.cookies.get('wpUserEmail')
+    );
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), PRODUCT_READ_TIMEOUT_MS);
+    const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
+      headers: {
+        Authorization: authHeader,
+      },
+      // Anonymous product reads can be briefly cached to avoid WooCommerce burst traffic and Nginx 502/504s.
+      cache: isUserSpecific ? 'no-store' : 'force-cache',
+      signal: controller.signal,
+    };
 
-  const text = await res.text();
+    if (!isUserSpecific) {
+      fetchOptions.next = { revalidate: PRODUCT_READ_REVALIDATE_SECONDS };
+    }
 
-  if (!res.ok) {
-    console.error('Woo products error:', text);
+    let res: Response;
+    try {
+      res = await fetch(url.toString(), fetchOptions);
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error('Woo products error:', text);
+      return new NextResponse(text, {
+        status: res.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     return new NextResponse(text, {
-      status: res.status,
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
+  } catch (error) {
+    console.error('Products proxy error:', error);
+    const timedOut = error instanceof Error && error.name === 'AbortError';
+    return NextResponse.json(
+      { error: timedOut ? 'WooCommerce products request timed out' : 'Unexpected error' },
+      { status: timedOut ? 504 : 502 }
+    );
   }
-
-  return new NextResponse(text, {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
 }

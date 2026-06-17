@@ -1,7 +1,7 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react'; // Apollo 4.0.7
+import { useLazyQuery } from '@apollo/client/react'; // Apollo 4.0.7
 import he from 'he';
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -260,14 +260,10 @@ export default function ProductListClient({
   >({});
 
   // ——— Query ———
-  const { loading, error, fetchMore, refetch, networkStatus } =
-    useQuery<ProductsData, Vars>(GET_PRODUCTS, {
-      variables: {
-        search: initialSearch || undefined,
-        category: undefined,
-        after: null,
-      },
-      fetchPolicy: 'cache-and-network',
+  const [runProductsQuery, { loading, error, networkStatus }] =
+    useLazyQuery<ProductsData, Vars>(GET_PRODUCTS, {
+      // Avoid duplicate SSR + client fetch on initial mount; query only after user actions.
+      fetchPolicy: 'network-only',
       notifyOnNetworkStatusChange: true,
     });
 
@@ -278,11 +274,23 @@ export default function ProductListClient({
     return sortProducts(filtered, sortParamRaw);
   }, [products, brandParam, sortParamRaw]);
 
+  const visibleProductIdKey = useMemo(() => {
+    return Array.from(
+      new Set(
+        visibleProducts
+          .map((p) => p.databaseId)
+          .filter((id): id is number => typeof id === 'number'),
+      ),
+    )
+      .sort((a, b) => a - b)
+      .join(',');
+  }, [visibleProducts]);
+
   // ——— Pagination ———
   const loadMore = async () => {
     if (!pageInfo.hasNextPage || !pageInfo.endCursor) return;
 
-    const res = await fetchMore({
+    const res = await runProductsQuery({
       variables: {
         search: searchTerm || undefined,
         category: undefined,
@@ -300,13 +308,9 @@ export default function ProductListClient({
 
   // ——— B2B/B2C cene preko REST-a (WC) ———
   useEffect(() => {
-    const ids = Array.from(
-      new Set(
-        visibleProducts
-          .map((p) => p.databaseId)
-          .filter((id): id is number => typeof id === 'number'),
-      ),
-    );
+    const ids = visibleProductIdKey
+      ? visibleProductIdKey.split(',').map((id) => Number(id))
+      : [];
 
     if (!ids.length) return;
 
@@ -389,15 +393,17 @@ export default function ProductListClient({
         }
       }
     })();
-  }, [visibleProducts]);
+  }, [visibleProductIdKey]);
 
   // ——— Search submit ———
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await refetch({
-      search: searchTerm || undefined,
-      category: undefined,
-      after: null,
+    const res = await runProductsQuery({
+      variables: {
+        search: searchTerm || undefined,
+        category: undefined,
+        after: null,
+      },
     });
 
     const refreshed = res.data?.products;
