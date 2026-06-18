@@ -3,6 +3,7 @@ import {
   getServerWooBaseUrl,
   getWooRestLogContext,
 } from '@/lib/wordpress-endpoints';
+import { sanitizeWooProducts } from '@/lib/woocommerce-products';
 
 const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
@@ -84,10 +85,12 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return new NextResponse(text, {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+    const products: unknown = JSON.parse(text);
+    const sanitizedProducts = sanitizeWooProducts(products, {
+      includeCustomerPricing: isUserSpecific,
     });
+
+    return NextResponse.json(sanitizedProducts, { status: 200 });
   } catch (error) {
     console.error(
       'Products proxy error:',

@@ -3,6 +3,7 @@ import {
   getServerWooBaseUrl,
   getWooRestLogContext,
 } from '@/lib/wordpress-endpoints';
+import { sanitizeWooProduct } from '@/lib/woocommerce-products';
 
 const WC_CONSUMER_KEY    = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
@@ -63,6 +64,11 @@ export async function GET(
     // 1) Pročitaj email iz cookie-ja
     const cookieStore = req.cookies;
     const userEmail = cookieStore.get('wpUserEmail')?.value ?? null;
+    const isUserSpecific = Boolean(
+      req.headers.get('authorization') ||
+        cookieStore.get('wpToken') ||
+        cookieStore.get('wpUserEmail')
+    );
 
     const wooBaseUrl = getServerWooBaseUrl();
 
@@ -225,15 +231,22 @@ export async function GET(
       }
     }
 
-    const payload = {
-      ...product,
-      zvo_regular_price,
-      zvo_effective_price,
-      zvo_discount_percent,
-      // može pomoći kod debug-a:
-      zvo_is_b2b: isB2BUser,
-      zvo_group_id: customerGroupId,
-    };
+    const payload = sanitizeWooProduct(
+      {
+        ...product,
+        zvo_regular_price,
+        zvo_effective_price,
+        zvo_discount_percent,
+      },
+      { includeCustomerPricing: isUserSpecific },
+    );
+
+    if (!payload) {
+      return NextResponse.json(
+        { error: 'Unexpected WooCommerce product response' },
+        { status: 502 },
+      );
+    }
 
     return NextResponse.json(payload, { status: 200 });
   } catch (err: unknown) {
