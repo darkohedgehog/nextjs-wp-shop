@@ -33,6 +33,10 @@ export const metadata: Metadata = {
   },
   description: siteMetaData.description,
 
+  verification: {
+    google: "zSKV8KOSrYI2aVLDxgCF_gkB52o6UW8yUHAdImRsHpE",
+  },
+
   alternates: {
     canonical: siteMetaData.siteUrl, // global fallback (per-page buildMetadata override-uje canonical)
   },
