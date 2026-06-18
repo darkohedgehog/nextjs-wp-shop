@@ -1,26 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerWordPressBaseUrl } from '@/lib/wordpress-endpoints';
+import {
+  getServerWooBaseUrl,
+  getWooRestLogContext,
+} from '@/lib/wordpress-endpoints';
 
 const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
 const PRODUCT_READ_REVALIDATE_SECONDS = 60;
 const PRODUCT_READ_TIMEOUT_MS = 8000;
 
+function getWooCredentialsPresence() {
+  return {
+    consumerKey: Boolean(WC_CONSUMER_KEY),
+    consumerSecret: Boolean(WC_CONSUMER_SECRET),
+  };
+}
+
 export async function GET(req: NextRequest) {
   if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
-    console.error('WooCommerce credencijali nisu podešeni u .env');
+    console.error('WooCommerce credencijali nisu podešeni u .env', {
+      credentialsPresent: getWooCredentialsPresence(),
+    });
     return NextResponse.json(
       { error: 'WooCommerce credentials missing' },
       { status: 500 }
     );
   }
 
+  let url: URL | null = null;
+
   try {
     const search  = req.nextUrl.searchParams;
     const include = search.get('include') ?? '';
     const perPage = search.get('per_page') ?? '10';
 
-    const url = new URL('/wp-json/wc/v3/products', getServerWordPressBaseUrl());
+    url = new URL('/wp-json/wc/v3/products', getServerWooBaseUrl());
 
     if (include) url.searchParams.set('include', include);
     url.searchParams.set('per_page', perPage);
@@ -60,7 +74,10 @@ export async function GET(req: NextRequest) {
     const text = await res.text();
 
     if (!res.ok) {
-      console.error('Woo products error:', text);
+      console.error(
+        'Woo products error:',
+        getWooRestLogContext(url, getWooCredentialsPresence(), res.status),
+      );
       return new NextResponse(text, {
         status: res.status,
         headers: { 'Content-Type': 'application/json' },
@@ -72,7 +89,13 @@ export async function GET(req: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Products proxy error:', error);
+    console.error(
+      'Products proxy error:',
+      url
+        ? getWooRestLogContext(url, getWooCredentialsPresence())
+        : { credentialsPresent: getWooCredentialsPresence() },
+      error,
+    );
     const timedOut = error instanceof Error && error.name === 'AbortError';
     return NextResponse.json(
       { error: timedOut ? 'WooCommerce products request timed out' : 'Unexpected error' },

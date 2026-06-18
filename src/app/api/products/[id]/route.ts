@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  getServerWooBaseUrl,
+  getWooRestLogContext,
+} from '@/lib/wordpress-endpoints';
 
-const WP_REST_ROOT       = process.env.WP_REST_ROOT;        // npr. https://wp.zivic-elektro.shop/wp-json
 const WC_CONSUMER_KEY    = process.env.WC_CONSUMER_KEY;
 const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
 
-if (!WP_REST_ROOT)       console.warn('[product] WP_REST_ROOT nije definisan');
 if (!WC_CONSUMER_KEY)    console.warn('[product] WC_CONSUMER_KEY nije definisan');
 if (!WC_CONSUMER_SECRET) console.warn('[product] WC_CONSUMER_SECRET nije definisan');
+
+function getWooCredentialsPresence() {
+  return {
+    consumerKey: Boolean(WC_CONSUMER_KEY),
+    consumerSecret: Boolean(WC_CONSUMER_SECRET),
+  };
+}
 
 function basicAuthHeader() {
   const token = Buffer.from(
@@ -39,8 +48,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    if (!WP_REST_ROOT || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
-      console.error('[product] WooCommerce credencijali nisu podešeni u .env');
+    if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+      console.error('[product] WooCommerce credencijali nisu podešeni u .env', {
+        credentialsPresent: getWooCredentialsPresence(),
+      });
       return NextResponse.json(
         { error: 'WooCommerce credentials missing' },
         { status: 500 },
@@ -53,8 +64,10 @@ export async function GET(
     const cookieStore = req.cookies;
     const userEmail = cookieStore.get('wpUserEmail')?.value ?? null;
 
+    const wooBaseUrl = getServerWooBaseUrl();
+
     // 2) Dohvati Woo proizvod (B2C baza)
-    const productUrl = new URL(`${WP_REST_ROOT}/wc/v3/products/${id}`);
+    const productUrl = new URL(`/wp-json/wc/v3/products/${id}`, wooBaseUrl);
 
     const productRes = await fetch(productUrl.toString(), {
       method: 'GET',
@@ -69,8 +82,11 @@ export async function GET(
     if (!productRes.ok) {
       console.error(
         '[product GET] Woo single product error:',
-        productRes.status,
-        productText,
+        getWooRestLogContext(
+          productUrl,
+          getWooCredentialsPresence(),
+          productRes.status,
+        ),
       );
       return new NextResponse(productText, {
         status: productRes.status,
@@ -104,8 +120,10 @@ export async function GET(
     let isB2BUser = false;
 
     if (userEmail) {
+      let customersUrl: URL | null = null;
+
       try {
-        const customersUrl = new URL(`${WP_REST_ROOT}/wc/v3/customers`);
+        customersUrl = new URL('/wp-json/wc/v3/customers', wooBaseUrl);
         customersUrl.searchParams.set('email', userEmail);
         customersUrl.searchParams.set('per_page', '1');
 
@@ -153,12 +171,21 @@ export async function GET(
         } else {
           console.warn(
             '[product GET] customers fetch NOT OK:',
-            custRes.status,
-            custText,
+            getWooRestLogContext(
+              customersUrl,
+              getWooCredentialsPresence(),
+              custRes.status,
+            ),
           );
         }
       } catch (err: unknown) {
-        console.warn('[product GET] error fetching customer by email:', err);
+        console.warn(
+          '[product GET] error fetching customer by email:',
+          customersUrl
+            ? getWooRestLogContext(customersUrl, getWooCredentialsPresence())
+            : { credentialsPresent: getWooCredentialsPresence() },
+          err,
+        );
       }
     }
 
