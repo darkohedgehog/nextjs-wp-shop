@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getPriceLists } from "@/lib/price-lists-server";
+import { getPriceLists, getRetailPriceLists } from "@/lib/price-lists-server";
 import { buildMetadata } from "@/utils/seo";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Cjenik web trgovine",
-  description: "Preuzmite cjenik web trgovine Živić Elektro i pregledajte prethodne objave.",
+  title: "Cjenici web trgovine i maloprodaje",
+  description: "Preuzmite odvojene cjenike web trgovine i maloprodaje Živić Elektro.",
   path: "/price-list",
 });
 
@@ -17,15 +17,17 @@ const dateFormatter = new Intl.DateTimeFormat("hr-HR", {
 const dayFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zagreb" });
 
 export default async function PriceListPage() {
-  const result = await getPriceLists();
+  const [result, retail] = await Promise.all([getPriceLists(), getRetailPriceLists()]);
   const manifest = result.status === "ready" ? result.manifest : null;
   const [latest, ...archive] = manifest?.publications ?? [];
   const isOlder = latest && dayFormatter.format(new Date(latest.publishedAt)) !== dayFormatter.format(new Date());
 
   return (
     <section className="mx-auto max-w-5xl px-4 pb-16 pt-32 sm:px-6" aria-labelledby="price-list-title">
-      <p className="mb-3 text-sm font-medium uppercase tracking-widest text-cyan-300">Živić Elektro · Webshop</p>
-      <h1 id="price-list-title" className="text-3xl font-semibold text-zinc-100 sm:text-4xl">Cjenik web trgovine</h1>
+      <p className="mb-3 text-sm font-medium uppercase tracking-widest text-cyan-300">Živić Elektro</p>
+      <h1 id="price-list-title" className="text-3xl font-semibold text-zinc-100 sm:text-4xl">Cjenici</h1>
+      <p className="mt-4 max-w-2xl text-zinc-300">Cijene i asortiman web trgovine razlikuju se od maloprodaje. Odaberite cjenik odgovarajućeg prodajnog mjesta.</p>
+      <h2 className="mt-10 text-2xl font-semibold text-zinc-100">Web trgovina</h2>
       <p className="mt-4 max-w-2xl text-zinc-300">
         Preuzmite cijene proizvoda web trgovine u CSV formatu. Cijene su izražene u eurima s uključenim PDV-om.
       </p>
@@ -69,6 +71,29 @@ export default async function PriceListPage() {
           </ul>
         </section>
       )}
+      <section className="mt-12 border-t border-zinc-700 pt-10" aria-labelledby="retail-title">
+        <h2 id="retail-title" className="text-2xl font-semibold text-zinc-100">Maloprodaja</h2>
+        <p className="mt-3 text-zinc-300">Cjenici fizičke prodavaonice. Ažuriraju se ručno nakon promjene cijena.</p>
+        {retail.status === "unavailable" ? (
+          <p className="mt-6 text-zinc-300" role="status">Maloprodajni cjenici trenutačno nisu dostupni. Pokušajte ponovno kasnije ili <Link href="/contact" className="text-cyan-300 underline">nas kontaktirajte</Link>.</p>
+        ) : retail.manifest.files.length === 0 ? (
+          <p className="mt-6 text-zinc-300" role="status">Maloprodajni cjenici još nisu objavljeni.</p>
+        ) : (
+          <>
+            <p className="mt-4 text-zinc-300">{retail.manifest.store.name}{retail.manifest.store.address && ` · ${retail.manifest.store.address}`}</p>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              {retail.manifest.files.map((file) => (
+                <article key={file.kind} className="rounded-3xl border border-zinc-600 bg-zinc-900/80 p-6">
+                  <h3 className="text-xl font-semibold text-zinc-100">{file.kind === "current" ? "Aktualni cjenik s usporedbom cijena" : "Cijene na referentni datum"}</h3>
+                  <p className="mt-3 text-zinc-300">{file.kind === "current" ? "Datum cjenika" : "Referentni datum"}: <time dateTime={file.date}>{new Intl.DateTimeFormat("hr-HR", { dateStyle: "long", timeZone: "UTC" }).format(new Date(file.date))}</time></p>
+                  <p className="mt-2 text-sm text-zinc-400">Objavljeno: <time dateTime={file.publishedAt}>{dateFormatter.format(new Date(file.publishedAt))}</time></p>
+                  <a href={file.url} className="mt-6 inline-flex rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-zinc-950 transition hover:bg-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">Preuzmi {file.kind === "current" ? "cjenik" : "referentne cijene"} ({file.format.toUpperCase()})</a>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
     </section>
   );
 }

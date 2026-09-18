@@ -25,7 +25,7 @@ export default function Footer() {
           <ul className="flex flex-wrap items-center text-sm text-zinc-400 gap-4 sm:gap-6">
             <li>
               <Link href="/price-list" className="hover:text-zinc-100 transition">
-                Cjenik webshopa
+                Cjenici
               </Link>
             </li>
             <li>

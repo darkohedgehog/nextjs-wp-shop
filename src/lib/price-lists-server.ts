@@ -1,24 +1,33 @@
 import "server-only";
 import { getPublicWordPressBaseUrl, getServerWordPressBaseUrl } from "./wordpress-endpoints";
 import { parsePriceListManifest, type PriceListManifest } from "./price-lists";
+import { parseRetailPriceListManifest, type RetailPriceListManifest } from "./retail-price-lists";
 
 export type PriceListResult = { status: "ready"; manifest: PriceListManifest } | { status: "unavailable" };
 
 export async function getPriceLists(): Promise<PriceListResult> {
+  return getManifest("publications", parsePriceListManifest);
+}
+
+export async function getRetailPriceLists(): Promise<{ status: "ready"; manifest: RetailPriceListManifest } | { status: "unavailable" }> {
+  return getManifest("retail", parseRetailPriceListManifest);
+}
+
+async function getManifest<T>(endpoint: string, parse: (value: unknown, base: string) => T | null): Promise<{ status: "ready"; manifest: T } | { status: "unavailable" }> {
   const publicBase = getPublicWordPressBaseUrl();
   const bases = new Set([getServerWordPressBaseUrl(), publicBase]);
   for (const base of bases) {
     try {
       // The internal VPS address may be unavailable during local development.
       // This endpoint is public: never forward credentials to either origin.
-      const response = await fetch(`${base}/wp-json/zivic-price-lists/v1/publications`, {
+      const response = await fetch(`${base}/wp-json/zivic-price-lists/v1/${endpoint}`, {
         cache: "no-store",
         signal: AbortSignal.timeout(5000),
         redirect: "error",
         headers: { Accept: "application/json" },
       });
       if (!response.ok) continue;
-      const manifest = parsePriceListManifest(await response.json(), publicBase);
+      const manifest = parse(await response.json(), publicBase);
       // A malformed manifest is rejected, not replaced by partial data.
       return manifest ? { status: "ready", manifest } : { status: "unavailable" };
     } catch {

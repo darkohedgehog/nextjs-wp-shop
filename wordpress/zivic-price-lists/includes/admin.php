@@ -113,7 +113,7 @@ final class Zivic_Price_List_Admin {
         if (!current_user_can('manage_woocommerce')) return;
         $settings = Zivic_Price_List_Publications::settings();
         $publications = get_option('zpl_publications', []);
-        echo '<div class="wrap"><h1>Cjenici webshopa</h1><p>Javne B2C cijene u EUR s PDV-om. Maloprodaja iz Synesisa nije dio ovog dodatka.</p>';
+        echo '<div class="wrap"><h1>Cjenici webshopa</h1><p>Javne B2C cijene webshopa u EUR s PDV-om. Za odvojenu ručnu objavu iz Synesisa otvorite Cjenici maloprodaje.</p>';
         $error = get_option('zpl_last_error', '');
         if ($error) echo '<div class="notice notice-error"><p>' . esc_html($error) . '</p></div>';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="zpl_settings">';

@@ -1,6 +1,6 @@
-# Živić Webshop Cjenici — local candidate 0.1.0
+# Živić Webshop Cjenici — local candidate 0.2.0
 
-Prepared locally. **Not installed or accepted against a running WordPress/WooCommerce site.** This plugin does not establish complete regulatory compliance by itself.
+Version 0.2.0 prepared locally; retail upload requires acceptance in WordPress after upgrading the previously installed 0.1.0. This plugin does not establish complete regulatory compliance by itself.
 
 ## Scope
 
@@ -10,7 +10,26 @@ Prepared locally. **Not installed or accepted against a running WordPress/WooCom
 - CSV with UTF-8 BOM, semicolon delimiter, double-quote escaping and decimal point; identifiers remain strings. Potential spreadsheet formulas are rejected. Files persist under `wp-content/uploads/zivic-price-lists/` with distinct object/address/code/sequence/UTC timestamp/ID filenames.
 - Successful files are never overwritten or automatically deleted. Retention is unlimited in v0.1, exceeding the proposed minimum archive duration; plan storage management before 5,000 publications.
 - Last successful manifest remains available after validation, disk or manifest-write failures. A completed orphan CSV can remain if the WordPress option write fails; it is not linked as a publication. Inspect manually instead of automatic destructive cleanup.
-- Synesis and physical retail are excluded.
+- Synesis retail files are published separately through WooCommerce → Cjenici maloprodaje (see below). They never participate in the webshop CSV validation or WooCommerce catalog.
+
+## Ručna objava maloprodaje (0.2.0)
+
+1. U WordPressu otvorite Dodaci → Dodaj novi → Prenesi dodatak. Odaberite ZIP verzije 0.2.0 i zamijenite postojeću verziju istog dodatka. Postojeće sidrene cijene, postavke i CSV objave ostaju spremljene.
+2. Otvorite **WooCommerce → Cjenici maloprodaje**. Potrebne su ovlasti `manage_woocommerce` i `upload_files`.
+3. Unesite naziv i adresu fizičke prodavaonice.
+4. Pod **Aktualni cjenik s usporedbom cijena** učitajte `Cjenik_s_usporedbom_cijena_na_dan_10092026.xls`. Unesite stvarni datum aktualnog cjenika; datum u nazivu datoteke označava povijesnu usporedbu i nije automatski datum aktualnih cijena.
+5. Pod **Cijene na referentni datum** učitajte `Cijena_na_dan_10092026.xls` i provjerite referentni datum 10.09.2026.
+6. Kliknite **Spremi i objavi maloprodajne cjenike**. Nakon ažuriranja frontenda provjerite `/price-list`, oba datuma i oba preuzimanja kao neprijavljeni posjetitelj.
+
+Kod promjene cijena učitajte samo novi aktualni cjenik. Prazan izbor datoteke zadržava prethodnu. Referentnu datoteku mijenjajte samo radi ispravka povijesnih podataka. Ako nema promjene, nije potreban novi upload. Novi artikli i prazne povijesne vrijednosti prenose se bez promjena; plugin ne izmišlja sidrene cijene.
+
+Podržani su XLS, XLSX i CSV, do 20 MB odnosno nižeg WordPress/PHP limita. Datoteke se objavljuju izvorno, za preuzimanje; ne prikazuju se svi redovi Excela u pregledniku i ne pretvaraju se automatski u CSV. Provjerite sadržaj prije objave: cijela izvorna datoteka postaje javna. Ovo nije potvrda propisanog formata cjenika.
+
+Zamjena uklanja prethodni link s frontenda, ali zadržava datoteku u Medijskoj zbirci. **Ukloni ovu objavu s frontenda** uklanja link, ne briše datoteku niti blokira stari izravni URL. Neuspjeli prijenos ili spremanje zadržava prethodne javne linkove; uspješno prenesena datoteka može ostati neobjavljena u Medijskoj zbirci ako kasniji korak ne uspije.
+
+Javni `GET /wp-json/zivic-price-lists/v1/retail` vraća naziv/adresu prodavaonice i najviše dvije objave (`current`, `anchor`). Frontend dohvaća maloprodaju neovisno o webshopu, bez cachea i vjerodajnica, uz provjeru formata i WordPress upload URL-a. Prilagođeni CDN/upload direktoriji nisu podržani bez prilagodbe. Nema cron rasporeda za maloprodaju ni ovisnosti o ACF-u.
+
+Prije prihvata u WordPressu provjerite: prvi upload oba XLS-a, zamjenu samo aktualnog, nepromijenjenu referentnu datoteku, neispravan tip/preveliku datoteku, uklanjanje pojedinog linka i neovisan prikaz kad webshop nema objavljen CSV. Lokalne testne zamjene WordPress funkcija ne dokazuju stvarno MIME filtriranje ili ograničenja hostinga.
 
 ## Before any activation or publication
 
@@ -40,6 +59,7 @@ Connect Next.js using the existing WordPress URL settings. `/price-list` is serv
 ```sh
 php tests/domain-test.php
 php tests/publication-test.php
+php tests/retail-test.php
 ```
 
 Publication tests use a standalone WordPress/Woo contract fixture and temporary files. They **do not replace** actual Woo integration tests. PHP syntax was also checked locally using PHP 8.2.
