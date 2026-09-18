@@ -1,5 +1,7 @@
 # Contract Withdrawal TODO
 
+> Istorijska analiza pre implementacije. Stanje od 18.09.2026: COD/BACS redirect već prenosi `order_key`; order-detail sada zahteva potvrđenog vlasnika ili ispravan ključ. Postoji zajednički `commerce-server.ts` sloj. Starije tvrdnje ispod o javnom pristupu, redirectu i nepostojanju helpera nisu trenutno stanje. WordPress Stripe povratak i dalje nije proveren.
+
 ## 1. Repository findings
 
 ### Router and project shape

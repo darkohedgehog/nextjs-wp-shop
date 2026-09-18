@@ -1,9 +1,5 @@
 import Link from "next/link";
 import {
-  FiFacebook
-} from "react-icons/fi";
-import {
-  RiMessengerLine,
   RiLinkedinBoxFill,
   RiNextjsFill
 } from "react-icons/ri";
@@ -27,6 +23,11 @@ export default function Footer() {
 
           {/* Main Links */}
           <ul className="flex flex-wrap items-center text-sm text-zinc-400 gap-4 sm:gap-6">
+            <li>
+              <Link href="/price-list" className="hover:text-zinc-100 transition">
+                Cjenik webshopa
+              </Link>
+            </li>
             <li>
               <Link href="/terms" className="hover:text-zinc-100 transition">
                 Uvjeti korištenja
@@ -57,22 +58,13 @@ export default function Footer() {
           </h3>
 
           <div className="flex items-center gap-4 text-blue-600">
-            <Link href="https://www.facebook.com/?locale=hr_HR" target="_blank" rel="noreferrer">
-              <FiFacebook className="w-6 h-6 hover:scale-110 transition" />
-            </Link>
 
-            <Link
-              href="https://business.facebook.com/latest/inbox/messenger?asset_id=137597493551735&business_id=1133499703746344"
-              target="_blank" rel="noreferrer"
-            >
-              <RiMessengerLine className="w-6 h-6 hover:scale-110 transition" />
-            </Link>
 
-            <Link href="mailto:prodaja@zivic-elektro.com" target="_blank" rel="noreferrer">
+            <Link aria-label="Pošaljite email" href="mailto:prodaja@zivic-elektro.com" target="_blank" rel="noreferrer">
               <MdOutlineAlternateEmail className="w-6 h-6 hover:scale-110 transition" />
             </Link>
 
-            <Link href="https://www.linkedin.com/in/darko-%C5%BEivi%C4%87/" target="_blank" rel="noreferrer">
+            <Link aria-label="LinkedIn" href="https://www.linkedin.com/in/darko-%C5%BEivi%C4%87/" target="_blank" rel="noreferrer">
               <RiLinkedinBoxFill className="w-6 h-6 hover:scale-110 transition" />
             </Link>
           </div>
@@ -81,11 +73,11 @@ export default function Footer() {
         {/* POWERED BY */}
         <div className="flex items-center justify-center gap-3 mt-12 text-gray-500 text-sm">
           Powered by
-          <Link href="https://nextjs.org/" target="_blank" rel="noreferrer">
+          <Link aria-label="Next.js" href="https://nextjs.org/" target="_blank" rel="noreferrer">
             <RiNextjsFill className="w-6 h-6 hover:text-blue-400 transition" />
           </Link>
           &
-          <Link href="https://wordpress.org/" target="_blank" rel="noreferrer">
+          <Link aria-label="WordPress" href="https://wordpress.org/" target="_blank" rel="noreferrer">
             <FaWordpress className="w-6 h-6 hover:text-blue-400 transition" />
           </Link>
         </div>
@@ -94,7 +86,7 @@ export default function Footer() {
         <div className="flex items-center justify-center gap-3 mt-4 text-gray-500 text-sm">
           Developed by Hedgehog
           <Link
-            href="https://www.hedgehogwebdev.com"
+            aria-label="Hedgehog Web Development" href="https://www.hedgehogwebdev.com"
             target="_blank"
             rel="noreferrer"
           >

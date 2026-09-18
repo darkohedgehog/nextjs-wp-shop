@@ -1,22 +1,17 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-export async function GET(req: NextRequest) {
-  // 1. Dohvati id iz URL-a (poslednji deo)
-  const urlParts = req.nextUrl.pathname.split('/');
-  const id = urlParts[urlParts.length - 1];
-
-  const base = process.env.WC_BASE_URL!;
-  const key = process.env.WC_KEY!;
-  const sec = process.env.WC_SECRET!;
-
-  const url = new URL(`/wp-json/wc/v3/orders/${id}`, base);
-  // Basic Auth
-  const auth = Buffer.from(`${key}:${sec}`).toString('base64');
-
-  const wpRes = await fetch(url.toString(), {
-    headers: { 'Authorization': `Basic ${auth}` },
-  });
-  const data = await wpRes.json();
-  return NextResponse.json(data, { status: wpRes.status });
+import { NextRequest } from 'next/server';
+import { orderView, positiveId, record } from '@/lib/commerce-security';
+import { commerceError, CommerceError, privateJson, session, validOrderKey, woo } from '@/lib/commerce-server';
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const id = positiveId((await params).id);
+    if (!id) throw new CommerceError(404, 'Narudžba nije pronađena.');
+    const key = req.nextUrl.searchParams.get('key');
+    // Without a key, authenticate before issuing any privileged lookup.
+    const user = key ? null : await session(req);
+    const order = record(await woo(`orders/${id}`));
+    if (!validOrderKey(key, order.order_key) && !(user && positiveId(order.customer_id) === user.id)) {
+      throw new CommerceError(404, 'Narudžba nije pronađena.');
+    }
+    return privateJson(orderView(order));
+  } catch (error) { return commerceError(error); }
 }

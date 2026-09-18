@@ -1,4 +1,6 @@
 "use client";
+import { safeHtml } from '@/lib/safe-html';
+
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -147,7 +149,7 @@ const FaqSection: React.FC<FaqSectionProps> = ({ items = [] }) => {
                   >
                     <div
                       className="prose prose-invert max-w-none px-5 pb-5 text-cyan-500"
-                      dangerouslySetInnerHTML={{ __html: item.answer }}
+                      dangerouslySetInnerHTML={{ __html: safeHtml(item.answer) }}
                     />
                   </motion.div>
                 )}

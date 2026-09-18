@@ -1,6 +1,5 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { HttpLink } from '@apollo/client/link/http'; // ✅ umesto createHttpLink
-import { SetContextLink } from '@apollo/client/link/context';
 import { getPublicGraphqlUrl, getServerGraphqlUrl } from '@/lib/wordpress-endpoints';
 
 const isServer = typeof window === 'undefined';
@@ -24,23 +23,9 @@ const httpLink = new HttpLink({
     : undefined,
 });
 
-const authLink = new SetContextLink((prevContext) => {
-  let token: string | null = null;
-
-  // JWT token sa klijenta
-  if (typeof window !== 'undefined') {
-    token = localStorage.getItem('wp_jwt');
-  }
-
-  return {
-    headers: {
-      ...(prevContext.headers || {}),
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-    },
-  };
-});
+// GraphQL serves public catalogue data. Customer pricing uses verified server routes.
 
 export const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: httpLink,
   cache: new InMemoryCache(),
 });

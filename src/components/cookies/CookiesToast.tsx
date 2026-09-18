@@ -1,90 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { LuCookie } from 'react-icons/lu';
 import { AiOutlineClose } from 'react-icons/ai';
 import Link from 'next/link';
 
-
-
-
-export default function CookiesToast() { 
-  const [showModal, setShowModal] = useState(false);
- 
- 
-  
-
-  const handleAgree = () => {
-    localStorage.setItem('cookieConsent', 'accepted');
-    console.log('Korisnik se slaže sa kolačićima');
-    setShowModal(false);
-  };
-  
-  const handleDisagree = () => {
-    localStorage.setItem('cookieConsent', 'declined');
-    console.log('Korisnik se ne slaže sa kolačićima');
-    setShowModal(false);
-  };
-  
-
+export default function CookiesToast() {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [saved, setSaved] = useState(false);
+  function choose(choice: 'accepted' | 'declined') {
+    try { localStorage.setItem('cookieConsent', choice); setSaved(true); }
+    catch { setSaved(false); }
+    dialog.current?.close();
+  }
   return (
-    <div>
-      {/* Dugme za kolačiće */}
-      <button
-        onClick={() => setShowModal(true)}
-        className="fixed bottom-4 left-4 p-3 bg-blue-700 text-white rounded-full shadow-md hover:bg-blue-600 transition-colors"
-        aria-label="Cookie settings"
-      >
+    <>
+      <button onClick={() => dialog.current?.showModal()} className="fixed bottom-4 left-4 p-3 z-40 bg-blue-700 text-white rounded-full shadow-md hover:bg-blue-600" aria-label="Postavke kolačića">
         <LuCookie className="text-xl" />
       </button>
-
-      {/* Modal za kolačiće */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 mx-4">
-          <div className="bg-zinc-500 rounded-2xl shadow-lg shadow-cyan-500 border border-cyan-400 p-6 relative max-w-lg w-full">
-            {/* Zatvori dugme */}
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute top-2 right-2 text-sky-800 hover:text-neutral-300"
-              aria-label="Close modal"
-            >
-              <AiOutlineClose className="text-xl" />
-            </button>
-
-            {/* Sadržaj */}
-            <h2 className="text-xl text-zinc-200 font-semibold mb-4">
-                Ova stranica koristi kolačiće
-            </h2>
-            <p className="text-zinc-300 mb-4">
-              Koristimo kolačiće za poboljšanje korisničkog iskustva. Više informacija pronađite u našim {' '}
-              <Link href={"/privacy"}
-               className="text-blue-900 hover:underline">
-                Pravila privatnosti
-              </Link>{' '}
-              i {' '}
-              <Link href={"/terms"} 
-                className="text-blue-900 hover:underline">
-                Uvjeti korištenja
-              </Link>{' '}
-              stranicama.
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={handleDisagree}
-                className="px-4 py-2 bg-red-600 text-neutral-200 rounded-2xl hover:bg-neutral-400"
-              >
-                Ne slažem se
-              </button>
-              <button
-                onClick={handleAgree}
-                className="px-4 py-2 bg-blue-700 text-white rounded-2xl hover:bg-blue-600"
-              >
-                Slažem se
-              </button>
-            </div>
-          </div>
+      <span className="sr-only" role="status">{saved ? 'Postavka je spremljena.' : ''}</span>
+      {/* Native dialog contains keyboard focus and restores it on close/Escape. */}
+      <dialog ref={dialog} aria-labelledby="cookie-title" className="m-auto max-w-lg w-[calc(100%-2rem)] rounded-2xl border border-cyan-400 bg-zinc-900 text-zinc-200 p-6 backdrop:bg-black/60">
+        <button onClick={() => dialog.current?.close()} className="absolute top-3 right-3 p-2" aria-label="Zatvori postavke kolačića"><AiOutlineClose /></button>
+        <h2 id="cookie-title" className="text-xl font-semibold mb-4 pr-8">Postavke kolačića</h2>
+        <p className="mb-4 text-zinc-300">Nužni kolačići omogućuju prijavu i rad trgovine. Ovdje možete spremiti svoj izbor za dodatne kolačiće. Više informacija nalazi se u <Link href="/privacy" className="text-cyan-300 underline">pravilima privatnosti</Link>.</p>
+        <div className="flex flex-wrap justify-end gap-3">
+          <button onClick={() => choose('declined')} className="px-4 py-2 border border-zinc-500 rounded-xl">Samo nužni</button>
+          <button onClick={() => choose('accepted')} className="px-4 py-2 bg-blue-700 rounded-xl">Prihvati dodatne</button>
         </div>
-      )}
-    </div>
+      </dialog>
+    </>
   );
 }

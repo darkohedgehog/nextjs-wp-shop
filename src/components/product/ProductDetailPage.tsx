@@ -1,4 +1,8 @@
 'use client';
+import { safeHtml } from '@/lib/safe-html';
+
+
+import { parseAnchorPrice, type AnchorPrice } from '@/lib/anchor-price';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -278,6 +282,8 @@ export default function ProductDetailPage() {
 
   const hasImages = allImages.length > 0;
 
+  const [anchorPrice, setAnchorPrice] = useState<AnchorPrice | undefined>();
+
   // 👉 STATE za B2B/B2C cenu iz Woo REST-a
   const [priceInfo, setPriceInfo] = useState<{
     effective: number;
@@ -293,6 +299,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (!product?.databaseId) return;
 
+    let cancelled = false;
     (async () => {
       try {
         const res = await fetch(`/api/products/${product.databaseId}`);
@@ -301,12 +308,15 @@ export default function ProductDetailPage() {
             'Ne mogu da dohvatim detalje proizvoda iz Woo:',
             await res.text()
           );
+          if (cancelled) return;
+          setAnchorPrice(undefined);
           setPriceInfo(null);
           return;
         }
 
         type RestProduct = {
           id: number;
+          zpl_anchor?: unknown;
           price?: string;
           regular_price?: string;
           zvo_regular_price?: number;
@@ -315,6 +325,8 @@ export default function ProductDetailPage() {
         };
 
         const p: RestProduct = await res.json();
+        if (cancelled) return;
+        setAnchorPrice(parseAnchorPrice(p.zpl_anchor));
 
         const regular =
           typeof p.zvo_regular_price === 'number'
@@ -339,10 +351,13 @@ export default function ProductDetailPage() {
 
         setPriceInfo({ effective, regular, discountPercent });
       } catch (err) {
+        if (cancelled) return;
+        setAnchorPrice(undefined);
         console.warn('Greška pri dohvaćanju B2B/B2C cene:', err);
         setPriceInfo(null);
       }
     })();
+    return () => { cancelled = true; };
   }, [product?.databaseId]);
 
   // vrednosti za prikaz (fallback GraphQL ako nema REST priceInfo)
@@ -564,6 +579,13 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
+              {anchorPrice && (
+                <p className="text-sm text-zinc-300" data-testid="anchor-price">
+                  Sidrena cijena: <strong>{Number(anchorPrice.amount).toLocaleString('hr-HR', { style: 'currency', currency: 'EUR' })}</strong>
+                  {' · na dan '}{anchorPrice.referenceDate.split('-').reverse().join('.')}.
+                </p>
+              )}
+
               {/* CENA + POPUST */}
               <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-baseline gap-2">
@@ -666,7 +688,7 @@ export default function ProductDetailPage() {
               </h2>
               <div
                 className="prose prose-invert max-w-none prose-p:text-sm prose-p:text-zinc-200 prose-li:text-sm prose-li:text-zinc-200 prose-headings:text-zinc-50 prose-headings:text-base prose-strong:text-zinc-50 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-table:text-sm prose-th:border-zinc-700 prose-td:border-zinc-800"
-                dangerouslySetInnerHTML={{ __html: product.shortDescription }}
+                dangerouslySetInnerHTML={{ __html: safeHtml(product.shortDescription) }}
               />
 
               {(brand || mainCategory) && (

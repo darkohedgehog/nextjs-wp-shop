@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerWooBaseUrl } from '@/lib/wordpress-endpoints';
 
-const WC_BASE_URL =
-  process.env.NEXT_PUBLIC_WC_BASE_URL ??
-  process.env.WC_BASE_URL ??
-  process.env.WP_REST_ROOT?.replace('/wp-json', '') ?? '';
+const WC_BASE_URL = getServerWooBaseUrl();
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,35 +18,31 @@ export async function GET(req: NextRequest) {
 
     const headers: Record<string, string> = {};
 
-    // najbitnije: PROSLEDI ORIGINALNE COOKIE-E (Woo session)
+    // Forward only cookies used by the WordPress/WooCommerce session.
     const cookie = req.headers.get('cookie');
     if (cookie) {
-      headers['Cookie'] = cookie;
+      headers.Cookie = cookie.split(';').map(part => part.trim()).filter(part => /^(wp_woocommerce_session_[^=]+|woocommerce_items_in_cart|woocommerce_cart_hash|wordpress_logged_in_[^=]+)=/.test(part)).join('; ');
     }
 
     const wpRes = await fetch(url, {
       method: 'GET',
       headers,
       cache: 'no-store',
+      redirect: 'error',
+      signal: AbortSignal.timeout(8000),
     });
 
     const text = await wpRes.text();
 
     if (!wpRes.ok) {
-      console.error('Woo store cart error:', wpRes.status, text);
-      // prosledi raw response od WP
-      return new NextResponse(text, {
-        status: wpRes.status,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return NextResponse.json({ error: 'Košarica trenutno nije dostupna.' }, { status: 502 });
     }
 
     return new NextResponse(text, {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store' },
     });
-  } catch (err) {
-    console.error('Greška u /api/store/cart:', err);
+  } catch {
 
     return NextResponse.json(
       {

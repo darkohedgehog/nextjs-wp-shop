@@ -73,6 +73,7 @@ module.exports = {
       "/contact",
       "/privacy",
       "/complaint",
+      "/price-list",
     ];
 
     staticPages.forEach((path) => {

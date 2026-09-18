@@ -1,3 +1,4 @@
+import { checkMutation, commerceError, CommerceError, privateJson } from '@/lib/commerce-server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -49,7 +50,12 @@ type WooCustomerCreatePayload = {
 };
 
 export async function POST(req: NextRequest) {
+  try {
+  checkMutation(req);
   const body = (await req.json()) as StoreRegisterBody;
+
+  if (!body || typeof body !== 'object' || ['email', 'username', 'password', 'first_name', 'last_name'].some(key => typeof (body as unknown as Record<string, unknown>)[key] !== 'string')) throw new CommerceError(400, 'Provjerite podatke registracije.');
+  if (Object.values(body).some(value => typeof value === 'string' && value.length > 4096)) throw new CommerceError(400, 'Podaci su predugi.');
 
   // očekujemo: email, first_name, last_name, username, password
   // plus B2B polja ako je isB2B === true
@@ -121,15 +127,19 @@ export async function POST(req: NextRequest) {
   const url = new URL('/wp-json/wc/v3/customers', baseUrl);
 
   // ⚠️ Obrati pažnju da koristiš iste env nazive svuda
-  url.searchParams.set('consumer_key', process.env.WC_KEY);
-  url.searchParams.set('consumer_secret', process.env.WC_SECRET);
+  if (url.protocol !== 'https:') return NextResponse.json({ error: 'Sigurna veza nije dostupna.' }, { status: 503 });
 
   const wpRes = await fetch(url.toString(), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Basic ${Buffer.from(`${process.env.WC_KEY}:${process.env.WC_SECRET}`).toString('base64')}` },
+    redirect: 'error',
+    signal: AbortSignal.timeout(10000),
     body: JSON.stringify(payload),
   });
 
   const data: unknown = await wpRes.json();
-  return NextResponse.json(data, { status: wpRes.status });
+  if (!wpRes.ok) throw new CommerceError(400, 'Registracija nije uspjela. Provjerite podatke ili pokušajte s prijavom.');
+  const created = data as { id?: unknown };
+  return privateJson({ id: created.id }, wpRes.status);
+  } catch (error) { return commerceError(error); }
 }

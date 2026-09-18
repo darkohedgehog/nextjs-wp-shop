@@ -144,6 +144,14 @@ export default function MyAccountPage() {
             }),
           ]);
 
+          if (customerRes.status === 401 || ordersRes.status === 401) {
+            localStorage.removeItem('wpUser');
+            localStorage.removeItem('wpToken');
+            localStorage.removeItem('wp_jwt');
+            router.replace('/my-account/login');
+            return;
+          }
+
           // --- Customer / B2B / profil ---
           if (customerRes.ok) {
             try {
@@ -270,6 +278,7 @@ export default function MyAccountPage() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('wpUser');
       localStorage.removeItem('wpToken');
+      localStorage.removeItem('wp_jwt');
     }
 
     showToast('Uspješno ste se odjavili.', 'success');

@@ -1,380 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-const WC_BASE_URL = process.env.WC_BASE_URL;
-const WC_CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
-const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
-
-if (!WC_BASE_URL) console.warn('[create-order] WC_BASE_URL nije definisan u .env');
-if (!WC_CONSUMER_KEY) console.warn('[create-order] WC_CONSUMER_KEY nije definisan u .env');
-if (!WC_CONSUMER_SECRET) console.warn('[create-order] WC_CONSUMER_SECRET nije definisan u .env');
-
-function basicAuthHeader(): string {
-  const token = Buffer.from(
-    `${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`
-  ).toString('base64');
-  return `Basic ${token}`;
-}
-
-// ---- Tipovi za Woo strukture ----
-type WooMetaData = {
-  key: string;
-  value: unknown;
-};
-
-type WooCustomer = {
-  meta_data?: WooMetaData[];
-};
-
-type WooProduct = {
-  id: number;
-  regular_price?: string | number | null;
-  sale_price?: string | number | null;
-  price?: string | number | null;
-  meta_data?: WooMetaData[];
-};
-
-type IncomingLineItem = {
-  product_id?: number;
-  variation_id?: number;
-  quantity?: number | string;
-  [key: string]: unknown;
-};
-
-type CreateOrderPayload = {
-  customer_id?: number | string;
-  payment_method?: string;
-  payment_method_title?: string;
-  billing?: unknown;
-  shipping?: unknown;
-  line_items?: IncomingLineItem[];
-  customer_note?: string;
-  shipping_lines?: unknown[];
-  accepted_terms?: boolean;
-  [key: string]: unknown;
-};
-
-export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    route: '/api/create-order',
-    method: 'GET',
-  });
-}
-
-// helper: parsiranje broja
-function toNum(v: unknown): number {
-  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-  if (typeof v === 'string') {
-    const n = parseFloat(v.replace(',', '.'));
-    return Number.isFinite(n) ? n : 0;
-  }
-  return 0;
-}
-
-// helper: strict boolean check
-function isAcceptedTerms(value: unknown): boolean {
-  return value === true;
-}
-
-// 👇 1) Dohvati B2BKing group za customer-a
-async function fetchCustomerGroup(customerId: number): Promise<{
-  groupId: string | null;
-  isB2B: boolean;
-}> {
-  if (!WC_BASE_URL) return { groupId: null, isB2B: false };
-
-  const url = new URL(`/wp-json/wc/v3/customers/${customerId}`, WC_BASE_URL);
-
-  const res = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      Authorization: basicAuthHeader(),
-    },
-    cache: 'no-store',
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    console.error(
-      `[create-order] fetchCustomerGroup error for customer ${customerId}:`,
-      res.status,
-      txt
-    );
-    return { groupId: null, isB2B: false };
-  }
-
-  const json = (await res.json()) as WooCustomer;
-
-  let groupId: string | null = null;
-  let isB2B = false;
-
-  if (Array.isArray(json.meta_data)) {
-    for (const m of json.meta_data) {
-      if (
-        m.key === 'b2bking_b2buser' &&
-        String(m.value).toLowerCase() === 'yes'
-      ) {
-        isB2B = true;
-      }
-      if (m.key === 'b2bking_customergroup') {
-        groupId = String(m.value);
-      }
-    }
-  }
-
-  console.log(
-    `[create-order] Customer ${customerId} -> isB2B=${isB2B}, groupId=${groupId}`
-  );
-
-  return { groupId, isB2B };
-}
-
-// 👇 2) Dohvati produkt i izračunaj grupnu cijenu na osnovu B2BKing meta
-async function fetchProductGroupPricing(
-  productId: number,
-  groupId: string | null
-): Promise<{ regular: number; effective: number; ok: boolean }> {
-  if (!WC_BASE_URL) return { regular: 0, effective: 0, ok: false };
-
-  const url = new URL(`/wp-json/wc/v3/products/${productId}`, WC_BASE_URL);
-
-  const res = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      Authorization: basicAuthHeader(),
-    },
-    cache: 'no-store',
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    console.error(
-      `[create-order] fetchProductGroupPricing error for product ${productId}:`,
-      res.status,
-      txt
-    );
-    return { regular: 0, effective: 0, ok: false };
-  }
-
-  const json = (await res.json()) as WooProduct;
-
-  let regular = toNum(json.regular_price ?? json.price ?? 0);
-  let effective = toNum(json.price ?? json.sale_price ?? regular);
-
-  if (groupId && Array.isArray(json.meta_data)) {
-    const keyRegular = `b2bking_regular_product_price_group_${groupId}`;
-    const keySale = `b2bking_sale_product_price_group_${groupId}`;
-
-    let groupRegular: number | null = null;
-    let groupSale: number | null = null;
-
-    for (const m of json.meta_data) {
-      if (m.key === keyRegular) {
-        groupRegular = toNum(m.value);
-      }
-      if (m.key === keySale) {
-        groupSale = toNum(m.value);
-      }
-    }
-
-    if (groupRegular && groupRegular > 0) {
-      regular = groupRegular;
-    }
-    if (groupSale && groupSale > 0) {
-      effective = groupSale;
-    }
-  }
-
-  const ok =
-    (regular > 0 || effective > 0) &&
-    Number.isFinite(regular) &&
-    Number.isFinite(effective);
-
-  if (!ok) {
-    console.warn(
-      `[create-order] Product ${productId} pricing suspicious (regular=${regular}, effective=${effective}) – neće se override-at line_item`
-    );
-  }
-
-  return { regular, effective, ok };
-}
+import { NextRequest } from 'next/server';
+import { address, BASE_SHIPPING, checkoutLines, customerGroup, positiveId, productPricing, record } from '@/lib/commerce-security';
+import { checkMutation, commerceError, CommerceError, privateJson, session, woo } from '@/lib/commerce-server';
 
 export async function POST(req: NextRequest) {
-  if (!WC_BASE_URL || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
-    console.error('[create-order] Missing env vars');
-    return NextResponse.json(
-      { error: 'Woo env vars missing (WC_BASE_URL / CK / CS)' },
-      { status: 500 },
-    );
-  }
-
-  let body: CreateOrderPayload;
   try {
-    body = (await req.json()) as CreateOrderPayload;
-  } catch (err) {
-    console.error('[create-order] Cannot parse JSON body:', err);
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  // ✅ Obavezna backend provjera uvjeta korištenja
-  if (!isAcceptedTerms(body.accepted_terms)) {
-    return NextResponse.json(
-      {
-        error: 'Morate prihvatiti uvjete korištenja kako biste završili narudžbu.',
-      },
-      { status: 400 },
-    );
-  }
-
-  const customerId =
-    body.customer_id !== undefined ? Number(body.customer_id) : 0;
-
-  let groupId: string | null = null;
-  let isB2B = false;
-
-  if (customerId > 0) {
-    const customerInfo = await fetchCustomerGroup(customerId);
-    groupId = customerInfo.groupId;
-    isB2B = customerInfo.isB2B;
-  }
-
-  const originalLineItems: IncomingLineItem[] = Array.isArray(body.line_items)
-    ? body.line_items
-    : [];
-
-  const adjustedLineItems: IncomingLineItem[] = [];
-
-  for (const li of originalLineItems) {
-    const productId = (li.product_id ?? li.variation_id) as number | undefined;
-    const qty = toNum(li.quantity ?? 1) || 1;
-
-    if (!productId) {
-      adjustedLineItems.push(li);
-      continue;
-    }
-
-    if (!isB2B || !groupId) {
-      adjustedLineItems.push(li);
-      continue;
-    }
-
+    checkMutation(req);
+    const body = record(await req.json());
+    if (body.accepted_terms !== true) throw new CommerceError(400, 'Morate prihvatiti uvjete korištenja.');
+    if (body.payment_method !== 'cod' && body.payment_method !== 'bacs') throw new CommerceError(400, 'Neispravan način plaćanja.');
+    const user = await session(req, false);
+    const customerId = user?.id ?? 0;
+    if (body.customer_id !== undefined && body.customer_id !== 0 && positiveId(body.customer_id) !== customerId) throw new CommerceError(403, 'Prijavite se ponovno prije narudžbe.');
+    const group = user ? customerGroup(await woo(`customers/${user.id}`)) : null;
+    let billing, shipping, lines;
     try {
-      const { regular, effective, ok } = await fetchProductGroupPricing(
-        Number(productId),
-        groupId
-      );
-
-      if (!ok) {
-        console.warn(
-          `[create-order] Skipping override for product ${productId} – koristim originalni line_item`
-        );
-        adjustedLineItems.push(li);
-        continue;
-      }
-
-      const unitPrice = effective || regular;
-      const lineTotal = unitPrice * qty;
-
-      const newItem: IncomingLineItem = {
-        ...li,
-        product_id: productId,
-        quantity: qty,
-        price: unitPrice.toFixed(2),
-        subtotal: lineTotal.toFixed(2),
-        total: lineTotal.toFixed(2),
-      };
-
-      adjustedLineItems.push(newItem);
-    } catch (e) {
-      console.error(
-        `[create-order] Error when adjusting price for product ${productId}:`,
-        e
-      );
-      adjustedLineItems.push(li);
+      billing = address(body.billing); shipping = address(body.shipping); lines = checkoutLines(body.line_items);
+    } catch { throw new CommerceError(400, 'Provjerite artikle, količine i adresu.'); }
+    for (const a of [billing, shipping]) {
+      if (a.country !== 'HR' || ['first_name', 'last_name', 'address_1', 'city', 'postcode'].some(key => !a[key])) throw new CommerceError(400, 'Unesite potpunu adresu u Hrvatskoj.');
     }
-  }
-
-  const url = new URL('/wp-json/wc/v3/orders', WC_BASE_URL);
-  const authHeader = basicAuthHeader();
-
-  const paymentMethod: string = String(body.payment_method ?? '');
-
-  const isCOD = paymentMethod === 'cod';
-  const isBacs = paymentMethod === 'bacs';
-
-  let status: 'pending' | 'processing' | 'on-hold' = 'pending';
-  let set_paid = false;
-
-  if (isCOD) {
-    status = 'processing';
-    set_paid = true;
-  } else if (isBacs) {
-    status = 'processing';
-    set_paid = false;
-  }
-
-  // ✅ Nemoj slepo prosleđivati baš sve iz body-ja
-  const wooPayload = {
-    customer_id: body.customer_id,
-    payment_method: body.payment_method,
-    payment_method_title: body.payment_method_title,
-    billing: body.billing,
-    shipping: body.shipping,
-    customer_note: body.customer_note,
-    shipping_lines: body.shipping_lines,
-    status,
-    set_paid,
-    line_items: adjustedLineItems,
-    meta_data: [
-      {
-        key: '_accepted_terms',
-        value: 'yes',
-      },
-    ],
-  };
-
-  try {
-    const wpRes = await fetch(url.toString(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authHeader,
-      },
-      body: JSON.stringify(wooPayload),
-    });
-
-    const text = await wpRes.text();
-
-    if (!wpRes.ok) {
-      console.error(
-        '[create-order] Woo create order error:',
-        wpRes.status,
-        text,
-      );
-
-      return NextResponse.json(
-        {
-          error: `Woo create order failed (status ${wpRes.status})`,
-          wooStatus: wpRes.status,
-          wooBody: text,
-        },
-        { status: 500 },
-      );
+    if (!billing.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billing.email) || !billing.phone) throw new CommerceError(400, 'Unesite email i telefon.');
+    if (body.customer_note !== undefined && (typeof body.customer_note !== 'string' || body.customer_note.length > 2000)) throw new CommerceError(400, 'Napomena je preduga.');
+    const line_items = [];
+    const stockUsage = new Map<number, number>();
+    for (const line of lines) {
+      const parent = record(await woo(`products/${line.product_id}`));
+      if (parent.status !== 'publish' || parent.catalog_visibility === 'hidden') throw new CommerceError(400, 'Artikl nije dostupan.');
+      if (!line.variation_id && parent.type !== 'simple') throw new CommerceError(400, 'Odaberite dostupnu varijantu artikla.');
+      if (line.variation_id && parent.type !== 'variable') throw new CommerceError(400, 'Neispravna varijanta.');
+      const product = line.variation_id ? record(await woo(`products/${line.product_id}/variations/${line.variation_id}`)) : parent;
+      if (product.status !== 'publish' || product.purchasable === false || product.stock_status === 'outofstock') throw new CommerceError(400, 'Artikl nije dostupan.');
+      const usesParentStock = Boolean(line.variation_id && parent.manage_stock === true && product.manage_stock !== true);
+      const stockOwner = usesParentStock ? parent : product;
+      const stockId = usesParentStock ? line.product_id : (line.variation_id ?? line.product_id);
+      const requestedStock = (stockUsage.get(stockId) ?? 0) + line.quantity;
+      stockUsage.set(stockId, requestedStock);
+      if (stockOwner.stock_status === 'outofstock' || (stockOwner.manage_stock === true && stockOwner.backorders_allowed !== true && typeof stockOwner.stock_quantity === 'number' && requestedStock > stockOwner.stock_quantity)) throw new CommerceError(400, 'Tražena količina nije dostupna.');
+      const { effective } = productPricing(product, group);
+      if (!Number.isFinite(effective) || effective <= 0) throw new CommerceError(400, 'Cijena artikla nije dostupna.');
+      // Retail totals are calculated by WooCommerce from the product. Group amounts
+      // come exclusively from verified customer/product metadata, never the request.
+      line_items.push({ ...line, ...(group ? { subtotal: (effective * line.quantity).toFixed(2), total: (effective * line.quantity).toFixed(2) } : {}) });
     }
-
-    const order = JSON.parse(text) as unknown;
-
-    console.log(
-      '[create-order] Woo order created OK, id =',
-      (order as { id?: number }).id
-    );
-
-    return NextResponse.json(order, { status: 201 });
-  } catch (err) {
-    console.error('[create-order] Unexpected error calling Woo:', err);
-    return NextResponse.json(
-      { error: 'Unexpected error calling Woo', details: String(err) },
-      { status: 500 },
-    );
-  }
+    const order = record(await woo('orders', { method: 'POST', body: JSON.stringify({
+      customer_id: customerId, payment_method: body.payment_method,
+      payment_method_title: body.payment_method === 'cod' ? 'Plaćanje pouzećem' : 'Direct Bank Transfer',
+      status: 'processing', set_paid: body.payment_method === 'cod',
+      billing, shipping, customer_note: body.customer_note ?? '', line_items,
+      shipping_lines: [{ method_id: 'flat_rate', method_title: 'Flat Rate', total: (group ? 0 : BASE_SHIPPING).toFixed(2) }],
+      meta_data: [{ key: '_accepted_terms', value: 'yes' }],
+    }) }));
+    return privateJson({ id: order.id, order_key: order.order_key }, 201);
+  } catch (error) { return commerceError(error); }
 }

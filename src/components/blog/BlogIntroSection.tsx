@@ -1,3 +1,4 @@
+import { safeHtml } from '@/lib/safe-html';
 import Link from "next/link";
 import Image from "next/image";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -204,7 +205,7 @@ export default async function BlogIntroSection() {
               <div
                 className="mt-2 line-clamp-3 text-xs text-zinc-300/90"
                 dangerouslySetInnerHTML={{
-                  __html: post.excerpt || "",
+                  __html: safeHtml(post.excerpt || ""),
                 }}
               />
 

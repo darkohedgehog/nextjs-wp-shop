@@ -1,3 +1,4 @@
+import { safeHtml } from '@/lib/safe-html';
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -219,7 +220,7 @@ export default async function BlogPage() {
                   <div
                     className="line-clamp-3 text-xs text-zinc-300/80 sm:text-sm"
                     dangerouslySetInnerHTML={{
-                      __html: post.excerpt || "",
+                      __html: safeHtml(post.excerpt || ""),
                     }}
                   />
 

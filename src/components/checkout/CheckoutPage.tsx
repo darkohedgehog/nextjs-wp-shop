@@ -1,5 +1,7 @@
 'use client';
 
+import { BASE_SHIPPING } from '@/lib/commerce-security';
+
 import { useCart } from '@/store/cart';
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
@@ -59,7 +61,8 @@ type CreateOrderResponse = {
   error?: unknown;
 };
 
-const BASE_SHIPPING = 5.5;
+// Shared with the authoritative server checkout calculation.
+
 const WC_BASE_URL = process.env.NEXT_PUBLIC_WC_BASE_URL;
 
 const CROATIA_COUNTRIES = [{ value: 'HR', label: 'Hrvatska' }];

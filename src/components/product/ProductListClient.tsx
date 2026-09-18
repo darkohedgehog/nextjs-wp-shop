@@ -320,30 +320,7 @@ export default function ProductListClient({
         params.set('include', ids.join(','));
         params.set('per_page', String(ids.length));
 
-        const headers: Record<string, string> = {};
-
-        try {
-          const raw = localStorage.getItem('wpUser');
-          if (raw) {
-            const user: unknown = JSON.parse(raw);
-            const token =
-              typeof (user as { token?: unknown })?.token === 'string'
-                ? (user as { token: string }).token
-                : typeof (user as { data?: { token?: unknown } })?.data?.token === 'string'
-                ? (user as { data: { token: string } }).data.token
-                : typeof (user as { jwt?: unknown })?.jwt === 'string'
-                ? (user as { jwt: string }).jwt
-                : undefined;
-
-            if (token) headers.Authorization = `Bearer ${token}`;
-          }
-        } catch (e) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.warn('Ne mogu da pročitam wpUser iz localStorage:', e);
-          }
-        }
-
-        const res = await fetch(`/api/products?${params.toString()}`, { headers });
+        const res = await fetch(`/api/products?${params.toString()}`);
 
         if (!res.ok) {
           if (process.env.NODE_ENV !== 'production') {

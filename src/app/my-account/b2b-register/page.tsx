@@ -98,7 +98,7 @@ export default function B2BRegisterPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.message || 'Došlo je do greške pri registraciji.');
+        setError(data?.error || data?.message || 'Došlo je do greške pri registraciji.');
         return;
       }
 

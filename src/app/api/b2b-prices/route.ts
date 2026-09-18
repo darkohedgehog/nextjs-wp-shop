@@ -1,125 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-const WC_BASE_URL        = process.env.WC_BASE_URL;
-const WC_CONSUMER_KEY    = process.env.WC_CONSUMER_KEY;
-const WC_CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
-
-if (!WC_BASE_URL)        console.warn('[b2b-prices] WC_BASE_URL nije definisan');
-if (!WC_CONSUMER_KEY)    console.warn('[b2b-prices] WC_CONSUMER_KEY nije definisan');
-if (!WC_CONSUMER_SECRET) console.warn('[b2b-prices] WC_CONSUMER_SECRET nije definisan');
-
-function basicAuthHeader(): string {
-  const token = Buffer.from(
-    `${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`
-  ).toString('base64');
-  return `Basic ${token}`;
-}
-
-// Tipovi za Woo response
-type WooMetaData = {
-  key: string;
-  value: string | number | boolean | null;
-};
-
-type WooProduct = {
-  id: number;
-  meta_data?: WooMetaData[];
-};
-
+import { NextRequest } from 'next/server';
+import { customerGroup, positiveId, record } from '@/lib/commerce-security';
+import { commerceError, CommerceError, privateJson, session, woo } from '@/lib/commerce-server';
 export async function GET(req: NextRequest) {
   try {
-    if (!WC_BASE_URL || !WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
-      return NextResponse.json(
-        { error: 'Woo env vars missing' },
-        { status: 500 }
-      );
+    const user = (await session(req))!;
+    const group = customerGroup(await woo(`customers/${user.id}`));
+    const requested = req.nextUrl.searchParams.get('groupId');
+    if (!group || (requested !== null && requested !== group)) throw new CommerceError(403, 'Pristup nije dopušten.');
+    const ids = req.nextUrl.searchParams.get('ids')?.split(',').map(positiveId);
+    if (!ids?.length || ids.length > 100 || ids.some(id => id === null)) throw new CommerceError(400, 'Neispravni artikli.');
+    const products = await woo(`products?status=publish&include=${ids.join(',')}&per_page=${ids.length}`);
+    if (!Array.isArray(products)) throw new Error('Invalid products');
+    const result: Record<string, { regular?: string; sale?: string }> = {};
+    for (const value of products) {
+      const product = record(value);
+      if (product.status !== 'publish' || product.catalog_visibility === 'hidden') continue;
+      const meta = Array.isArray(product.meta_data) ? product.meta_data.map(record) : [];
+      const regular = meta.find(m => m.key === `b2bking_regular_product_price_group_${group}`)?.value;
+      const sale = meta.find(m => m.key === `b2bking_sale_product_price_group_${group}`)?.value;
+      result[String(product.id)] = { regular: regular == null ? undefined : String(regular), sale: sale == null ? undefined : String(sale) };
     }
-
-    const { searchParams } = new URL(req.url);
-    const idsParam = searchParams.get('ids');      // npr. "2295,123,456"
-    const groupId  = searchParams.get('groupId');  // npr. "308"
-
-    if (!idsParam || !groupId) {
-      return NextResponse.json(
-        { error: 'ids i groupId su obavezni (?ids=1,2,3&groupId=308)' },
-        { status: 400 }
-      );
-    }
-
-    const ids = idsParam
-      .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !Number.isNaN(n));
-
-    if (!ids.length) {
-      return NextResponse.json(
-        { error: 'Nijedan validan product ID' },
-        { status: 400 }
-      );
-    }
-
-    const url = new URL('/wp-json/wc/v3/products', WC_BASE_URL);
-    url.searchParams.set('include', ids.join(','));
-    url.searchParams.set('per_page', String(ids.length));
-
-    const wpRes = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        Authorization: basicAuthHeader(),
-      },
-      cache: 'no-store',
-    });
-
-    const text = await wpRes.text();
-
-    if (!wpRes.ok) {
-      console.error('[b2b-prices] Woo error:', wpRes.status, text);
-      return new NextResponse(text, {
-        status: wpRes.status,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    let products: WooProduct[] = [];
-    try {
-      products = JSON.parse(text) as WooProduct[];
-    } catch (e) {
-      console.error('[b2b-prices] JSON parse error:', e);
-      return NextResponse.json(
-        { error: 'Ne mogu parsirati Woo response' },
-        { status: 500 }
-      );
-    }
-
-    const regularKey = `b2bking_regular_product_price_group_${groupId}`;
-    const saleKey    = `b2bking_sale_product_price_group_${groupId}`;
-
-    const result: Record<
-      number,
-      { regular?: string; sale?: string }
-    > = {};
-
-    for (const p of products) {
-      const pid = p.id;
-      const meta = Array.isArray(p.meta_data) ? p.meta_data : [];
-
-      const regMeta  = meta.find((m) => m.key === regularKey);
-      const saleMeta = meta.find((m) => m.key === saleKey);
-
-      if (regMeta || saleMeta) {
-        result[pid] = {
-          regular: regMeta?.value != null ? String(regMeta.value) : undefined,
-          sale:    saleMeta?.value != null ? String(saleMeta.value) : undefined,
-        };
-      }
-    }
-
-    return NextResponse.json(result, { status: 200 });
-  } catch (err) {
-    console.error('[b2b-prices] Unexpected error:', err);
-    return NextResponse.json(
-      { error: 'Unexpected error', details: String(err) },
-      { status: 500 }
-    );
-  }
+    return privateJson(result);
+  } catch (error) { return commerceError(error); }
 }

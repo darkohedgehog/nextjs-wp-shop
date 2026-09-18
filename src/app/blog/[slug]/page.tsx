@@ -1,3 +1,4 @@
+import { safeHtml } from '@/lib/safe-html';
 import dynamic from "next/dynamic";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -301,7 +302,7 @@ export default async function BlogPostPage({
       {/* JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
       {/* Background glow */}
@@ -372,7 +373,7 @@ export default async function BlogPostPage({
           </header>
 
           <div className="prose prose-invert prose-lg max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:text-zinc-100 prose-a:text-cyan-300 prose-a:no-underline hover:prose-a:text-cyan-100 prose-strong:text-slate-50 prose-img:rounded-2xl prose-figcaption:text-xs prose-figcaption:text-slate-400">
-            <div dangerouslySetInnerHTML={{ __html: cleanedContent }} />
+            <div dangerouslySetInnerHTML={{ __html: safeHtml(cleanedContent) }} />
           </div>
 
           <div className="flex items-center justify-center">

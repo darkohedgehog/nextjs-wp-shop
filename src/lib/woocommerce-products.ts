@@ -1,3 +1,5 @@
+import { parseAnchorPrice, type AnchorPrice } from './anchor-price.ts';
+
 export type PublicWooTerm = {
   id: number;
   name: string;
@@ -26,6 +28,7 @@ export type PublicWooProduct = {
   categories?: PublicWooTerm[];
   brands?: PublicWooTerm[];
   images: PublicWooImage[];
+  zpl_anchor?: AnchorPrice;
   zvo_regular_price?: number;
   zvo_effective_price?: number;
   zvo_discount_percent?: number;
@@ -134,6 +137,7 @@ export function sanitizeWooProduct(
     images: sanitizeImages(product.images),
   };
 
+  setIfDefined(sanitized, "zpl_anchor", parseAnchorPrice(product.zpl_anchor));
   setIfDefined(sanitized, "permalink", stringValue(product.permalink));
   setIfDefined(sanitized, "sku", stringValue(product.sku));
   setIfDefined(sanitized, "price", stringValue(product.price));

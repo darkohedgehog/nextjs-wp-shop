@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import type { Metadata } from "next";
 import ProductDetailPage from "@/components/product/ProductDetailPage";
 import { buildMetadata } from "@/utils/seo";
@@ -107,21 +108,8 @@ async function fetchProductMeta(slug: string): Promise<ProductMeta | null> {
   }
 }
 
-/**
- * Small in-module cache so we don't fetch twice (metadata + page render).
- * (Napomena: radi u okviru istog node procesa; u dev-u i na serverless-u
- * očekuj da ponekad bude "best effort", ali u praksi pomaže.)
- */
-const productMetaCache = new Map<string, Promise<ProductMeta | null>>();
-
-function getProductMetaCached(slug: string): Promise<ProductMeta | null> {
-  const existing = productMetaCache.get(slug);
-  if (existing) return existing;
-
-  const p = fetchProductMeta(slug);
-  productMetaCache.set(slug, p);
-  return p;
-}
+// Deduplicate metadata and page reads only within the current render.
+const getProductMetaCached = cache(fetchProductMeta);
 
 // -----------------------------
 // JSON-LD builder
@@ -214,7 +202,7 @@ export default async function ProductDetail({
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
       )}
 

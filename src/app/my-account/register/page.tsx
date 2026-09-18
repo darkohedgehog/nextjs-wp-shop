@@ -60,7 +60,7 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data?.message || 'Greška pri registraciji.');
+        setError(data?.error || data?.message || 'Greška pri registraciji.');
       } else {
         // posle uspešne registracije ideš na login
         router.push('/my-account/login');

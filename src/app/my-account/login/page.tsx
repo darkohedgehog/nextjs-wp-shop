@@ -20,6 +20,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
+    try {
     const res = await fetch('/api/store-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -29,14 +30,20 @@ export default function LoginPage() {
     const data = await res.json();
     setLoading(false);
 
-    if (!res.ok || !data.data?.token) {
-      setError(data?.message || 'Greška pri prijavi.');
+    if (!res.ok || !data.data?.id) {
+      setError(data?.error || 'Greška pri prijavi.');
       return;
     }
 
-    localStorage.setItem('wpToken', data.data.token);
+    localStorage.removeItem('wpToken');
+    localStorage.removeItem('wp_jwt');
     localStorage.setItem('wpUser', JSON.stringify(data.data));
     router.push('/my-account');
+    } catch {
+      setError('Prijava trenutno nije dostupna. Pokušajte ponovno.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
