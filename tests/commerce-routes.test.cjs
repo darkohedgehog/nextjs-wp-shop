@@ -176,3 +176,42 @@ test('B2B registration retains the explicitly agreed group assignment', async ()
   assert.deepEqual(writes[0].meta_data.slice(0, 2), [{ key: 'b2bking_b2buser', value: 'yes' }, { key: 'b2bking_customergroup', value: 308 }]);
   assert.deepEqual(await res.json(), { id: 99 });
 });
+test('production public origins pass validation behind an internal HTTP proxy', async () => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    const handlers = [login, route('lost-password'), route('store-register')];
+    for (const origin of ['https://www.zivic-elektro.shop', 'https://zivic-elektro.shop']) {
+      for (const handler of handlers) {
+        const request = new NextRequest('http://localhost:3000/api/test', {
+          method: 'POST', headers: { origin, 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' }, body: '{}',
+        });
+        // Empty input must reach field validation without contacting WordPress.
+        const res = await handler.POST(request);
+        assert.equal(res.status, 400);
+        assert.notEqual((await res.json()).error, 'Zahtjev nije dopušten.');
+      }
+    }
+    assert.equal(calls.length, 0);
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previous;
+  }
+});
+test('production origin check rejects lookalikes, insecure origins and spoofed proxy headers', async () => {
+  const { checkMutation } = require('../src/lib/commerce-server.ts');
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    for (const origin of ['https://evil.invalid', 'https://www.zivic-elektro.shop.evil.invalid', 'http://www.zivic-elektro.shop', 'http://localhost:3000', 'null']) {
+      const request = new NextRequest('http://localhost:3000/api/store-login', {
+        method: 'POST', headers: { origin, 'content-type': 'application/json', 'sec-fetch-site': 'same-origin', 'x-forwarded-host': origin.replace(/^https?:\/\//, ''), 'x-forwarded-proto': 'https' }, body: '{}',
+      });
+      assert.throws(() => checkMutation(request), error => error.status === 403);
+    }
+    assert.throws(() => checkMutation(new NextRequest('http://localhost:3000/api/store-login', {
+      method: 'POST', headers: { origin: 'https://www.zivic-elektro.shop', 'content-type': 'application/json', 'sec-fetch-site': 'cross-site' }, body: '{}',
+    })), error => error.status === 403);
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previous;
+  }
+});

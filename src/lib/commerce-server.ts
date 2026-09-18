@@ -16,7 +16,11 @@ export function commerceError(error: unknown) {
 }
 export function checkMutation(req: NextRequest) {
   const origin = req.headers.get('origin');
-  if ((origin && origin !== req.nextUrl.origin) || req.headers.get('sec-fetch-site') === 'cross-site') throw new CommerceError(403, 'Zahtjev nije dopušten.');
+  // TLS terminates at the production proxy; nextUrl may contain its internal HTTP origin.
+  // Trust explicit shop origins, never client-supplied Host/X-Forwarded-* headers.
+  const allowedOrigins = new Set(['https://www.zivic-elektro.shop', 'https://zivic-elektro.shop']);
+  if (process.env.NODE_ENV !== 'production') allowedOrigins.add(req.nextUrl.origin);
+  if ((origin && !allowedOrigins.has(origin)) || req.headers.get('sec-fetch-site') === 'cross-site') throw new CommerceError(403, 'Zahtjev nije dopušten.');
   if (!req.headers.get('content-type')?.startsWith('application/json')) throw new CommerceError(415, 'Potreban je JSON zahtjev.');
 }
 export async function woo(path: string, init: RequestInit = {}): Promise<unknown> {

@@ -42,3 +42,11 @@ Korisnik je potvrdio da je na localhostu poslao narudžbu pouzećem i da je stig
 Prijavljeni `Buffer size mismatch: got 197820, expected 196560` potiče iz dotLottie `_draw()` funkcije. Reprodukovan je bez narudžbe, istom animacijom u kontejneru širine 180 px pri render devicePixelRatio=1.75. Automatska visina prati zaokruženu veličinu canvas-a: visina pada sa 90 na 89.140625 CSS px, a canvas sa 157 na 156 piksela dok renderer zadržava prethodni buffer. Pri DPR=1.25 javlja se ekvivalentno upozorenje.
 
 `LottieAnimation.tsx` sada daje omotaču eksplicitan odnos stranica 2:1, što zadržava postojeći izgled i prekida povratnu vezu između unutrašnje rezolucije canvas-a i visine rasporeda. Browser provera pri DPR=1, 1.25, 1.75 i 2: sve četiri animacije vidljive, CSS dimenzije 180×90, bez novih warning/error poruka. Privremena reprodukciona stranica je uklonjena. TypeScript i ciljani ESLint prolaze. Checkout i bibliotečke verzije nisu menjani ovom popravkom.
+
+## Produkcijska regresija: 403 na javnim POST rutama
+
+Prijava, registracija i zahtev za reset lozinke na `https://www.zivic-elektro.shop` odbijani su zajedničkim `checkMutation` poređenjem Origin zaglavlja sa `req.nextUrl.origin`. Direktna read-only dijagnostika praznim login payloadom potvrdila je aplikacijski odgovor `403 / Zahtjev nije dopušten.` bez slanja kredencijala ili pozivanja Woo upisa. Direktni localhost testovi nisu pokrili javni HTTPS origin naspram interne HTTP adrese iza proxyja.
+
+Popravka eksplicitno dozvoljava HTTPS origin webshopa sa i bez `www`. Origin trenutne Next.js adrese dodatno je dozvoljen samo van produkcije. Ne veruje se proizvoljnim Host/X-Forwarded zaglavljima; `Sec-Fetch-Site: cross-site` i dalje se odbija. Nema izmene autentifikacije tokena ni isključivanja zaštite.
+
+Dva nova regresiona testa pre popravke padaju, a posle nje prolaze: javne domene kroz interni proxy stižu do validacije polja na sve tri rute, bez upstream poziva; lažni domeni, HTTP origin, produkcijski localhost origin i lažirana proxy zaglavlja ne dobijaju pristup. Ukupno 33 testa, TypeScript i lint prolaze. Stvarna prijava/reset/registracija zahtevaju ponovnu proveru nakon objave ove ispravke.

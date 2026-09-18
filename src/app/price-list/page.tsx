@@ -6,8 +6,8 @@ import { buildMetadata } from "@/utils/seo";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Cjenik webshopa",
-  description: "Preuzmite cjenik webshopa Živić Elektro i pregledajte prethodne objave.",
+  title: "Cjenik web trgovine",
+  description: "Preuzmite cjenik web trgovine Živić Elektro i pregledajte prethodne objave.",
   path: "/price-list",
 });
 
@@ -25,9 +25,9 @@ export default async function PriceListPage() {
   return (
     <section className="mx-auto max-w-5xl px-4 pb-16 pt-32 sm:px-6" aria-labelledby="price-list-title">
       <p className="mb-3 text-sm font-medium uppercase tracking-widest text-cyan-300">Živić Elektro · Webshop</p>
-      <h1 id="price-list-title" className="text-3xl font-semibold text-zinc-100 sm:text-4xl">Cjenik webshopa</h1>
+      <h1 id="price-list-title" className="text-3xl font-semibold text-zinc-100 sm:text-4xl">Cjenik web trgovine</h1>
       <p className="mt-4 max-w-2xl text-zinc-300">
-        Preuzmite cijene proizvoda webshopa u CSV formatu. Cijene su izražene u eurima s uključenim PDV-om.
+        Preuzmite cijene proizvoda web trgovine u CSV formatu. Cijene su izražene u eurima s uključenim PDV-om.
       </p>
       <div className="mt-8 rounded-3xl border border-zinc-600 bg-zinc-900/80 p-6 shadow-xl sm:p-8">
         {result.status === "unavailable" ? (
@@ -39,7 +39,7 @@ export default async function PriceListPage() {
         ) : !latest ? (
           <div role="status">
             <h2 className="text-xl font-semibold text-zinc-100">Cjenik još nije objavljen</h2>
-            <p className="mt-3 text-zinc-300">Nakon objave ovdje ćete moći preuzeti cjenik webshopa.</p>
+            <p className="mt-3 text-zinc-300">Nakon objave ovdje ćete moći preuzeti cjenik web trgovine.</p>
           </div>
         ) : (
           <>
